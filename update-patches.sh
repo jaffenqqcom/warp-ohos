@@ -51,8 +51,8 @@ echo "  $(wc -l < "$PATCH_DIR/openharmony-ability/full.patch") 行"
 
 echo ""
 echo "=========================================="
-echo " patches 更新完毕！"
+echo " 新patches 制作完成！"
 echo "=========================================="
 ls -lh "$PATCH_DIR/warp/"*.patch "$PATCH_DIR/winit/"*.patch "$PATCH_DIR/openharmony-ability/"*.patch "$PATCH_DIR/"*.patch 2>/dev/null
 echo ""
-echo "提示: 更新后的 patch 可以提交到 warp-ohos 仓库保存"
+echo "提示: 提交到 warp-ohos 仓库保存：git add clone.sh README.md update-patches.sh patches/ && git commit -m "更新脚本与补丁目录" && git push"
