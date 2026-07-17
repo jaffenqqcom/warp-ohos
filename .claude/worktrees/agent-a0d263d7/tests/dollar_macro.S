@@ -1,2 +1,0 @@
-#define M q
-$M
