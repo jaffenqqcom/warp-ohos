@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/bin/sh
 # 下载 warp + winit + openharmony-ability + 三个修补过的外部 crate
 # 自动打所有 patch，配置 cargo 路径覆盖
-# 用法: cd <目标目录> && bash clone.sh
+# 用法: cd <目标目录> && sh clone.sh
 set -euo pipefail
 
 BASE_DIR="$(pwd)"
