@@ -1,0 +1,163 @@
+diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' '--exclude=Cargo.lock' /home/user/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/nix-0.26.4/src/fcntl.rs /mnt/linux_share/warp-winit/patches/nix/src/fcntl.rs
+--- /home/user/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/nix-0.26.4/src/fcntl.rs	2006-07-24 09:21:28.000000000 +0800
++++ /mnt/linux_share/warp-winit/patches/nix/src/fcntl.rs	2026-06-26 23:00:21.152806719 +0800
+@@ -104,7 +104,7 @@
+         #[cfg(any(target_os = "dragonfly",
+                   target_os = "freebsd",
+                   target_os = "ios",
+-                  all(target_os = "linux", not(target_env = "musl")),
++                  all(target_os = "linux", not(any(target_env = "musl", target_env = "ohos"))),
+                   target_os = "macos",
+                   target_os = "netbsd",
+                   target_os = "openbsd",
+diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' '--exclude=Cargo.lock' /home/user/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/nix-0.26.4/src/sys/signal.rs /mnt/linux_share/warp-winit/patches/nix/src/sys/signal.rs
+--- /home/user/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/nix-0.26.4/src/sys/signal.rs	2006-07-24 09:21:28.000000000 +0800
++++ /mnt/linux_share/warp-winit/patches/nix/src/sys/signal.rs	2026-06-26 23:00:21.180802500 +0800
+@@ -1069,6 +1069,8 @@
+                 SigevNotify::SigevThreadId{..} => libc::SIGEV_THREAD_ID,
+                 #[cfg(all(target_os = "linux", target_env = "uclibc"))]
+                 SigevNotify::SigevThreadId{..} => libc::SIGEV_THREAD_ID,
++                #[cfg(all(target_os = "linux", target_env = "ohos"))]
++                SigevNotify::SigevThreadId{..} => 4,  // SIGEV_THREAD_ID not in OHOS libc
+                 #[cfg(any(all(target_os = "linux", target_env = "musl"), target_arch = "mips"))]
+                 SigevNotify::SigevThreadId{..} => 4  // No SIGEV_THREAD_ID defined
+             };
+diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' '--exclude=Cargo.lock' /home/user/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/nix-0.26.4/src/sys/socket/mod.rs /mnt/linux_share/warp-winit/patches/nix/src/sys/socket/mod.rs
+--- /home/user/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/nix-0.26.4/src/sys/socket/mod.rs	2006-07-24 09:21:28.000000000 +0800
++++ /mnt/linux_share/warp-winit/patches/nix/src/sys/socket/mod.rs	2026-06-26 23:00:21.184798906 +0800
+@@ -1428,7 +1428,7 @@
+     unsafe fn encode_into(&self, cmsg: *mut cmsghdr) {
+         (*cmsg).cmsg_level = self.cmsg_level();
+         (*cmsg).cmsg_type = self.cmsg_type();
+-        (*cmsg).cmsg_len = self.cmsg_len();
++        (*cmsg).cmsg_len = self.cmsg_len() as _;
+         self.copy_to_cmsg_data(CMSG_DATA(cmsg));
+     }
+ }
+diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' '--exclude=Cargo.lock' /home/user/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/nix-0.26.4/src/sys/socket/sockopt.rs /mnt/linux_share/warp-winit/patches/nix/src/sys/socket/sockopt.rs
+--- /home/user/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/nix-0.26.4/src/sys/socket/sockopt.rs	2006-07-24 09:21:28.000000000 +0800
++++ /mnt/linux_share/warp-winit/patches/nix/src/sys/socket/sockopt.rs	2026-06-26 23:00:21.184798906 +0800
+@@ -1193,7 +1193,11 @@
+ }
+ 
+ /// Getter for an `u8` value.
+-struct GetU8 {
++// nix ≥0.30 已将 GetU8 改为 pub + doc(hidden) 来避免 feature = "net" 未启用时的
++// dead_code 错误。此处同步该修复。
++#[doc(hidden)]
++#[derive(Clone, Copy, Debug)]
++pub struct GetU8 {
+     len: socklen_t,
+     val: MaybeUninit<u8>,
+ }
+@@ -1225,7 +1229,9 @@
+ }
+ 
+ /// Setter for an `u8` value.
+-struct SetU8 {
++#[doc(hidden)]
++#[derive(Clone, Copy, Debug)]
++pub struct SetU8 {
+     val: u8,
+ }
+ 
+diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' '--exclude=Cargo.lock' /home/user/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/nix-0.26.4/src/sys/statfs.rs /mnt/linux_share/warp-winit/patches/nix/src/sys/statfs.rs
+--- /home/user/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/nix-0.26.4/src/sys/statfs.rs	2006-07-24 09:21:28.000000000 +0800
++++ /mnt/linux_share/warp-winit/patches/nix/src/sys/statfs.rs	2026-06-26 23:00:21.188803125 +0800
+@@ -64,7 +64,7 @@
+ type fs_type_t = libc::c_ulong;
+ #[cfg(all(target_os = "linux", target_arch = "s390x"))]
+ type fs_type_t = libc::c_uint;
+-#[cfg(all(target_os = "linux", target_env = "musl"))]
++#[cfg(all(target_os = "linux", any(target_env = "musl", target_env = "ohos")))]
+ type fs_type_t = libc::c_ulong;
+ #[cfg(all(target_os = "linux", target_env = "uclibc"))]
+ type fs_type_t = libc::c_int;
+@@ -73,7 +73,8 @@
+     not(any(
+         target_arch = "s390x",
+         target_env = "musl",
+-        target_env = "uclibc"
++        target_env = "uclibc",
++        target_env = "ohos",
+     ))
+ ))]
+ type fs_type_t = libc::__fsword_t;
+@@ -292,7 +293,7 @@
+ pub const NSFS_MAGIC: FsType = FsType(libc::NSFS_MAGIC as fs_type_t);
+ #[cfg(all(
+     any(target_os = "linux", target_os = "android"),
+-    not(target_env = "musl")
++    not(any(target_env = "musl", target_env = "ohos"))
+ ))]
+ #[allow(missing_docs)]
+ pub const XFS_SUPER_MAGIC: FsType = FsType(libc::XFS_SUPER_MAGIC as fs_type_t);
+@@ -342,7 +343,7 @@
+     /// Optimal transfer block size
+     #[cfg(any(
+         target_os = "android",
+-        all(target_os = "linux", target_env = "musl")
++        all(target_os = "linux", any(target_env = "musl", target_env = "ohos"))
+     ))]
+     #[cfg_attr(docsrs, doc(cfg(all())))]
+     pub fn optimal_transfer_size(&self) -> libc::c_ulong {
+@@ -355,7 +356,8 @@
+         not(any(
+             target_arch = "s390x",
+             target_env = "musl",
+-            target_env = "uclibc"
++            target_env = "uclibc",
++            target_env = "ohos",
+         ))
+     ))]
+     #[cfg_attr(docsrs, doc(cfg(all())))]
+@@ -401,7 +403,7 @@
+ 
+     /// Size of a block
+     // f_bsize on linux: https://github.com/torvalds/linux/blob/master/fs/nfs/super.c#L471
+-    #[cfg(all(target_os = "linux", target_env = "musl"))]
++    #[cfg(all(target_os = "linux", any(target_env = "musl", target_env = "ohos")))]
+     #[cfg_attr(docsrs, doc(cfg(all())))]
+     pub fn block_size(&self) -> libc::c_ulong {
+         self.0.f_bsize
+@@ -422,7 +424,8 @@
+         not(any(
+             target_arch = "s390x",
+             target_env = "musl",
+-            target_env = "uclibc"
++            target_env = "uclibc",
++            target_env = "ohos",
+         ))
+     ))]
+     #[cfg_attr(docsrs, doc(cfg(all())))]
+@@ -492,7 +495,7 @@
+     }
+ 
+     /// Maximum length of filenames
+-    #[cfg(all(target_os = "linux", target_env = "musl"))]
++    #[cfg(all(target_os = "linux", any(target_env = "musl", target_env = "ohos")))]
+     #[cfg_attr(docsrs, doc(cfg(all())))]
+     pub fn maximum_name_length(&self) -> libc::c_ulong {
+         self.0.f_namelen
+@@ -511,7 +514,8 @@
+         not(any(
+             target_arch = "s390x",
+             target_env = "musl",
+-            target_env = "uclibc"
++            target_env = "uclibc",
++            target_env = "ohos",
+         ))
+     ))]
+     #[cfg_attr(docsrs, doc(cfg(all())))]
+diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' '--exclude=Cargo.lock' /home/user/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/nix-0.26.4/src/sys/statvfs.rs /mnt/linux_share/warp-winit/patches/nix/src/sys/statvfs.rs
+--- /home/user/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/nix-0.26.4/src/sys/statvfs.rs	2006-07-24 09:21:28.000000000 +0800
++++ /mnt/linux_share/warp-winit/patches/nix/src/sys/statvfs.rs	2026-06-26 23:00:21.188803125 +0800
+@@ -58,7 +58,7 @@
+         #[cfg_attr(docsrs, doc(cfg(all())))]
+         ST_NODIRATIME;
+         /// Update access time relative to modify/change time
+-        #[cfg(any(target_os = "android", all(target_os = "linux", not(target_env = "musl"))))]
++        #[cfg(any(target_os = "android", all(target_os = "linux", not(any(target_env = "musl", target_env = "ohos")))))]
+         #[cfg_attr(docsrs, doc(cfg(all())))]
+         ST_RELATIME;
+     }

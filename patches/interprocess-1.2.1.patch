@@ -1,0 +1,12 @@
+diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' '--exclude=Cargo.lock' /home/user/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/interprocess-1.2.1/build.rs /mnt/linux_share/warp-winit/patches/interprocess/build.rs
+--- /home/user/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/interprocess-1.2.1/build.rs	1973-11-30 05:33:09.000000000 +0800
++++ /mnt/linux_share/warp-winit/patches/interprocess/build.rs	2026-06-26 23:00:21.244797188 +0800
+@@ -50,7 +50,7 @@
+ #[rustfmt::skip]
+ fn collect_uds_features(target: &TargetTriplet) {
+     let (mut uds, mut scm_rights) = (false, true);
+-    if (target.os("linux") && target.env_any(&["gnu", "musl", "musleabi", "musleabihf"]))
++    if (target.os("linux") && target.env_any(&["gnu", "musl", "musleabi", "musleabihf", "ohos"]))
+     || target.os_any(&["android", "emscripten", "fuchsia", "redox"]) {
+         // "Linux-like" in libc terminology, plus Fuchsia and Redox
+         uds = true;

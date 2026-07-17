@@ -1,0 +1,2627 @@
+diff --git a/.cargo-ok b/.cargo-ok
+new file mode 100755
+index 00000000..e69de29b
+diff --git a/.cargo/config.toml b/.cargo/config.toml
+old mode 100644
+new mode 100755
+diff --git a/.git-blame-ignore-revs b/.git-blame-ignore-revs
+old mode 100644
+new mode 100755
+diff --git a/.gitattributes b/.gitattributes
+old mode 100644
+new mode 100755
+diff --git a/.github/CODEOWNERS b/.github/CODEOWNERS
+old mode 100644
+new mode 100755
+diff --git a/.github/ISSUE_TEMPLATE/blank_issue.md b/.github/ISSUE_TEMPLATE/blank_issue.md
+old mode 100644
+new mode 100755
+diff --git a/.github/ISSUE_TEMPLATE/bug_android.yml b/.github/ISSUE_TEMPLATE/bug_android.yml
+old mode 100644
+new mode 100755
+diff --git a/.github/ISSUE_TEMPLATE/bug_ios.yml b/.github/ISSUE_TEMPLATE/bug_ios.yml
+old mode 100644
+new mode 100755
+diff --git a/.github/ISSUE_TEMPLATE/bug_macos.yml b/.github/ISSUE_TEMPLATE/bug_macos.yml
+old mode 100644
+new mode 100755
+diff --git a/.github/ISSUE_TEMPLATE/bug_wayland.yml b/.github/ISSUE_TEMPLATE/bug_wayland.yml
+old mode 100644
+new mode 100755
+diff --git a/.github/ISSUE_TEMPLATE/bug_web.yml b/.github/ISSUE_TEMPLATE/bug_web.yml
+old mode 100644
+new mode 100755
+diff --git a/.github/ISSUE_TEMPLATE/bug_windows.yml b/.github/ISSUE_TEMPLATE/bug_windows.yml
+old mode 100644
+new mode 100755
+diff --git a/.github/ISSUE_TEMPLATE/bug_x11.yml b/.github/ISSUE_TEMPLATE/bug_x11.yml
+old mode 100644
+new mode 100755
+diff --git a/.github/ISSUE_TEMPLATE/config.yml b/.github/ISSUE_TEMPLATE/config.yml
+old mode 100644
+new mode 100755
+diff --git a/.github/ISSUE_TEMPLATE/feature_request.yml b/.github/ISSUE_TEMPLATE/feature_request.yml
+old mode 100644
+new mode 100755
+diff --git a/.github/PULL_REQUEST_TEMPLATE.md b/.github/PULL_REQUEST_TEMPLATE.md
+old mode 100644
+new mode 100755
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+old mode 100644
+new mode 100755
+diff --git a/.github/workflows/docs.yml b/.github/workflows/docs.yml
+old mode 100644
+new mode 100755
+diff --git a/.gitignore b/.gitignore
+old mode 100644
+new mode 100755
+diff --git a/.swcrc b/.swcrc
+old mode 100644
+new mode 100755
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+old mode 100644
+new mode 100755
+diff --git a/CODE_OF_CONDUCT.md b/CODE_OF_CONDUCT.md
+old mode 100644
+new mode 100755
+diff --git a/CONTRIBUTING.md b/CONTRIBUTING.md
+old mode 100644
+new mode 100755
+diff --git a/Cargo.toml b/Cargo.toml
+old mode 100644
+new mode 100755
+index 5b2d09a2..d7da71da
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -360,6 +360,10 @@ concurrent-queue = { version = "2", default-features = false }
+ console_error_panic_hook = "0.1"
+ tracing-web = "0.1"
+ 
++[target.'cfg(target_env = "ohos")'.dependencies]
++openharmony-ability = { path = "../openharmony-ability/crates/ability" }
++openharmony-ability-derive = { path = "../openharmony-ability/crates/derive" }
++
+ [[example]]
+ doc-scrape-examples = true
+ name = "window"
+diff --git a/FEATURES.md b/FEATURES.md
+old mode 100644
+new mode 100755
+diff --git a/HALL_OF_CHAMPIONS.md b/HALL_OF_CHAMPIONS.md
+old mode 100644
+new mode 100755
+diff --git a/LICENSE b/LICENSE
+old mode 100644
+new mode 100755
+diff --git a/README.md b/README.md
+old mode 100644
+new mode 100755
+diff --git a/build.rs b/build.rs
+old mode 100644
+new mode 100755
+index 6a4528b3..c5c0ff98
+--- a/build.rs
++++ b/build.rs
+@@ -13,13 +13,14 @@ fn main() {
+         ios_platform: { target_os = "ios" },
+         windows_platform: { target_os = "windows" },
+         apple: { any(target_os = "ios", target_os = "macos") },
+-        free_unix: { all(unix, not(apple), not(android_platform), not(target_os = "emscripten")) },
++        free_unix: { all(unix, not(apple), not(android_platform), not(target_os = "emscripten"), not(ohos_platform)) },
+         redox: { target_os = "redox" },
+ 
+         // Native displays.
+         x11_platform: { all(feature = "x11", free_unix, not(redox)) },
+         wayland_platform: { all(feature = "wayland", free_unix, not(redox)) },
+         orbital_platform: { redox },
++        ohos_platform: { all(target_env = "ohos") },
+     }
+ 
+     // Winit defined cfgs.
+diff --git a/clippy.toml b/clippy.toml
+old mode 100644
+new mode 100755
+diff --git a/deny.toml b/deny.toml
+old mode 100644
+new mode 100755
+diff --git a/docs/res/ATTRIBUTION.md b/docs/res/ATTRIBUTION.md
+old mode 100644
+new mode 100755
+diff --git a/docs/res/keyboard_left_shift_key.svg b/docs/res/keyboard_left_shift_key.svg
+old mode 100644
+new mode 100755
+diff --git a/docs/res/keyboard_numpad_1_key.svg b/docs/res/keyboard_numpad_1_key.svg
+old mode 100644
+new mode 100755
+diff --git a/docs/res/keyboard_right_shift_key.svg b/docs/res/keyboard_right_shift_key.svg
+old mode 100644
+new mode 100755
+diff --git a/docs/res/keyboard_standard_1_key.svg b/docs/res/keyboard_standard_1_key.svg
+old mode 100644
+new mode 100755
+diff --git a/dpi/CHANGELOG.md b/dpi/CHANGELOG.md
+old mode 100644
+new mode 100755
+diff --git a/dpi/Cargo.toml b/dpi/Cargo.toml
+old mode 100644
+new mode 100755
+diff --git a/dpi/src/lib.rs b/dpi/src/lib.rs
+old mode 100644
+new mode 100755
+diff --git a/examples/child_window.rs b/examples/child_window.rs
+old mode 100644
+new mode 100755
+diff --git a/examples/control_flow.rs b/examples/control_flow.rs
+old mode 100644
+new mode 100755
+diff --git a/examples/data/cross.png b/examples/data/cross.png
+old mode 100644
+new mode 100755
+diff --git a/examples/data/cross2.png b/examples/data/cross2.png
+old mode 100644
+new mode 100755
+diff --git a/examples/data/gradient.png b/examples/data/gradient.png
+old mode 100644
+new mode 100755
+diff --git a/examples/data/icon.png b/examples/data/icon.png
+old mode 100644
+new mode 100755
+diff --git a/examples/pump_events.rs b/examples/pump_events.rs
+old mode 100644
+new mode 100755
+diff --git a/examples/run_on_demand.rs b/examples/run_on_demand.rs
+old mode 100644
+new mode 100755
+diff --git a/examples/util/fill.rs b/examples/util/fill.rs
+old mode 100644
+new mode 100755
+diff --git a/examples/util/tracing.rs b/examples/util/tracing.rs
+old mode 100644
+new mode 100755
+diff --git a/examples/window.rs b/examples/window.rs
+old mode 100644
+new mode 100755
+diff --git a/examples/x11_embed.rs b/examples/x11_embed.rs
+old mode 100644
+new mode 100755
+diff --git a/rustfmt.toml b/rustfmt.toml
+old mode 100644
+new mode 100755
+diff --git a/src/application.rs b/src/application.rs
+old mode 100644
+new mode 100755
+diff --git a/src/changelog/mod.rs b/src/changelog/mod.rs
+old mode 100644
+new mode 100755
+diff --git a/src/changelog/unreleased.md b/src/changelog/unreleased.md
+old mode 100644
+new mode 100755
+diff --git a/src/changelog/v0.10.md b/src/changelog/v0.10.md
+old mode 100644
+new mode 100755
+diff --git a/src/changelog/v0.11.md b/src/changelog/v0.11.md
+old mode 100644
+new mode 100755
+diff --git a/src/changelog/v0.12.md b/src/changelog/v0.12.md
+old mode 100644
+new mode 100755
+diff --git a/src/changelog/v0.13.md b/src/changelog/v0.13.md
+old mode 100644
+new mode 100755
+diff --git a/src/changelog/v0.14.md b/src/changelog/v0.14.md
+old mode 100644
+new mode 100755
+diff --git a/src/changelog/v0.15.md b/src/changelog/v0.15.md
+old mode 100644
+new mode 100755
+diff --git a/src/changelog/v0.16.md b/src/changelog/v0.16.md
+old mode 100644
+new mode 100755
+diff --git a/src/changelog/v0.17.md b/src/changelog/v0.17.md
+old mode 100644
+new mode 100755
+diff --git a/src/changelog/v0.18.md b/src/changelog/v0.18.md
+old mode 100644
+new mode 100755
+diff --git a/src/changelog/v0.19.md b/src/changelog/v0.19.md
+old mode 100644
+new mode 100755
+diff --git a/src/changelog/v0.20.md b/src/changelog/v0.20.md
+old mode 100644
+new mode 100755
+diff --git a/src/changelog/v0.21.md b/src/changelog/v0.21.md
+old mode 100644
+new mode 100755
+diff --git a/src/changelog/v0.22.md b/src/changelog/v0.22.md
+old mode 100644
+new mode 100755
+diff --git a/src/changelog/v0.23.md b/src/changelog/v0.23.md
+old mode 100644
+new mode 100755
+diff --git a/src/changelog/v0.24.md b/src/changelog/v0.24.md
+old mode 100644
+new mode 100755
+diff --git a/src/changelog/v0.25.md b/src/changelog/v0.25.md
+old mode 100644
+new mode 100755
+diff --git a/src/changelog/v0.26.md b/src/changelog/v0.26.md
+old mode 100644
+new mode 100755
+diff --git a/src/changelog/v0.27.md b/src/changelog/v0.27.md
+old mode 100644
+new mode 100755
+diff --git a/src/changelog/v0.28.md b/src/changelog/v0.28.md
+old mode 100644
+new mode 100755
+diff --git a/src/changelog/v0.29.md b/src/changelog/v0.29.md
+old mode 100644
+new mode 100755
+diff --git a/src/changelog/v0.30.md b/src/changelog/v0.30.md
+old mode 100644
+new mode 100755
+diff --git a/src/changelog/v0.8.md b/src/changelog/v0.8.md
+old mode 100644
+new mode 100755
+diff --git a/src/changelog/v0.9.md b/src/changelog/v0.9.md
+old mode 100644
+new mode 100755
+diff --git a/src/cursor.rs b/src/cursor.rs
+old mode 100644
+new mode 100755
+diff --git a/src/error.rs b/src/error.rs
+old mode 100644
+new mode 100755
+diff --git a/src/event.rs b/src/event.rs
+old mode 100644
+new mode 100755
+diff --git a/src/event_loop.rs b/src/event_loop.rs
+old mode 100644
+new mode 100755
+index 233374be..edc53290
+--- a/src/event_loop.rs
++++ b/src/event_loop.rs
+@@ -556,7 +556,7 @@ impl<T: 'static> Clone for EventLoopProxy<T> {
+     }
+ }
+ 
+-impl<T: 'static> EventLoopProxy<T> {
++impl<T: 'static + Send> EventLoopProxy<T> {
+     /// Send an event to the [`EventLoop`] from which this proxy was created. This emits a
+     /// `UserEvent(event)` event in the event loop, where `event` is the value passed to this
+     /// function.
+diff --git a/src/icon.rs b/src/icon.rs
+old mode 100644
+new mode 100755
+diff --git a/src/keyboard.rs b/src/keyboard.rs
+old mode 100644
+new mode 100755
+diff --git a/src/lib.rs b/src/lib.rs
+old mode 100644
+new mode 100755
+diff --git a/src/monitor.rs b/src/monitor.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform/android.rs b/src/platform/android.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform/ios.rs b/src/platform/ios.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform/macos.rs b/src/platform/macos.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform/mod.rs b/src/platform/mod.rs
+old mode 100644
+new mode 100755
+index 4f59303e..08a25c6c
+--- a/src/platform/mod.rs
++++ b/src/platform/mod.rs
+@@ -20,6 +20,8 @@ pub mod web;
+ pub mod windows;
+ #[cfg(any(x11_platform, docsrs))]
+ pub mod x11;
++#[cfg(any(ohos_platform, docsrs))]
++pub mod ohos;
+ 
+ #[cfg(any(
+     windows_platform,
+@@ -47,6 +49,7 @@ pub mod pump_events;
+     x11_platform,
+     wayland_platform,
+     orbital_platform,
++    ohos_platform,
+     docsrs
+ ))]
+ pub mod modifier_supplement;
+diff --git a/src/platform/modifier_supplement.rs b/src/platform/modifier_supplement.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform/ohos.rs b/src/platform/ohos.rs
+new file mode 100755
+index 00000000..22477f16
+--- /dev/null
++++ b/src/platform/ohos.rs
+@@ -0,0 +1,70 @@
++//! # OpenHarmony
++//!
++//! The OpenHarmony backend builds on the `openharmony-ability` crate.
++//!
++//! Native OpenHarmony applications need a glue crate (`openharmony-ability`) that defines
++//! the main entry point for the Rust application, tracks life-cycle events,
++//! and synchronizes with the main thread.
++//!
++//! winit re-exports the openharmony-ability API for convenience.
++#![cfg(target_env = "ohos")]
++
++pub use crate::platform_impl::ohos::{
++    ActiveEventLoop, EventLoop, EventLoopProxy, OhosEvent, PlatformSpecificEventLoopAttributes,
++    PlatformSpecificWindowAttributes, Window, KeyAction, TouchPhase, ImePayload, MouseAction,
++    MouseButton,
++};
++
++pub use openharmony_ability::{Configuration, OpenHarmonyApp, Rect};
++
++// Re-export event channel helpers for warp-winit to use.
++pub use crate::platform_impl::ohos::{expose_event_channel, ability_event_to_ohos_event};
++
++/// Additional methods on [`EventLoop`] that are specific to OpenHarmony.
++pub trait EventLoopExtOpenHarmony {
++    /// Get the [`OpenHarmonyApp`] which was used to create this event loop.
++    fn openharmony_app(&self) -> &OpenHarmonyApp;
++}
++
++/// Additional methods on [`ActiveEventLoop`] that are specific to OpenHarmony.
++pub trait ActiveEventLoopExtOpenHarmony {
++    /// Get the [`OpenHarmonyApp`] which was used to create this event loop.
++    fn openharmony_app(&self) -> &OpenHarmonyApp;
++}
++
++/// Additional methods on [`Window`] that are specific to OpenHarmony.
++pub trait WindowExtOpenHarmony {
++    fn content_rect(&self) -> Rect;
++    fn config(&self) -> Configuration;
++}
++
++/// Additional methods on [`EventLoopBuilder`] that are specific to OpenHarmony.
++pub trait EventLoopBuilderExtOpenHarmony {
++    /// Associates the [`OpenHarmonyApp`] that was passed to
++    /// `openharmony-ability::ability` with the event loop.
++    ///
++    /// This must be called on OpenHarmony since the [`OpenHarmonyApp`]
++    /// is not global state.
++    fn with_openharmony_app(&mut self, app: OpenHarmonyApp) -> &mut Self;
++}
++
++impl<T> EventLoopBuilderExtOpenHarmony for crate::event_loop::EventLoopBuilder<T> {
++    fn with_openharmony_app(&mut self, app: OpenHarmonyApp) -> &mut Self {
++        self.platform_specific.openharmony_app = Some(app);
++        self
++    }
++}
++
++/// Re-export of the `openharmony-ability` API.
++///
++/// winit re-exports the `openharmony-ability` API for convenience so that most
++/// applications can rely on the winit crate to resolve the required version of
++/// `openharmony-ability` and avoid any chance of a conflict between winit and the
++/// application crate.
++pub mod ability {
++    #[doc(no_inline)]
++    pub use openharmony_ability::*;
++
++    #[doc(no_inline)]
++    pub use openharmony_ability_derive::*;
++}
+diff --git a/src/platform/orbital.rs b/src/platform/orbital.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform/pump_events.rs b/src/platform/pump_events.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform/run_on_demand.rs b/src/platform/run_on_demand.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform/scancode.rs b/src/platform/scancode.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform/startup_notify.rs b/src/platform/startup_notify.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform/wayland.rs b/src/platform/wayland.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform/web.rs b/src/platform/web.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform/windows.rs b/src/platform/windows.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform/x11.rs b/src/platform/x11.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/android/keycodes.rs b/src/platform_impl/android/keycodes.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/android/mod.rs b/src/platform_impl/android/mod.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/ios/app_state.rs b/src/platform_impl/ios/app_state.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/ios/event_loop.rs b/src/platform_impl/ios/event_loop.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/ios/mod.rs b/src/platform_impl/ios/mod.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/ios/monitor.rs b/src/platform_impl/ios/monitor.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/ios/notification_center.rs b/src/platform_impl/ios/notification_center.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/ios/view.rs b/src/platform_impl/ios/view.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/ios/view_controller.rs b/src/platform_impl/ios/view_controller.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/ios/window.rs b/src/platform_impl/ios/window.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/common/mod.rs b/src/platform_impl/linux/common/mod.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/common/xkb/compose.rs b/src/platform_impl/linux/common/xkb/compose.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/common/xkb/keymap.rs b/src/platform_impl/linux/common/xkb/keymap.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/common/xkb/mod.rs b/src/platform_impl/linux/common/xkb/mod.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/common/xkb/state.rs b/src/platform_impl/linux/common/xkb/state.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/mod.rs b/src/platform_impl/linux/mod.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/wayland/event_loop/mod.rs b/src/platform_impl/linux/wayland/event_loop/mod.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/wayland/event_loop/proxy.rs b/src/platform_impl/linux/wayland/event_loop/proxy.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/wayland/event_loop/sink.rs b/src/platform_impl/linux/wayland/event_loop/sink.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/wayland/mod.rs b/src/platform_impl/linux/wayland/mod.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/wayland/output.rs b/src/platform_impl/linux/wayland/output.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/wayland/seat/keyboard/mod.rs b/src/platform_impl/linux/wayland/seat/keyboard/mod.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/wayland/seat/mod.rs b/src/platform_impl/linux/wayland/seat/mod.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/wayland/seat/pointer/mod.rs b/src/platform_impl/linux/wayland/seat/pointer/mod.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/wayland/seat/pointer/relative_pointer.rs b/src/platform_impl/linux/wayland/seat/pointer/relative_pointer.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/wayland/seat/text_input/mod.rs b/src/platform_impl/linux/wayland/seat/text_input/mod.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/wayland/seat/touch/mod.rs b/src/platform_impl/linux/wayland/seat/touch/mod.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/wayland/state.rs b/src/platform_impl/linux/wayland/state.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/wayland/types/cursor.rs b/src/platform_impl/linux/wayland/types/cursor.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/wayland/types/kwin_blur.rs b/src/platform_impl/linux/wayland/types/kwin_blur.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/wayland/types/mod.rs b/src/platform_impl/linux/wayland/types/mod.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/wayland/types/wp_fractional_scaling.rs b/src/platform_impl/linux/wayland/types/wp_fractional_scaling.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/wayland/types/wp_viewporter.rs b/src/platform_impl/linux/wayland/types/wp_viewporter.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/wayland/types/xdg_activation.rs b/src/platform_impl/linux/wayland/types/xdg_activation.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/wayland/window/mod.rs b/src/platform_impl/linux/wayland/window/mod.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/wayland/window/state.rs b/src/platform_impl/linux/wayland/window/state.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/activation.rs b/src/platform_impl/linux/x11/activation.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/atoms.rs b/src/platform_impl/linux/x11/atoms.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/dnd.rs b/src/platform_impl/linux/x11/dnd.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/event_processor.rs b/src/platform_impl/linux/x11/event_processor.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/ffi.rs b/src/platform_impl/linux/x11/ffi.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/ime/callbacks.rs b/src/platform_impl/linux/x11/ime/callbacks.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/ime/context.rs b/src/platform_impl/linux/x11/ime/context.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/ime/inner.rs b/src/platform_impl/linux/x11/ime/inner.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/ime/input_method.rs b/src/platform_impl/linux/x11/ime/input_method.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/ime/mod.rs b/src/platform_impl/linux/x11/ime/mod.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/mod.rs b/src/platform_impl/linux/x11/mod.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/monitor.rs b/src/platform_impl/linux/x11/monitor.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/tests/xsettings.dat b/src/platform_impl/linux/x11/tests/xsettings.dat
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/util/client_msg.rs b/src/platform_impl/linux/x11/util/client_msg.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/util/cookie.rs b/src/platform_impl/linux/x11/util/cookie.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/util/cursor.rs b/src/platform_impl/linux/x11/util/cursor.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/util/geometry.rs b/src/platform_impl/linux/x11/util/geometry.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/util/hint.rs b/src/platform_impl/linux/x11/util/hint.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/util/icon.rs b/src/platform_impl/linux/x11/util/icon.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/util/input.rs b/src/platform_impl/linux/x11/util/input.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/util/keys.rs b/src/platform_impl/linux/x11/util/keys.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/util/memory.rs b/src/platform_impl/linux/x11/util/memory.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/util/mod.rs b/src/platform_impl/linux/x11/util/mod.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/util/modifiers.rs b/src/platform_impl/linux/x11/util/modifiers.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/util/mouse.rs b/src/platform_impl/linux/x11/util/mouse.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/util/randr.rs b/src/platform_impl/linux/x11/util/randr.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/util/window_property.rs b/src/platform_impl/linux/x11/util/window_property.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/util/wm.rs b/src/platform_impl/linux/x11/util/wm.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/util/xmodmap.rs b/src/platform_impl/linux/x11/util/xmodmap.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/window.rs b/src/platform_impl/linux/x11/window.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/xdisplay.rs b/src/platform_impl/linux/x11/xdisplay.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/linux/x11/xsettings.rs b/src/platform_impl/linux/x11/xsettings.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/macos/app.rs b/src/platform_impl/macos/app.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/macos/app_state.rs b/src/platform_impl/macos/app_state.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/macos/cursor.rs b/src/platform_impl/macos/cursor.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/macos/event.rs b/src/platform_impl/macos/event.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/macos/event_handler.rs b/src/platform_impl/macos/event_handler.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/macos/event_loop.rs b/src/platform_impl/macos/event_loop.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/macos/ffi.rs b/src/platform_impl/macos/ffi.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/macos/menu.rs b/src/platform_impl/macos/menu.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/macos/mod.rs b/src/platform_impl/macos/mod.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/macos/monitor.rs b/src/platform_impl/macos/monitor.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/macos/observer.rs b/src/platform_impl/macos/observer.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/macos/util.rs b/src/platform_impl/macos/util.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/macos/view.rs b/src/platform_impl/macos/view.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/macos/window.rs b/src/platform_impl/macos/window.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/macos/window_delegate.rs b/src/platform_impl/macos/window_delegate.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/mod.rs b/src/platform_impl/mod.rs
+old mode 100644
+new mode 100755
+index 3bfce688..dee8379d
+--- a/src/platform_impl/mod.rs
++++ b/src/platform_impl/mod.rs
+@@ -15,6 +15,8 @@ mod orbital;
+ mod web;
+ #[cfg(windows_platform)]
+ mod windows;
++#[cfg(ohos_platform)]
++pub(crate) mod ohos;
+ 
+ #[cfg(android_platform)]
+ use android as platform;
+@@ -30,6 +32,8 @@ use orbital as platform;
+ use web as platform;
+ #[cfg(windows_platform)]
+ use windows as platform;
++#[cfg(ohos_platform)]
++use ohos as platform;
+ 
+ pub use self::platform::*;
+ 
+@@ -74,5 +78,6 @@ impl From<Fullscreen> for RootFullscreen {
+     not(wayland_platform),
+     not(web_platform),
+     not(orbital_platform),
++    not(ohos_platform),
+ ))]
+ compile_error!("The platform you're compiling for is not supported by winit");
+diff --git a/src/platform_impl/ohos/keycodes.rs b/src/platform_impl/ohos/keycodes.rs
+new file mode 100755
+index 00000000..cafe4766
+--- /dev/null
++++ b/src/platform_impl/ohos/keycodes.rs
+@@ -0,0 +1,227 @@
++use openharmony_ability::xcomponent::KeyCode;
++
++use crate::keyboard::{Key, KeyLocation, NamedKey, NativeKey, NativeKeyCode, PhysicalKey};
++
++pub fn to_physical_key(keycode: KeyCode) -> PhysicalKey {
++    match keycode {
++        KeyCode::A => PhysicalKey::Code(crate::keyboard::KeyCode::KeyA),
++        KeyCode::B => PhysicalKey::Code(crate::keyboard::KeyCode::KeyB),
++        KeyCode::C => PhysicalKey::Code(crate::keyboard::KeyCode::KeyC),
++        KeyCode::D => PhysicalKey::Code(crate::keyboard::KeyCode::KeyD),
++        KeyCode::E => PhysicalKey::Code(crate::keyboard::KeyCode::KeyE),
++        KeyCode::F => PhysicalKey::Code(crate::keyboard::KeyCode::KeyF),
++        KeyCode::G => PhysicalKey::Code(crate::keyboard::KeyCode::KeyG),
++        KeyCode::H => PhysicalKey::Code(crate::keyboard::KeyCode::KeyH),
++        KeyCode::I => PhysicalKey::Code(crate::keyboard::KeyCode::KeyI),
++        KeyCode::J => PhysicalKey::Code(crate::keyboard::KeyCode::KeyJ),
++        KeyCode::K => PhysicalKey::Code(crate::keyboard::KeyCode::KeyK),
++        KeyCode::L => PhysicalKey::Code(crate::keyboard::KeyCode::KeyL),
++        KeyCode::M => PhysicalKey::Code(crate::keyboard::KeyCode::KeyM),
++        KeyCode::N => PhysicalKey::Code(crate::keyboard::KeyCode::KeyN),
++        KeyCode::O => PhysicalKey::Code(crate::keyboard::KeyCode::KeyO),
++        KeyCode::P => PhysicalKey::Code(crate::keyboard::KeyCode::KeyP),
++        KeyCode::Q => PhysicalKey::Code(crate::keyboard::KeyCode::KeyQ),
++        KeyCode::R => PhysicalKey::Code(crate::keyboard::KeyCode::KeyR),
++        KeyCode::S => PhysicalKey::Code(crate::keyboard::KeyCode::KeyS),
++        KeyCode::T => PhysicalKey::Code(crate::keyboard::KeyCode::KeyT),
++        KeyCode::U => PhysicalKey::Code(crate::keyboard::KeyCode::KeyU),
++        KeyCode::V => PhysicalKey::Code(crate::keyboard::KeyCode::KeyV),
++        KeyCode::W => PhysicalKey::Code(crate::keyboard::KeyCode::KeyW),
++        KeyCode::X => PhysicalKey::Code(crate::keyboard::KeyCode::KeyX),
++        KeyCode::Y => PhysicalKey::Code(crate::keyboard::KeyCode::KeyY),
++        KeyCode::Z => PhysicalKey::Code(crate::keyboard::KeyCode::KeyZ),
++
++        KeyCode::Key0 => PhysicalKey::Code(crate::keyboard::KeyCode::Digit0),
++        KeyCode::Key1 => PhysicalKey::Code(crate::keyboard::KeyCode::Digit1),
++        KeyCode::Key2 => PhysicalKey::Code(crate::keyboard::KeyCode::Digit2),
++        KeyCode::Key3 => PhysicalKey::Code(crate::keyboard::KeyCode::Digit3),
++        KeyCode::Key4 => PhysicalKey::Code(crate::keyboard::KeyCode::Digit4),
++        KeyCode::Key5 => PhysicalKey::Code(crate::keyboard::KeyCode::Digit5),
++        KeyCode::Key6 => PhysicalKey::Code(crate::keyboard::KeyCode::Digit6),
++        KeyCode::Key7 => PhysicalKey::Code(crate::keyboard::KeyCode::Digit7),
++        KeyCode::Key8 => PhysicalKey::Code(crate::keyboard::KeyCode::Digit8),
++        KeyCode::Key9 => PhysicalKey::Code(crate::keyboard::KeyCode::Digit9),
++
++        KeyCode::Del => PhysicalKey::Code(crate::keyboard::KeyCode::Backspace),
++        KeyCode::Tab => PhysicalKey::Code(crate::keyboard::KeyCode::Tab),
++        KeyCode::Enter => PhysicalKey::Code(crate::keyboard::KeyCode::Enter),
++        KeyCode::ShiftLeft => PhysicalKey::Code(crate::keyboard::KeyCode::ShiftLeft),
++        KeyCode::ShiftRight => PhysicalKey::Code(crate::keyboard::KeyCode::ShiftRight),
++        KeyCode::CtrlLeft => PhysicalKey::Code(crate::keyboard::KeyCode::ControlLeft),
++        KeyCode::CtrlRight => PhysicalKey::Code(crate::keyboard::KeyCode::ControlRight),
++        KeyCode::AltLeft => PhysicalKey::Code(crate::keyboard::KeyCode::AltLeft),
++        KeyCode::AltRight => PhysicalKey::Code(crate::keyboard::KeyCode::AltRight),
++        KeyCode::MetaLeft => PhysicalKey::Code(crate::keyboard::KeyCode::SuperLeft),
++        KeyCode::MetaRight => PhysicalKey::Code(crate::keyboard::KeyCode::SuperRight),
++        KeyCode::CapsLock => PhysicalKey::Code(crate::keyboard::KeyCode::CapsLock),
++
++        KeyCode::Escape => PhysicalKey::Code(crate::keyboard::KeyCode::Escape),
++        KeyCode::Space => PhysicalKey::Code(crate::keyboard::KeyCode::Space),
++        KeyCode::PageUp => PhysicalKey::Code(crate::keyboard::KeyCode::PageUp),
++        KeyCode::PageDown => PhysicalKey::Code(crate::keyboard::KeyCode::PageDown),
++        KeyCode::MoveEnd => PhysicalKey::Code(crate::keyboard::KeyCode::End),
++        KeyCode::MoveHome => PhysicalKey::Code(crate::keyboard::KeyCode::Home),
++
++        KeyCode::DpadUp => PhysicalKey::Code(crate::keyboard::KeyCode::ArrowUp),
++        KeyCode::DpadDown => PhysicalKey::Code(crate::keyboard::KeyCode::ArrowDown),
++        KeyCode::DpadLeft => PhysicalKey::Code(crate::keyboard::KeyCode::ArrowLeft),
++        KeyCode::DpadRight => PhysicalKey::Code(crate::keyboard::KeyCode::ArrowRight),
++
++        KeyCode::Insert => PhysicalKey::Code(crate::keyboard::KeyCode::Insert),
++        KeyCode::ForwardDel => PhysicalKey::Code(crate::keyboard::KeyCode::Delete),
++
++        KeyCode::F1 => PhysicalKey::Code(crate::keyboard::KeyCode::F1),
++        KeyCode::F2 => PhysicalKey::Code(crate::keyboard::KeyCode::F2),
++        KeyCode::F3 => PhysicalKey::Code(crate::keyboard::KeyCode::F3),
++        KeyCode::F4 => PhysicalKey::Code(crate::keyboard::KeyCode::F4),
++        KeyCode::F5 => PhysicalKey::Code(crate::keyboard::KeyCode::F5),
++        KeyCode::F6 => PhysicalKey::Code(crate::keyboard::KeyCode::F6),
++        KeyCode::F7 => PhysicalKey::Code(crate::keyboard::KeyCode::F7),
++        KeyCode::F8 => PhysicalKey::Code(crate::keyboard::KeyCode::F8),
++        KeyCode::F9 => PhysicalKey::Code(crate::keyboard::KeyCode::F9),
++        KeyCode::F10 => PhysicalKey::Code(crate::keyboard::KeyCode::F10),
++        KeyCode::F11 => PhysicalKey::Code(crate::keyboard::KeyCode::F11),
++        KeyCode::F12 => PhysicalKey::Code(crate::keyboard::KeyCode::F12),
++
++        KeyCode::NumLock => PhysicalKey::Code(crate::keyboard::KeyCode::NumLock),
++        KeyCode::Numpad0 => PhysicalKey::Code(crate::keyboard::KeyCode::Numpad0),
++        KeyCode::Numpad1 => PhysicalKey::Code(crate::keyboard::KeyCode::Numpad1),
++        KeyCode::Numpad2 => PhysicalKey::Code(crate::keyboard::KeyCode::Numpad2),
++        KeyCode::Numpad3 => PhysicalKey::Code(crate::keyboard::KeyCode::Numpad3),
++        KeyCode::Numpad4 => PhysicalKey::Code(crate::keyboard::KeyCode::Numpad4),
++        KeyCode::Numpad5 => PhysicalKey::Code(crate::keyboard::KeyCode::Numpad5),
++        KeyCode::Numpad6 => PhysicalKey::Code(crate::keyboard::KeyCode::Numpad6),
++        KeyCode::Numpad7 => PhysicalKey::Code(crate::keyboard::KeyCode::Numpad7),
++        KeyCode::Numpad8 => PhysicalKey::Code(crate::keyboard::KeyCode::Numpad8),
++        KeyCode::Numpad9 => PhysicalKey::Code(crate::keyboard::KeyCode::Numpad9),
++        KeyCode::NumpadAdd => PhysicalKey::Code(crate::keyboard::KeyCode::NumpadAdd),
++        KeyCode::NumpadSubtract => PhysicalKey::Code(crate::keyboard::KeyCode::NumpadSubtract),
++        KeyCode::NumpadMultiply => PhysicalKey::Code(crate::keyboard::KeyCode::NumpadMultiply),
++        KeyCode::NumpadDivide => PhysicalKey::Code(crate::keyboard::KeyCode::NumpadDivide),
++        KeyCode::NumpadEnter => PhysicalKey::Code(crate::keyboard::KeyCode::NumpadEnter),
++        KeyCode::NumpadDot => PhysicalKey::Code(crate::keyboard::KeyCode::NumpadDecimal),
++
++        // Symbol keys
++        KeyCode::Minus => PhysicalKey::Code(crate::keyboard::KeyCode::Minus),
++        KeyCode::Equals => PhysicalKey::Code(crate::keyboard::KeyCode::Equal),
++        KeyCode::LeftBracket => PhysicalKey::Code(crate::keyboard::KeyCode::BracketLeft),
++        KeyCode::RightBracket => PhysicalKey::Code(crate::keyboard::KeyCode::BracketRight),
++        KeyCode::Backslash => PhysicalKey::Code(crate::keyboard::KeyCode::Backslash),
++        KeyCode::Semicolon => PhysicalKey::Code(crate::keyboard::KeyCode::Semicolon),
++        KeyCode::Apostrophe => PhysicalKey::Code(crate::keyboard::KeyCode::Quote),
++        KeyCode::Comma => PhysicalKey::Code(crate::keyboard::KeyCode::Comma),
++        KeyCode::Period => PhysicalKey::Code(crate::keyboard::KeyCode::Period),
++        KeyCode::Slash => PhysicalKey::Code(crate::keyboard::KeyCode::Slash),
++        KeyCode::Grave => PhysicalKey::Code(crate::keyboard::KeyCode::Backquote),
++
++        _ => PhysicalKey::Unidentified(NativeKeyCode::Unidentified),
++    }
++}
++
++pub fn to_logical(keycode: KeyCode) -> Key {
++    match keycode {
++        KeyCode::A => Key::Character("a".into()),
++        KeyCode::B => Key::Character("b".into()),
++        KeyCode::C => Key::Character("c".into()),
++        KeyCode::D => Key::Character("d".into()),
++        KeyCode::E => Key::Character("e".into()),
++        KeyCode::F => Key::Character("f".into()),
++        KeyCode::G => Key::Character("g".into()),
++        KeyCode::H => Key::Character("h".into()),
++        KeyCode::I => Key::Character("i".into()),
++        KeyCode::J => Key::Character("j".into()),
++        KeyCode::K => Key::Character("k".into()),
++        KeyCode::L => Key::Character("l".into()),
++        KeyCode::M => Key::Character("m".into()),
++        KeyCode::N => Key::Character("n".into()),
++        KeyCode::O => Key::Character("o".into()),
++        KeyCode::P => Key::Character("p".into()),
++        KeyCode::Q => Key::Character("q".into()),
++        KeyCode::R => Key::Character("r".into()),
++        KeyCode::S => Key::Character("s".into()),
++        KeyCode::T => Key::Character("t".into()),
++        KeyCode::U => Key::Character("u".into()),
++        KeyCode::V => Key::Character("v".into()),
++        KeyCode::W => Key::Character("w".into()),
++        KeyCode::X => Key::Character("x".into()),
++        KeyCode::Y => Key::Character("y".into()),
++        KeyCode::Z => Key::Character("z".into()),
++
++        KeyCode::Key0 => Key::Character("0".into()),
++        KeyCode::Key1 => Key::Character("1".into()),
++        KeyCode::Key2 => Key::Character("2".into()),
++        KeyCode::Key3 => Key::Character("3".into()),
++        KeyCode::Key4 => Key::Character("4".into()),
++        KeyCode::Key5 => Key::Character("5".into()),
++        KeyCode::Key6 => Key::Character("6".into()),
++        KeyCode::Key7 => Key::Character("7".into()),
++        KeyCode::Key8 => Key::Character("8".into()),
++        KeyCode::Key9 => Key::Character("9".into()),
++
++        KeyCode::Del => Key::Named(NamedKey::Backspace),
++        KeyCode::Tab => Key::Named(NamedKey::Tab),
++        KeyCode::Enter => Key::Named(NamedKey::Enter),
++        KeyCode::ShiftLeft | KeyCode::ShiftRight => Key::Named(NamedKey::Shift),
++        KeyCode::CtrlLeft | KeyCode::CtrlRight => Key::Named(NamedKey::Control),
++        KeyCode::AltLeft | KeyCode::AltRight => Key::Named(NamedKey::Alt),
++        KeyCode::MetaLeft | KeyCode::MetaRight => Key::Named(NamedKey::Super),
++        KeyCode::CapsLock => Key::Named(NamedKey::CapsLock),
++
++        KeyCode::Escape => Key::Named(NamedKey::Escape),
++        KeyCode::Space => Key::Character(" ".into()),
++        KeyCode::PageUp => Key::Named(NamedKey::PageUp),
++        KeyCode::PageDown => Key::Named(NamedKey::PageDown),
++        KeyCode::MoveEnd => Key::Named(NamedKey::End),
++        KeyCode::MoveHome => Key::Named(NamedKey::Home),
++
++        KeyCode::DpadUp => Key::Named(NamedKey::ArrowUp),
++        KeyCode::DpadDown => Key::Named(NamedKey::ArrowDown),
++        KeyCode::DpadLeft => Key::Named(NamedKey::ArrowLeft),
++        KeyCode::DpadRight => Key::Named(NamedKey::ArrowRight),
++
++        KeyCode::Insert => Key::Named(NamedKey::Insert),
++        KeyCode::ForwardDel => Key::Named(NamedKey::Delete),
++
++        KeyCode::F1 => Key::Named(NamedKey::F1),
++        KeyCode::F2 => Key::Named(NamedKey::F2),
++        KeyCode::F3 => Key::Named(NamedKey::F3),
++        KeyCode::F4 => Key::Named(NamedKey::F4),
++        KeyCode::F5 => Key::Named(NamedKey::F5),
++        KeyCode::F6 => Key::Named(NamedKey::F6),
++        KeyCode::F7 => Key::Named(NamedKey::F7),
++        KeyCode::F8 => Key::Named(NamedKey::F8),
++        KeyCode::F9 => Key::Named(NamedKey::F9),
++        KeyCode::F10 => Key::Named(NamedKey::F10),
++        KeyCode::F11 => Key::Named(NamedKey::F11),
++        KeyCode::F12 => Key::Named(NamedKey::F12),
++
++        // Symbol keys
++        KeyCode::Minus => Key::Character("-".into()),
++        KeyCode::Equals => Key::Character("=".into()),
++        KeyCode::LeftBracket => Key::Character("[".into()),
++        KeyCode::RightBracket => Key::Character("]".into()),
++        KeyCode::Backslash => Key::Character("\\".into()),
++        KeyCode::Semicolon => Key::Character(";".into()),
++        KeyCode::Apostrophe => Key::Character("\'".into()),
++        KeyCode::Comma => Key::Character(",".into()),
++        KeyCode::Period => Key::Character(".".into()),
++        KeyCode::Slash => Key::Character("/".into()),
++        KeyCode::Grave => Key::Character("`".into()),
++
++        _ => Key::Unidentified(NativeKey::Unidentified),
++    }
++}
++
++pub fn to_location(keycode: KeyCode) -> KeyLocation {
++    match keycode {
++        KeyCode::ShiftLeft => KeyLocation::Left,
++        KeyCode::ShiftRight => KeyLocation::Right,
++        KeyCode::CtrlLeft => KeyLocation::Left,
++        KeyCode::CtrlRight => KeyLocation::Right,
++        KeyCode::AltLeft => KeyLocation::Left,
++        KeyCode::AltRight => KeyLocation::Right,
++        KeyCode::MetaLeft => KeyLocation::Left,
++        KeyCode::MetaRight => KeyLocation::Right,
++        _ => KeyLocation::Standard,
++    }
++}
+diff --git a/src/platform_impl/ohos/keycodes_check.rs.bak b/src/platform_impl/ohos/keycodes_check.rs.bak
+new file mode 100755
+index 00000000..ee276982
+--- /dev/null
++++ b/src/platform_impl/ohos/keycodes_check.rs.bak
+@@ -0,0 +1,6 @@
++// TEMPORARY: dump KeyCode variants via an incomplete match
++pub fn dump_variants(kc: openharmony_ability::xcomponent::KeyCode) -> &'static str {
++    match kc {
++        // Intentionally empty to force compiler to list all variants
++    }
++}
+diff --git a/src/platform_impl/ohos/mod.rs b/src/platform_impl/ohos/mod.rs
+new file mode 100755
+index 00000000..064bf2e1
+--- /dev/null
++++ b/src/platform_impl/ohos/mod.rs
+@@ -0,0 +1,1391 @@
++use std::cell::Cell;
++use std::ffi::c_void;
++use std::ptr::NonNull;
++use std::sync::atomic::{AtomicBool, Ordering};
++use std::sync::mpsc::{self, Receiver, Sender};
++use std::sync::{Mutex, OnceLock};
++
++use smol_str::SmolStr;
++
++/// 包装原始指针使其实现 Send（OH_NativeVSync 实例可在线程间安全传递）。
++#[derive(Clone, Copy)]
++struct VsyncPtr(*mut c_void);
++unsafe impl Send for VsyncPtr {}
++unsafe impl Sync for VsyncPtr {}
++
++use openharmony_ability::OpenHarmonyApp;
++
++use crate::dpi::{PhysicalPosition, PhysicalSize, Position, Size};
++use crate::error::EventLoopError;
++use crate::event::{self, StartCause, WindowEvent};
++use crate::event_loop::{self, ControlFlow, DeviceEvents};
++use crate::window::{ImePurpose, Theme, WindowAttributes, WindowLevel};
++
++use super::Fullscreen;
++
++mod keycodes;
++mod monitor;
++
++pub(crate) use monitor::MonitorHandle;
++pub(crate) use monitor::VideoModeHandle;
++
++pub(crate) use crate::cursor::{
++    NoCustomCursor as PlatformCustomCursor, NoCustomCursor as PlatformCustomCursorSource,
++};
++pub(crate) use crate::icon::NoIcon as PlatformIcon;
++
++/// Platform-specific inner error type for winit OsError.
++pub type OsError = &'static str;
++
++/// Handle to the underlying display, cheaply cloneable.
++#[derive(Clone, Debug)]
++pub struct OwnedDisplayHandle;
++
++#[cfg(feature = "rwh_05")]
++impl OwnedDisplayHandle {
++    pub fn raw_display_handle_rwh_05(&self) -> rwh_05::RawDisplayHandle {
++        rwh_05::RawDisplayHandle::Ohos(rwh_05::OhosDisplayHandle::empty())
++    }
++}
++
++#[cfg(feature = "rwh_06")]
++impl OwnedDisplayHandle {
++    pub fn raw_display_handle_rwh_06(
++        &self,
++    ) -> Result<rwh_06::RawDisplayHandle, rwh_06::HandleError> {
++        Ok(rwh_06::RawDisplayHandle::Ohos(rwh_06::OhosDisplayHandle::new()))
++    }
++}
++
++/// Input device identifier for OpenHarmony.
++///
++/// Since OpenHarmony does not distinguish between multiple input devices,
++/// this is a unit struct.
++#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
++pub struct DeviceId;
++
++impl DeviceId {
++    pub const fn dummy() -> Self {
++        DeviceId
++    }
++}
++
++/// Platform-specific key event extra data for OpenHarmony.
++///
++/// Provides fields for the [`KeyEventExtModifierSupplement`] trait.
++#[derive(Debug, Clone, Eq, PartialEq, Hash)]
++pub struct KeyEventExtra {
++    pub text_with_all_modifiers: Option<SmolStr>,
++    pub key_without_modifiers: crate::keyboard::Key,
++}
++
++/// Window identifier for OpenHarmony.
++///
++/// Only a single window is supported, so this is a unit struct.
++#[derive(Copy, Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
++pub struct WindowId;
++
++impl WindowId {
++    pub const fn dummy() -> Self {
++        WindowId
++    }
++}
++
++impl From<WindowId> for u64 {
++    fn from(_: WindowId) -> Self {
++        0
++    }
++}
++
++impl From<u64> for WindowId {
++    fn from(_: u64) -> Self {
++        WindowId
++    }
++}
++
++const GLOBAL_WINDOW_ID: crate::window::WindowId = crate::window::WindowId(WindowId);
++
++// ── Platform-specific attributes ────────────────────────────────────────────
++
++#[derive(Clone, Debug)]
++pub struct PlatformSpecificEventLoopAttributes {
++    pub openharmony_app: Option<OpenHarmonyApp>,
++}
++
++impl Default for PlatformSpecificEventLoopAttributes {
++    fn default() -> Self {
++        Self { openharmony_app: None }
++    }
++}
++
++#[derive(Clone, Debug, Default)]
++pub struct PlatformSpecificWindowAttributes;
++
++// ── Event channel (winit ↔ warp cross-thread bridge) ───────────────────────
++
++pub(crate) static CACHED_SURFACE_SIZE: std::sync::atomic::AtomicU64 =
++    std::sync::atomic::AtomicU64::new(0);
++
++pub(crate) static EVENT_CHANNEL: OnceLock<(Sender<OhosEvent>, Mutex<Receiver<OhosEvent>>)> =
++    OnceLock::new();
++
++/// Expose the event channel sender side for warp-winit's ohos_entry.rs to register.
++/// Called from init_ability before EventLoop is created.
++pub fn expose_event_channel() -> Sender<OhosEvent> {
++    let (tx, rx) = mpsc::channel();
++    EVENT_CHANNEL.set((tx.clone(), Mutex::new(rx))).ok();
++    tx
++}
++
++// ── OH_NativeVSync (vsync 定时器) ──────────────────────────────────────────
++
++#[link(name = "native_vsync")]
++extern "C" {
++    fn OH_NativeVSync_Create(name: *const u8, len: u32) -> *mut c_void;
++    fn OH_NativeVSync_Destroy(vsync: *mut c_void);
++    fn OH_NativeVSync_RequestFrame(
++        vsync: *mut c_void,
++        callback: Option<unsafe extern "C" fn(i64, *mut c_void)>,
++        data: *mut c_void,
++    ) -> i32;
++}
++
++/// 全局 vsync 实例，在 EventLoop::run() 中初始化。
++static VSYNC_INSTANCE: Mutex<Option<VsyncPtr>> = Mutex::new(None);
++
++/// 渲染待处理标记。替代将 WindowRedraw 事件塞入 mpsc 队列的方式。
++/// vsync 回调：原子检查-设置，若上一帧尚未渲染则跳过当前帧。
++/// 事件循环：处理完事件后检查此标记，只发一次 RedrawRequested。
++static PENDING_REDRAW: AtomicBool = AtomicBool::new(false);
++
++/// 全局 IME 光标位置。由 set_ime_cursor_area/set_ime_position 更新，
++/// 供 OhosDelegate 在 IME 回调中查询使用。
++/// (left, top, width, height) 逻辑像素坐标。
++static IME_CURSOR_RECT: Mutex<Option<(f64, f64, f64, f64)>> = Mutex::new(None);
++
++/// 获取当前的 IME 光标位置。
++/// 返回 Option<(left, top, width, height)>，逻辑像素坐标。
++pub fn ime_cursor_rect() -> Option<(f64, f64, f64, f64)> {
++    IME_CURSOR_RECT.lock().ok().and_then(|r| *r)
++}
++
++/// 模拟 macOS/Linux 键盘布局的 text_with_all_modifiers 行为。
++///
++/// macOS/Linux 的 `text_with_all_modifiers()` 返回 OS 键盘布局在所有修饰键作用下的
++/// 最终字符输出。OHOS 没有真实键盘布局，通过此函数手动模拟 US QWERTY 布局的行为：
++///
++/// 优先级：
++/// 1. Ctrl 优先 — 输出 ASCII 控制字符（如 ctrl+a → "\x01"），Shift 被忽略
++/// 2. Shift — 小写字母→大写，符号→US QWERTY 上档符号（如 shift+1 → "!"）
++/// 3. 无修饰键 — 直接输出键盘映射的基字
++///
++/// 返回 `(text, text_with_all_modifiers)`，两者值相同（在 OHOS 上它们没有区别）。
++fn ohos_compute_text(
++    logical_key: &crate::keyboard::Key,
++    shift_held: bool,
++    caps_on: bool,
++    ctrl_held: bool,
++) -> (Option<SmolStr>, Option<SmolStr>) {
++    // 1. Ctrl 优先：输出 ASCII 控制字符
++    if ctrl_held {
++        if let crate::keyboard::Key::Character(c) = logical_key {
++            if let Some(ch) = c.chars().next() {
++                if ch.is_ascii() {
++                    let control_byte = (ch as u8) & 0x1F;
++                    let control_str = SmolStr::new(
++                        String::from_utf8(vec![control_byte]).unwrap_or_else(|_| c.to_string()),
++                    );
++                    return (Some(control_str.clone()), Some(control_str));
++                }
++            }
++        }
++    }
++
++    // 2. Shift/CapsLock 处理
++    if shift_held || caps_on {
++        if let crate::keyboard::Key::Character(c) = logical_key {
++            if let Some(ch) = c.chars().next() {
++                let shift_xor_caps = shift_held != caps_on;
++                let shifted = match ch {
++                    'a'..='z' if shift_xor_caps => ((ch as u8) - 32) as char,
++                    'A'..='Z' if shift_xor_caps => ((ch as u8) + 32) as char,
++                    'a'..='z' | 'A'..='Z' => ch,
++                    '1' if shift_held => '!',
++                    '2' if shift_held => '@',
++                    '3' if shift_held => '#',
++                    '4' if shift_held => '$',
++                    '5' if shift_held => '%',
++                    '6' if shift_held => '^',
++                    '7' if shift_held => '&',
++                    '8' if shift_held => '*',
++                    '9' if shift_held => '(',
++                    '0' if shift_held => ')',
++                    '-' if shift_held => '_',
++                    '=' if shift_held => '+',
++                    '[' if shift_held => '{',
++                    ']' if shift_held => '}',
++                    '\\' if shift_held => '|',
++                    ';' if shift_held => ':',
++                    '\'' if shift_held => '"',
++                    ',' if shift_held => '<',
++                    '.' if shift_held => '>',
++                    '/' if shift_held => '?',
++                    '`' if shift_held => '~',
++                    _ => ch,
++                };
++                let shifted: SmolStr = shifted.to_string().into();
++                return (Some(shifted.clone()), Some(shifted));
++            }
++        }
++    }
++
++    // 3. 无特殊修饰键：输出基字
++    match logical_key {
++        crate::keyboard::Key::Character(c) => {
++            let s: SmolStr = c.clone().into();
++            (Some(s.clone()), Some(s))
++        },
++        crate::keyboard::Key::Named(crate::keyboard::NamedKey::Tab) => {
++            (Some("\t".into()), Some("\t".into()))
++        },
++        crate::keyboard::Key::Named(crate::keyboard::NamedKey::Enter) => {
++            (Some("\r".into()), Some("\r".into()))
++        },
++        crate::keyboard::Key::Named(crate::keyboard::NamedKey::Backspace) => {
++            (Some("\x7f".into()), Some("\x7f".into()))
++        },
++        _ => (None, None),
++    }
++}
++
++/// vsync 回调：原子设标记并以 UserEvent 唤醒事件循环。
++/// 标记已设时跳过（上一帧渲染尚未处理），防止渲染事件在队列中堆积。
++extern "C" fn ohos_vsync_callback(_timestamp: i64, _data: *mut c_void) {
++    // OHOS: vsync 回调不再无条件设置 PENDING_REDRAW——request_redraw()
++    // 负责在需要绘制时设置标记。vsync 只做帧率同步：
++    // 如果有 PENDING_REDRAW，发送 UserEvent 唤醒事件循环执行渲染。
++    // 这避免了 60fps 全速渲染带来的性能问题。
++    if PENDING_REDRAW.load(std::sync::atomic::Ordering::Acquire) {
++        if let Some(channel) = EVENT_CHANNEL.get() {
++            let _ = channel.0.send(OhosEvent::UserEvent);
++        }
++    }
++    if let Ok(guard) = VSYNC_INSTANCE.lock() {
++        if let Some(vsync) = guard.as_ref() {
++            unsafe {
++                OH_NativeVSync_RequestFrame(
++                    vsync.0,
++                    Some(ohos_vsync_callback as unsafe extern "C" fn(i64, *mut c_void)),
++                    std::ptr::null_mut(),
++                );
++            }
++        }
++    }
++}
++
++/// 初始化 OH_NativeVSync 并注册回调。
++fn init_vsync() {
++    let mut guard = VSYNC_INSTANCE.lock().unwrap();
++    if guard.is_some() {
++        return;
++    }
++    let name = b"warp_vsync\0";
++    let vsync = unsafe { OH_NativeVSync_Create(name.as_ptr(), (name.len() - 1) as u32) };
++    if let Some(ptr) = NonNull::new(vsync) {
++        let vsync_ptr = VsyncPtr(ptr.as_ptr());
++        *guard = Some(vsync_ptr);
++        unsafe {
++            OH_NativeVSync_RequestFrame(
++                ptr.as_ptr(),
++                Some(ohos_vsync_callback as unsafe extern "C" fn(i64, *mut c_void)),
++                std::ptr::null_mut(),
++            );
++        }
++    }
++}
++
++/// 销毁 vsync 实例。
++fn destroy_vsync() {
++    let mut guard = VSYNC_INSTANCE.lock().unwrap();
++    if let Some(vsync) = guard.take() {
++        unsafe { OH_NativeVSync_Destroy(vsync.0) };
++    }
++}
++
++// ── EventLoop ───────────────────────────────────────────────────────────────
++
++pub struct EventLoop<T: 'static> {
++    pub(crate) openharmony_app: OpenHarmonyApp,
++    window_target: crate::event_loop::ActiveEventLoop,
++    _marker: std::marker::PhantomData<T>,
++}
++
++impl<T: 'static> EventLoop<T> {
++    pub fn new(attributes: &PlatformSpecificEventLoopAttributes) -> Result<Self, EventLoopError> {
++        static EVENT_LOOP_CREATED: AtomicBool = AtomicBool::new(false);
++        if EVENT_LOOP_CREATED.swap(true, Ordering::Relaxed) {
++            return Err(EventLoopError::RecreationAttempt);
++        }
++
++        let openharmony_app = attributes.openharmony_app.clone().ok_or_else(|| {
++            EventLoopError::Os(crate::error::OsError::new(
++                line!(),
++                file!(),
++                "OpenHarmonyApp not provided",
++            ))
++        })?;
++
++        // OHOS_APP already registered via OHOS_APP static above.
++        // (set_ohos_app removed to simplify the IME path)
++
++        let inner = ActiveEventLoop {
++            app: openharmony_app.clone(),
++            control_flow: Cell::new(ControlFlow::default()),
++            exit: Cell::new(false),
++        };
++        Ok(Self {
++            window_target: crate::event_loop::ActiveEventLoop {
++                p: inner,
++                _marker: std::marker::PhantomData,
++            },
++            openharmony_app,
++            _marker: std::marker::PhantomData,
++        })
++    }
++
++    pub fn run<F>(self, mut event_handler: F) -> Result<(), EventLoopError>
++    where
++        F: FnMut(event::Event<T>, &event_loop::ActiveEventLoop),
++    {
++        let root_target = self.window_target;
++
++        // 初始化 OH_NativeVSync，以 vsync 频率驱动 RedrawRequested 事件。
++        init_vsync();
++
++        // Read from the global EVENT_CHANNEL (set up by init_ability via expose_event_channel)
++        if let Some((_, rx)) = EVENT_CHANNEL.get() {
++            let rx = rx.lock().unwrap();
++
++            eprintln!("[ohos-el] entering recv loop");
++
++            loop {
++                match rx.recv_timeout(std::time::Duration::from_millis(100)) {
++                    Ok(ohos_event) => {
++                        eprintln!("[ohos-el] event: {:?}", ohos_event);
++                        // UserPayload carries CustomEvent; downcast with ownership of the Box.
++                        // This must be handled here (before ohos_event_to_winit_event) because
++                        // that function takes &OhosEvent and can't move out of the Box.
++                        if let OhosEvent::UserPayload(mut data) = ohos_event {
++                            if let Ok(v) = data.downcast::<T>() {
++                                event_handler(event::Event::UserEvent(*v), &root_target);
++                                if root_target.exiting() {
++                                    break;
++                                }
++                            }
++                        } else {
++                            let winit_events = ohos_event_to_winit_event::<T>(&ohos_event);
++                            for evt in winit_events {
++                                event_handler(evt, &root_target);
++                                if root_target.exiting() {
++                                    break;
++                                }
++                            }
++                            if root_target.exiting() {
++                                break;
++                            }
++                        }
++
++                        // 检查 PENDING_REDRAW 标记，vsync 回调通过 compare_exchange 设置，
++                        // 事件循环通过 swap 原子地取出并清除。
++                        if PENDING_REDRAW.swap(false, Ordering::AcqRel) {
++                            use event::WindowEvent;
++                            event_handler(
++                                event::Event::WindowEvent {
++                                    window_id: GLOBAL_WINDOW_ID,
++                                    event: WindowEvent::RedrawRequested,
++                                },
++                                &root_target,
++                            );
++                            if root_target.exiting() {
++                                break;
++                            }
++                        }
++
++                        // Dispatch AboutToWait once per OhosEvent batch
++                        event_handler(event::Event::AboutToWait, &root_target);
++
++
++                        if root_target.exiting() {
++                            break;
++                        }
++                    },
++                    Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
++                        // 100ms timeout: dispatch AboutToWait to process
++                        // pending dispatch tasks (e.g. spawn callback).
++                        if PENDING_REDRAW.swap(false, Ordering::AcqRel) {
++                            use event::WindowEvent;
++                            event_handler(
++                                event::Event::WindowEvent {
++                                    window_id: GLOBAL_WINDOW_ID,
++                                    event: WindowEvent::RedrawRequested,
++                                },
++                                &root_target,
++                            );
++                        }
++                        event_handler(event::Event::AboutToWait, &root_target);
++                        if root_target.exiting() {
++                            break;
++                        }
++                    },
++                    Err(_) => break, // channel closed
++                }
++            }
++        }
++
++        // 清理 vsync 资源
++        destroy_vsync();
++
++        Ok(())
++    }
++
++    pub fn window_target(&self) -> &crate::event_loop::ActiveEventLoop {
++        &self.window_target
++    }
++
++    pub fn create_proxy(&self) -> EventLoopProxy<T> {
++        EventLoopProxy {
++            waker: self.openharmony_app.create_waker(),
++            _marker: std::marker::PhantomData,
++        }
++    }
++}
++
++// ── EventLoopProxy ──────────────────────────────────────────────────────────
++
++pub struct EventLoopProxy<T: 'static> {
++    waker: openharmony_ability::OpenHarmonyWaker,
++    _marker: std::marker::PhantomData<T>,
++}
++
++impl<T: 'static> EventLoopProxy<T> {
++    pub fn new(waker: openharmony_ability::OpenHarmonyWaker) -> Self {
++        Self { waker, _marker: std::marker::PhantomData }
++    }
++
++    pub fn wake_up(&self) {
++        // Wake the event loop via OpenHarmonyWaker
++        self.waker.wake();
++    }
++
++    pub fn send_event(&self, event: T) -> Result<(), event_loop::EventLoopClosed<T>>
++    where
++        T: Send,
++    {
++        if let Some((tx, _)) = EVENT_CHANNEL.get() {
++            let _ = tx.send(OhosEvent::UserPayload(Box::new(event)));
++            self.wake_up();
++        }
++        Ok(())
++    }
++}
++
++impl<T: 'static> Clone for EventLoopProxy<T> {
++    fn clone(&self) -> Self {
++        Self { waker: self.waker.clone(), _marker: std::marker::PhantomData }
++    }
++}
++
++// ── ActiveEventLoop ─────────────────────────────────────────────────────────
++
++#[derive(Clone, Debug)]
++pub struct ActiveEventLoop {
++    #[allow(dead_code)]
++    pub(crate) app: OpenHarmonyApp,
++    control_flow: Cell<ControlFlow>,
++    exit: Cell<bool>,
++}
++
++impl ActiveEventLoop {
++    pub fn set_control_flow(&self, control_flow: ControlFlow) {
++        self.control_flow.set(control_flow);
++    }
++
++    pub fn control_flow(&self) -> ControlFlow {
++        self.control_flow.get()
++    }
++
++    pub fn exit(&self) {
++        self.exit.set(true);
++    }
++
++    pub fn exiting(&self) -> bool {
++        self.exit.get()
++    }
++
++    pub fn create_window(
++        &self,
++        window_attributes: WindowAttributes,
++    ) -> Result<Window, crate::error::OsError> {
++        Window::new(self, window_attributes)
++    }
++
++    pub fn primary_monitor(&self) -> Option<monitor::MonitorHandle> {
++        Some(monitor::MonitorHandle::new())
++    }
++
++    pub fn available_monitors(&self) -> Vec<monitor::MonitorHandle> {
++        vec![monitor::MonitorHandle::new()]
++    }
++
++    pub fn listen_device_events(&self, _allowed: DeviceEvents) {}
++
++    pub fn create_custom_cursor(
++        &self,
++        source: crate::cursor::CustomCursorSource,
++    ) -> crate::cursor::CustomCursor {
++        let _ = source.inner;
++        crate::cursor::CustomCursor { inner: PlatformCustomCursor }
++    }
++
++    pub fn system_theme(&self) -> Option<Theme> {
++        None
++    }
++
++    pub fn owned_display_handle(&self) -> OwnedDisplayHandle {
++        OwnedDisplayHandle
++    }
++
++    #[cfg(feature = "rwh_05")]
++    pub fn raw_display_handle_rwh_05(&self) -> rwh_05::RawDisplayHandle {
++        rwh_05::RawDisplayHandle::Ohos(rwh_05::OhosDisplayHandle::empty())
++    }
++
++    #[cfg(feature = "rwh_06")]
++    pub fn raw_display_handle_rwh_06(
++        &self,
++    ) -> Result<rwh_06::RawDisplayHandle, rwh_06::HandleError> {
++        Ok(rwh_06::RawDisplayHandle::Ohos(rwh_06::OhosDisplayHandle::new()))
++    }
++}
++
++// ── Window ──────────────────────────────────────────────────────────────────
++
++#[derive(Debug)]
++pub struct Window {
++    id: WindowId,
++    /// 持有 OpenHarmonyApp 引用，供 raw_window_handle 查询 native_window 指针。
++    native_window: OpenHarmonyApp,
++    /// 缓存的表面尺寸，由 set_inner_size 更新。避免每帧 query OpenHarmonyApp
++    /// 导致 surface 重配（OpenHarmonyApp::surface_size() 实时读取 XComponent，
++    /// 可能每帧返回不同值）。
++    cached_inner_size: std::sync::atomic::AtomicU64,
++}
++
++impl Window {
++    pub fn new(
++        event_loop: &ActiveEventLoop,
++        _window_attributes: WindowAttributes,
++    ) -> Result<Self, crate::error::OsError> {
++        let initial_size = event_loop
++            .app
++            .surface_size()
++            .map(|(w, h)| (w as u32, h as u32))
++            .unwrap_or((1080, 1920));
++        Ok(Self {
++            id: WindowId,
++            native_window: event_loop.app.clone(),
++            cached_inner_size: std::sync::atomic::AtomicU64::new(
++                (initial_size.0 as u64) << 32 | initial_size.1 as u64,
++            ),
++        })
++    }
++
++    pub fn id(&self) -> WindowId {
++        self.id
++    }
++
++    pub fn request_redraw(&self) {
++        // 主动请求渲染：设置 PENDING_REDRAW 标记，vsync 时 NOT 再自动设置。
++        // 这替换了 vsync 回调中 unconditional 的 PENDING_REDRAW 设置，确保
++        // 渲染只在 request_redraw 调用（通过 invalidate / render_scene）时发生。
++        PENDING_REDRAW.store(true, std::sync::atomic::Ordering::Release);
++        if let Some(channel) = EVENT_CHANNEL.get() {
++            let _ = channel.0.send(OhosEvent::UserEvent);
++        }
++    }
++
++    pub fn pre_present_notify(&self) {}
++
++    pub fn primary_monitor(&self) -> Option<monitor::MonitorHandle> {
++        Some(monitor::MonitorHandle::new())
++    }
++
++    pub fn available_monitors(&self) -> Vec<monitor::MonitorHandle> {
++        vec![monitor::MonitorHandle::new()]
++    }
++
++    pub fn scale_factor(&self) -> f64 {
++        self.native_window.scale() as f64
++    }
++
++    pub fn set_title(&self, _title: &str) {}
++
++    pub fn set_visible(&self, _visible: bool) {}
++
++    pub fn is_visible(&self) -> Option<bool> {
++        Some(true)
++    }
++
++    pub fn set_resizable(&self, _resizable: bool) {}
++
++    pub fn is_resizable(&self) -> bool {
++        true
++    }
++
++    pub fn set_minimized(&self, _minimized: bool) {}
++
++    pub fn set_maximized(&self, _maximized: bool) {}
++
++    pub fn is_maximized(&self) -> bool {
++        false
++    }
++
++    pub(crate) fn set_fullscreen(&self, _monitor: Option<Fullscreen>) {}
++
++    pub(crate) fn fullscreen(&self) -> Option<Fullscreen> {
++        None
++    }
++
++    pub fn set_decorations(&self, _decorations: bool) {}
++
++    pub fn is_decorated(&self) -> bool {
++        true
++    }
++
++    pub fn set_window_level(&self, _level: WindowLevel) {}
++
++    pub fn set_cursor(&self, _cursor: crate::cursor::Cursor) {}
++
++    pub fn set_cursor_position(
++        &self,
++        _position: Position,
++    ) -> Result<(), crate::error::ExternalError> {
++        Ok(())
++    }
++
++    pub fn set_cursor_grab(
++        &self,
++        _mode: crate::window::CursorGrabMode,
++    ) -> Result<(), crate::error::ExternalError> {
++        Ok(())
++    }
++
++    pub fn cursor_grab(
++        &self,
++    ) -> Result<crate::window::CursorGrabMode, crate::error::ExternalError> {
++        Ok(crate::window::CursorGrabMode::None)
++    }
++
++    pub fn set_cursor_hittest(&self, _hittest: bool) -> Result<(), crate::error::ExternalError> {
++        Ok(())
++    }
++
++    pub fn set_resize_increments(&self, _increments: Option<Size>) {}
++
++    pub fn resize_increments(&self) -> Option<PhysicalSize<u32>> {
++        None
++    }
++
++    pub fn set_min_size(&self, _dimensions: Option<PhysicalSize<u32>>) {}
++
++    pub fn set_min_inner_size(&self, _size: Option<Size>) {}
++
++    pub fn set_max_size(&self, _dimensions: Option<PhysicalSize<u32>>) {}
++
++    pub fn set_max_inner_size(&self, _size: Option<Size>) {}
++
++    pub fn set_ime_allowed(&self, allowed: bool) {
++        tracing::info!("OHOS_WINDOW::set_ime_allowed: allowed={}", allowed);
++        if allowed {
++            self.native_window.show_keyboard();
++        } else {
++            self.native_window.hide_keyboard();
++        }
++    }
++
++    pub fn set_ime_cursor_area(&self, area: Position, size: Size) {
++        tracing::info!("OHOS_WINDOW::set_ime_cursor_area: area={:?} size={:?}", area, size);
++        // 存储光标位置供 IME 回调查询
++        if let Ok(mut rect) = IME_CURSOR_RECT.lock() {
++            let (x, y) = match area {
++                Position::Logical(p) => (p.x, p.y),
++                Position::Physical(p) => (p.x as f64, p.y as f64),
++            };
++            let (w, h) = match size {
++                Size::Logical(s) => (s.width, s.height),
++                Size::Physical(s) => (s.width as f64, s.height as f64),
++            };
++            *rect = Some((x, y, w, h));
++        }
++    }
++
++    pub fn set_ime_purpose(&self, purpose: ImePurpose) {
++        tracing::info!("OHOS_WINDOW::set_ime_purpose: purpose={:?}", purpose);
++    }
++
++    pub fn set_ime_position(&self, position: PhysicalPosition<i32>) {
++        tracing::info!("OHOS_WINDOW::set_ime_position: position={:?}", position);
++    }
++
++    pub fn current_monitor(&self) -> Option<monitor::MonitorHandle> {
++        Some(monitor::MonitorHandle::new())
++    }
++
++    pub fn inner_size(&self) -> PhysicalSize<u32> {
++        let packed = CACHED_SURFACE_SIZE.load(std::sync::atomic::Ordering::Acquire);
++        let w = (packed >> 32) as u32;
++        let h = packed as u32;
++        if w > 0 && h > 0 {
++            PhysicalSize::new(w, h)
++        } else {
++            let packed = self.cached_inner_size.load(std::sync::atomic::Ordering::Relaxed);
++            PhysicalSize::new(w, h)
++        }
++    }
++
++    /// 从外部（Resized 事件）更新缓存的 surface 尺寸。
++    pub fn set_inner_size(&self, size: PhysicalSize<u32>) {
++        self.cached_inner_size.store(
++            (size.width as u64) << 32 | size.height as u64,
++            std::sync::atomic::Ordering::Relaxed,
++        );
++    }
++
++    pub fn request_inner_size(&self, _size: Size) -> Option<PhysicalSize<u32>> {
++        None
++    }
++
++    pub fn reset_dead_keys(&self) {}
++
++    pub fn focus_window(&self) {}
++
++    pub fn request_user_attention(&self, _request_type: Option<crate::window::UserAttentionType>) {}
++
++    pub fn set_blur(&self, _blur: bool) {}
++
++    pub fn set_enabled_buttons(&self, _buttons: crate::window::WindowButtons) {}
++
++    pub fn enabled_buttons(&self) -> crate::window::WindowButtons {
++        crate::window::WindowButtons::all()
++    }
++
++    pub fn is_minimized(&self) -> Option<bool> {
++        Some(false)
++    }
++
++    pub fn set_window_icon(&self, _icon: Option<crate::icon::Icon>) {}
++
++    pub fn set_theme(&self, _theme: Option<Theme>) {}
++
++    pub fn set_content_protected(&self, _protected: bool) {}
++
++    pub fn title(&self) -> String {
++        String::new()
++    }
++
++    pub fn set_cursor_visible(&self, _visible: bool) {}
++
++    pub fn show_window_menu(&self, _position: Position) {}
++
++    pub fn inner_position(&self) -> Result<PhysicalPosition<i32>, crate::error::NotSupportedError> {
++        Err(crate::error::NotSupportedError::new())
++    }
++
++    pub fn outer_position(&self) -> Result<PhysicalPosition<i32>, crate::error::NotSupportedError> {
++        Err(crate::error::NotSupportedError::new())
++    }
++
++    pub fn surface_size(&self) -> PhysicalSize<u32> {
++        PhysicalSize::new(1080, 1920)
++    }
++
++    pub fn outer_size(&self) -> PhysicalSize<u32> {
++        self.inner_size()
++    }
++
++    pub fn set_outer_position(&self, _position: Position) {}
++
++    pub fn content_rect(&self) -> openharmony_ability::Rect {
++        openharmony_ability::Rect { top: 0, left: 0, width: 1080, height: 1920 }
++    }
++
++    pub fn config(&self) -> openharmony_ability::Configuration {
++        openharmony_ability::Configuration::default()
++    }
++
++    pub fn set_closable(&self, _closable: bool) {}
++
++    pub fn theme(&self) -> Option<Theme> {
++        None
++    }
++
++    pub fn has_focus(&self) -> bool {
++        true
++    }
++
++    pub fn request_surface_size(&self, _width: u32, _height: u32) {}
++
++    pub fn set_transparent(&self, _transparent: bool) {}
++
++    pub fn drag_window(&self) -> Result<(), crate::error::ExternalError> {
++        Err(crate::error::ExternalError::NotSupported(crate::error::NotSupportedError::new()))
++    }
++
++    pub fn drag_resize_window(
++        &self,
++        _direction: crate::window::ResizeDirection,
++    ) -> Result<(), crate::error::ExternalError> {
++        Err(crate::error::ExternalError::NotSupported(crate::error::NotSupportedError::new()))
++    }
++
++    pub fn raw_window_handle_rwh_06(&self) -> Result<rwh_06::RawWindowHandle, rwh_06::HandleError> {
++        use rwh_06::OhosNdkWindowHandle;
++        match self.native_window.native_window() {
++            Some(rw) => {
++                let ptr = std::ptr::NonNull::new(rw.raw()).unwrap_or(std::ptr::NonNull::dangling());
++                let handle = OhosNdkWindowHandle::new(ptr);
++                Ok(rwh_06::RawWindowHandle::OhosNdk(handle))
++            },
++            None => {
++                let handle = OhosNdkWindowHandle::new(std::ptr::NonNull::dangling());
++                Ok(rwh_06::RawWindowHandle::OhosNdk(handle))
++            },
++        }
++    }
++
++    pub(crate) fn maybe_wait_on_main<R: Send>(&self, f: impl FnOnce(&Self) -> R + Send) -> R {
++        f(self)
++    }
++
++    pub(crate) fn maybe_queue_on_main(&self, f: impl FnOnce(&Self) + Send + 'static) {
++        f(self)
++    }
++
++    #[cfg(feature = "rwh_05")]
++    pub fn raw_display_handle_rwh_05(&self) -> rwh_05::RawDisplayHandle {
++        rwh_05::RawDisplayHandle::Ohos(rwh_05::OhosDisplayHandle::empty())
++    }
++
++    #[cfg(feature = "rwh_06")]
++    pub fn raw_display_handle_rwh_06(
++        &self,
++    ) -> Result<rwh_06::RawDisplayHandle, rwh_06::HandleError> {
++        Ok(rwh_06::RawDisplayHandle::Ohos(rwh_06::OhosDisplayHandle::new()))
++    }
++}
++
++// ── Event conversion ────────────────────────────────────────────────────────
++
++/// Phase of a touch event, extracted from OHOS NDK OH_TouchEvent touchType.
++#[derive(Debug, Clone, Copy, PartialEq)]
++pub enum TouchPhase {
++    Started,
++    Moved,
++    Ended,
++    Canceled,
++}
++
++/// Key action (pressed or released).
++#[derive(Debug, Clone, Copy, PartialEq)]
++pub enum KeyAction {
++    Pressed,
++    Released,
++}
++
++/// Mouse action (pressed, released, or moved).
++#[derive(Debug, Clone, Copy, PartialEq)]
++pub enum MouseAction {
++    Press,
++    Release,
++    Move,
++}
++
++/// Mouse button identifiers.
++#[derive(Debug, Clone, Copy, PartialEq)]
++pub enum MouseButton {
++    Left,
++    Right,
++    Middle,
++    Back,
++    Forward,
++    Other(i32),
++}
++
++/// Payload for IME input events.
++#[derive(Debug, Clone)]
++pub enum ImePayload {
++    /// Text content (e.g., "你好", multi-byte, or ASCII to bypass keybinding).
++    Commit(String),
++    /// IME composition in progress (e.g., unfinished pinyin).
++    Preedit(String),
++    /// IME status change: true=enabled, false=disabled.
++    ImeStatus(bool),
++    /// Key event that should go through the keybinding system.
++    /// key: "enter"/"backspace"/"tab"/"escape", chars: None for control keys,
++    ///      or key == the single ASCII character, chars = Some(character).
++    KeyboardEvent { key: String, chars: Option<String> },
++}
++
++/// Owned + Send event type for the cross-thread event channel between
++/// the ArkTS UI thread (openharmony-ability run_loop) and the warp main thread.
++///
++/// Excludes lifetime-bounded variants (Resume/SaveState from openharmony_ability::Event),
++/// which are handled directly in the run_loop closure.
++pub enum OhosEvent {
++    WindowCreate,
++    WindowDestroy,
++    WindowRedraw,
++    WindowResize(PhysicalSize<u32>),
++    ContentRectChange,
++    AvoidAreaChange,
++    ConfigChanged,
++    LowMemory,
++    Start,
++    GainedFocus,
++    LostFocus,
++    Pause,
++    Stop,
++    Create,
++    Destroy,
++    SurfaceCreate,
++    SurfaceDestroy,
++    TouchEvent(TouchPhase, f64, f64),
++    /// 鼠标事件（与 TouchEvent 分开，用于区分左右键和移动/拖拽）
++    MouseEvent(MouseAction, MouseButton, f64, f64),
++    /// keycode, action, modifier_state（OHOS bitmask: bit0=Ctrl, bit1=Shift, bit2=Alt）
++    KeyEvent(openharmony_ability::xcomponent::KeyCode, KeyAction, u8),
++    ImeEvent(ImePayload),
++    KeyboardEvent(i32),
++    MouseWheel(f64, f64),
++    UserEvent,
++    /// 跨线程用户事件负载（CustomEvent 通过此变体走 EVENT_CHANNEL）
++    UserPayload(Box<dyn std::any::Any + Send>),
++}
++
++impl std::fmt::Debug for OhosEvent {
++    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
++        match self {
++            Self::UserPayload(_) => f.debug_struct("UserPayload").finish_non_exhaustive(),
++            _ => f.debug_tuple("").finish(),
++        }
++    }
++}
++
++/// Convert an `openharmony_ability::Event` to `OhosEvent` for the cross-thread channel.
++///
++/// This is the bridge between the ability event loop (ArkTS UI thread) and the
++/// winit event loop (warp main thread). `Resume` and `SaveState` variants carry
++/// lifetime-bounded data and are handled directly in the run_loop closure.
++pub fn ability_event_to_ohos_event(event: &openharmony_ability::Event<'_>) -> OhosEvent {
++    use openharmony_ability::InputEvent;
++    match event {
++        openharmony_ability::Event::WindowCreate => OhosEvent::WindowCreate,
++        openharmony_ability::Event::WindowDestroy => OhosEvent::WindowDestroy,
++        openharmony_ability::Event::WindowRedraw(_) => OhosEvent::WindowRedraw,
++        openharmony_ability::Event::WindowResize(size) => {
++            OhosEvent::WindowResize(PhysicalSize::new(size.width as u32, size.height as u32))
++        },
++        openharmony_ability::Event::ContentRectChange(_) => OhosEvent::ContentRectChange,
++        openharmony_ability::Event::AvoidAreaChange(_) => OhosEvent::AvoidAreaChange,
++        openharmony_ability::Event::ConfigChanged(_) => OhosEvent::ConfigChanged,
++        openharmony_ability::Event::LowMemory => OhosEvent::LowMemory,
++        openharmony_ability::Event::Start => OhosEvent::Start,
++        openharmony_ability::Event::GainedFocus => OhosEvent::GainedFocus,
++        openharmony_ability::Event::LostFocus => OhosEvent::LostFocus,
++        openharmony_ability::Event::Pause => OhosEvent::Pause,
++        openharmony_ability::Event::Stop => OhosEvent::Stop,
++        openharmony_ability::Event::Create => OhosEvent::Create,
++        openharmony_ability::Event::Destroy => OhosEvent::Destroy,
++        openharmony_ability::Event::SurfaceCreate => OhosEvent::SurfaceCreate,
++        openharmony_ability::Event::SurfaceDestroy => OhosEvent::SurfaceDestroy,
++        openharmony_ability::Event::KeyboardEvent(v) => OhosEvent::KeyboardEvent(*v),
++        openharmony_ability::Event::UserEvent => OhosEvent::UserEvent,
++        // Input events need to be decomposed from opaque types
++        // InputEvent::KeyEvent 由 ArkTS onKeyEvent 处理，不从 NDK 回调走
++        openharmony_ability::Event::Input(InputEvent::KeyEvent(_)) => OhosEvent::UserEvent,
++        openharmony_ability::Event::Input(InputEvent::TouchEvent(data)) => {
++            // Decompose TouchEventData using the xcomponent binding types
++            use openharmony_ability::xcomponent::TouchEvent;
++            let phase = match data.event_type {
++                TouchEvent::Down => TouchPhase::Started,
++                TouchEvent::Move => TouchPhase::Moved,
++                TouchEvent::Up => TouchPhase::Ended,
++                TouchEvent::Cancel => TouchPhase::Canceled,
++                _ => TouchPhase::Canceled,
++            };
++            OhosEvent::TouchEvent(phase, data.x as f64, data.y as f64)
++        },
++        openharmony_ability::Event::Input(InputEvent::ImeEvent(ime)) => {
++            use openharmony_ability::ImeEvent;
++            let payload = match ime {
++                ImeEvent::TextInputEvent(txt) => {
++                    let text = &txt.text;
++                    if text == "\n" || text == "\r" {
++                        ImePayload::KeyboardEvent { key: "enter".into(), chars: Some("\r".into()) }
++                    } else if text == "\x7f" || text == "\x08" {
++                        ImePayload::KeyboardEvent {
++                            key: "backspace".into(),
++                            chars: Some("\x7f".into()),
++                        }
++                    } else if text == "\t" {
++                        ImePayload::KeyboardEvent { key: "tab".into(), chars: Some("\t".into()) }
++                    } else if text == "\x1b" {
++                        ImePayload::KeyboardEvent { key: "escape".into(), chars: None }
++                    } else if text.len() == 1 {
++                        let c = text.chars().next().unwrap();
++                        if c.is_ascii() && !c.is_ascii_control() {
++                            let s = text.clone();
++                            ImePayload::KeyboardEvent { key: s.clone(), chars: Some(s) }
++                        } else {
++                            ImePayload::Commit(text.clone())
++                        }
++                    } else {
++                        ImePayload::Commit(text.clone())
++                    }
++                },
++                ImeEvent::BackspaceEvent(_len) => ImePayload::KeyboardEvent {
++                    key: "backspace".into(),
++                    chars: Some("\x7f".into()),
++                },
++                ImeEvent::ImeStatusEvent(status) => {
++                    use openharmony_ability::ime::KeyboardStatus;
++                    ImePayload::ImeStatus(matches!(status, KeyboardStatus::Show))
++                },
++                ImeEvent::EnterEvent(_key) => {
++                    ImePayload::KeyboardEvent { key: "enter".into(), chars: Some("\r".into()) }
++                },
++            };
++            OhosEvent::ImeEvent(payload)
++        },
++        // Resume and SaveState carry lifetime-bound data; caller handles them directly
++        openharmony_ability::Event::AxisEvent(_, _) => {
++            // Handled directly in ohos_entry.rs run_loop, not through ability_event_to_ohos_event
++            OhosEvent::UserEvent
++        },
++        openharmony_ability::Event::Resume(_) | openharmony_ability::Event::SaveState(_) => {
++            unreachable!(
++                "Resume/SaveState must be handled before calling ability_event_to_ohos_event"
++            )
++        },
++    }
++}
++
++fn ohos_event_to_winit_event<T>(event: &OhosEvent) -> Vec<event::Event<T>> {
++    use event::{Event, WindowEvent};
++
++    match event {
++        OhosEvent::SurfaceCreate => {
++            vec![Event::NewEvents(StartCause::Init), Event::Resumed]
++        },
++        OhosEvent::SurfaceDestroy => vec![Event::Suspended],
++        OhosEvent::WindowResize(size) => {
++            CACHED_SURFACE_SIZE.store(
++                (size.width as u64) << 32 | size.height as u64,
++                std::sync::atomic::Ordering::Release,
++            );
++            vec![Event::WindowEvent {
++                window_id: GLOBAL_WINDOW_ID,
++                event: WindowEvent::Resized(*size),
++            }]
++        },
++        OhosEvent::WindowRedraw => {
++            vec![Event::WindowEvent {
++                window_id: GLOBAL_WINDOW_ID,
++                event: WindowEvent::RedrawRequested,
++            }]
++        },
++        OhosEvent::GainedFocus => {
++            vec![Event::WindowEvent {
++                window_id: GLOBAL_WINDOW_ID,
++                event: WindowEvent::Focused(true),
++            }]
++        },
++        OhosEvent::LostFocus => {
++            vec![Event::WindowEvent {
++                window_id: GLOBAL_WINDOW_ID,
++                event: WindowEvent::Focused(false),
++            }]
++        },
++        OhosEvent::Destroy => {
++            vec![Event::WindowEvent {
++                window_id: GLOBAL_WINDOW_ID,
++                event: WindowEvent::CloseRequested,
++            }]
++        },
++        OhosEvent::LowMemory => vec![Event::MemoryWarning],
++        OhosEvent::TouchEvent(phase, x, y) => {
++            let winit_phase = match phase {
++                TouchPhase::Started => event::TouchPhase::Started,
++                TouchPhase::Moved => event::TouchPhase::Moved,
++                TouchPhase::Ended => event::TouchPhase::Ended,
++                TouchPhase::Canceled => event::TouchPhase::Cancelled,
++            };
++            vec![Event::WindowEvent {
++                window_id: GLOBAL_WINDOW_ID,
++                event: WindowEvent::Touch(event::Touch {
++                    device_id: event::DeviceId(DeviceId),
++                    phase: winit_phase,
++                    location: PhysicalPosition::new(*x, *y),
++                    force: None,
++                    id: 0,
++                }),
++            }]
++        },
++        OhosEvent::MouseEvent(action, button, x, y) => {
++            use crate::event::MouseButton as WinitMouseButton;
++            match action {
++                MouseAction::Press => {
++                    let btn = match button {
++                        MouseButton::Left => WinitMouseButton::Left,
++                        MouseButton::Right => WinitMouseButton::Right,
++                        MouseButton::Middle => WinitMouseButton::Middle,
++                        MouseButton::Back => WinitMouseButton::Back,
++                        MouseButton::Forward => WinitMouseButton::Forward,
++                        MouseButton::Other(v) => WinitMouseButton::Other(*v as u16),
++                    };
++                    vec![
++                        // 先发 CursorMoved 更新 last_cursor_position，再发 MouseInput
++                        // winit 的 MouseInput 没有位置字段，warpui 通过 last_cursor_position
++                        // 获取点击位置。（macOS/Linux 的 OS 保证 CursorMoved 先于 MouseInput）
++                        Event::WindowEvent {
++                            window_id: GLOBAL_WINDOW_ID,
++                            event: WindowEvent::CursorMoved {
++                                device_id: event::DeviceId(DeviceId),
++                                position: PhysicalPosition::new(*x, *y),
++                            },
++                        },
++                        Event::WindowEvent {
++                            window_id: GLOBAL_WINDOW_ID,
++                            event: WindowEvent::MouseInput {
++                                device_id: event::DeviceId(DeviceId),
++                                state: event::ElementState::Pressed,
++                                button: btn,
++                            },
++                        },
++                    ]
++                },
++                MouseAction::Release => {
++                    let btn = match button {
++                        MouseButton::Left => WinitMouseButton::Left,
++                        MouseButton::Right => WinitMouseButton::Right,
++                        MouseButton::Middle => WinitMouseButton::Middle,
++                        MouseButton::Back => WinitMouseButton::Back,
++                        MouseButton::Forward => WinitMouseButton::Forward,
++                        MouseButton::Other(v) => WinitMouseButton::Other(*v as u16),
++                    };
++                    vec![
++                        Event::WindowEvent {
++                            window_id: GLOBAL_WINDOW_ID,
++                            event: WindowEvent::CursorMoved {
++                                device_id: event::DeviceId(DeviceId),
++                                position: PhysicalPosition::new(*x, *y),
++                            },
++                        },
++                        Event::WindowEvent {
++                            window_id: GLOBAL_WINDOW_ID,
++                            event: WindowEvent::MouseInput {
++                                device_id: event::DeviceId(DeviceId),
++                                state: event::ElementState::Released,
++                                button: btn,
++                            },
++                        },
++                    ]
++                },
++                MouseAction::Move => {
++                    vec![Event::WindowEvent {
++                        window_id: GLOBAL_WINDOW_ID,
++                        event: WindowEvent::CursorMoved {
++                            device_id: event::DeviceId(DeviceId),
++                            position: PhysicalPosition::new(*x, *y),
++                        },
++                    }]
++                },
++            }
++        },
++        OhosEvent::KeyEvent(keycode, action, modifier_state) => {
++            let state = match action {
++                KeyAction::Pressed => event::ElementState::Pressed,
++                KeyAction::Released => event::ElementState::Released,
++            };
++            let physical_key = keycodes::to_physical_key(*keycode);
++            let logical_key = keycodes::to_logical(*keycode);
++
++            // 从 ArkTS 的 modifierKeyState 直接读取修饰键状态（像 macOS 读 NSEvent.modifierFlags 一样）。
++            // bit0=Ctrl, bit1=Shift, bit2=Alt, bit4=CapsLock
++            let ms = *modifier_state;
++            let ctrl_held = ms & 0x01 != 0;
++            let shift_held = ms & 0x02 != 0;
++            let caps_on = ms & 0x10 != 0;
++
++            let (text, text_with_all_modifiers) =
++                ohos_compute_text(&logical_key, shift_held, caps_on, ctrl_held);
++
++            let mut winit_mods = crate::keyboard::ModifiersState::default();
++            if ms & 0x04 != 0 {
++                winit_mods |= crate::keyboard::ModifiersState::ALT;
++            }
++            if ms & 0x01 != 0 {
++                winit_mods |= crate::keyboard::ModifiersState::CONTROL;
++            }
++            if ms & 0x02 != 0 {
++                winit_mods |= crate::keyboard::ModifiersState::SHIFT;
++            }
++            let mods: crate::event::Modifiers = winit_mods.into();
++            vec![
++                Event::WindowEvent {
++                    window_id: GLOBAL_WINDOW_ID,
++                    event: WindowEvent::ModifiersChanged(mods),
++                },
++                Event::WindowEvent {
++                    window_id: GLOBAL_WINDOW_ID,
++                    event: WindowEvent::KeyboardInput {
++                        device_id: event::DeviceId(DeviceId),
++                        event: event::KeyEvent {
++                            state,
++                            physical_key,
++                            logical_key: logical_key.clone(),
++                            text,
++                            location: keycodes::to_location(*keycode),
++                            repeat: false,
++                            platform_specific: KeyEventExtra {
++                                text_with_all_modifiers,
++                                key_without_modifiers: logical_key,
++                            },
++                        },
++                        is_synthetic: false,
++                    },
++                },
++            ]
++        },
++        OhosEvent::ImeEvent(payload) => {
++            // KeyboardEvent → KeyEvent 路径（查快捷键系统）
++            if let ImePayload::KeyboardEvent { key, chars } = payload {
++                let (physical_key, logical_key, text) = match key.as_str() {
++                    "enter" => (
++                        crate::keyboard::PhysicalKey::Code(crate::keyboard::KeyCode::Enter),
++                        crate::keyboard::Key::Named(crate::keyboard::NamedKey::Enter),
++                        chars.clone().map(SmolStr::from),
++                    ),
++                    "backspace" => (
++                        crate::keyboard::PhysicalKey::Code(crate::keyboard::KeyCode::Backspace),
++                        crate::keyboard::Key::Named(crate::keyboard::NamedKey::Backspace),
++                        chars.clone().map(SmolStr::from),
++                    ),
++                    "tab" => (
++                        crate::keyboard::PhysicalKey::Code(crate::keyboard::KeyCode::Tab),
++                        crate::keyboard::Key::Named(crate::keyboard::NamedKey::Tab),
++                        chars.clone().map(SmolStr::from),
++                    ),
++                    "escape" => (
++                        crate::keyboard::PhysicalKey::Code(crate::keyboard::KeyCode::Escape),
++                        crate::keyboard::Key::Named(crate::keyboard::NamedKey::Escape),
++                        None,
++                    ),
++                    _ => match chars {
++                        Some(ref s) => (
++                            crate::keyboard::PhysicalKey::Unidentified(
++                                crate::keyboard::NativeKeyCode::Unidentified,
++                            ),
++                            crate::keyboard::Key::Character(s.clone().into()),
++                            Some(s.clone().into()),
++                        ),
++                        None => return Vec::new(),
++                    },
++                };
++                // IME 不带修饰键信息，默认清除修饰键状态
++                let mods: crate::event::Modifiers =
++                    crate::keyboard::ModifiersState::default().into();
++                return vec![
++                    Event::WindowEvent {
++                        window_id: GLOBAL_WINDOW_ID,
++                        event: WindowEvent::ModifiersChanged(mods),
++                    },
++                    Event::WindowEvent {
++                        window_id: GLOBAL_WINDOW_ID,
++                        event: WindowEvent::KeyboardInput {
++                            device_id: event::DeviceId(DeviceId),
++                            event: event::KeyEvent {
++                                state: event::ElementState::Pressed,
++                                physical_key,
++                                logical_key: logical_key.clone(),
++                                text,
++                                location: crate::keyboard::KeyLocation::Standard,
++                                repeat: false,
++                                platform_specific: KeyEventExtra {
++                                    text_with_all_modifiers: None,
++                                    key_without_modifiers: logical_key,
++                                },
++                            },
++                            is_synthetic: false,
++                        },
++                    },
++                ];
++            }
++            let ime_event = match payload {
++                ImePayload::Commit(s) => {
++                    tracing::debug!("IME_EVENT: Commit '{}'", s);
++                    event::Ime::Commit(s.clone())
++                },
++                ImePayload::Preedit(s) => {
++                    tracing::debug!("IME_EVENT: Preedit '{}'", s);
++                    event::Ime::Preedit(s.clone(), None)
++                },
++                ImePayload::ImeStatus(true) => {
++                    tracing::info!("IME_EVENT: Show -> Enabled");
++                    event::Ime::Enabled
++                },
++                ImePayload::ImeStatus(false) => {
++                    tracing::info!("IME_EVENT: Hide -> Disabled");
++                    event::Ime::Disabled
++                },
++                ImePayload::KeyboardEvent { .. } => {
++                    unreachable!("KeyboardEvent handled above")
++                },
++            };
++            vec![Event::WindowEvent {
++                window_id: GLOBAL_WINDOW_ID,
++                event: WindowEvent::Ime(ime_event),
++            }]
++        },
++        OhosEvent::MouseWheel(delta_x, delta_y) => {
++            // 缩放：OHOS 轴事件单位是"分"（1/120 秒的滚动量），
++            // 120 = 一个标准滚轮刻度，winit 的 LineDelta 也是每刻度 ~1-3 行。
++            // 转换为 LineDelta 并由 app.rs 处理缩放。
++            vec![Event::WindowEvent {
++                window_id: GLOBAL_WINDOW_ID,
++                event: WindowEvent::MouseWheel {
++                    device_id: event::DeviceId(DeviceId),
++                    delta: event::MouseScrollDelta::LineDelta(*delta_x as f32, *delta_y as f32),
++                    phase: event::TouchPhase::Moved,
++                },
++            }]
++        },
++        // UserEvent: pure vsync wake-up, handled by PENDING_REDRAW in EventLoop::run().
++        OhosEvent::UserEvent => Vec::new(),
++
++        // UserPayload: handled directly in EventLoop::run() before this function.
++        OhosEvent::UserPayload(_) => Vec::new(),
++        // Lifecycle/internal events tracked by openharmony-ability itself;
++        // no winit event conversion needed.
++        OhosEvent::WindowCreate
++        | OhosEvent::WindowDestroy
++        | OhosEvent::ContentRectChange
++        | OhosEvent::AvoidAreaChange
++        | OhosEvent::ConfigChanged
++        | OhosEvent::Start
++        | OhosEvent::Pause
++        | OhosEvent::Stop
++        | OhosEvent::Create
++        | OhosEvent::KeyboardEvent(_) => Vec::new(),
++    }
++}
+diff --git a/src/platform_impl/ohos/monitor.rs b/src/platform_impl/ohos/monitor.rs
+new file mode 100755
+index 00000000..e3e7d2e2
+--- /dev/null
++++ b/src/platform_impl/ohos/monitor.rs
+@@ -0,0 +1,75 @@
++use crate::monitor::MonitorHandle as RootMonitorHandle;
++
++#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
++pub struct MonitorHandle;
++
++impl MonitorHandle {
++    pub fn new() -> Self {
++        Self
++    }
++
++    pub fn name(&self) -> Option<String> {
++        None
++    }
++
++    pub fn native_identifier(&self) -> u32 {
++        0
++    }
++
++    pub fn size(&self) -> crate::dpi::PhysicalSize<u32> {
++        // Default 1080p if display info not available
++        crate::dpi::PhysicalSize::new(1080, 1920)
++    }
++
++    pub fn refresh_rate_millihertz(&self) -> Option<u32> {
++        None
++    }
++
++    pub fn scale_factor(&self) -> f64 {
++        1.0
++    }
++
++    pub fn position(&self) -> crate::dpi::PhysicalPosition<i32> {
++        crate::dpi::PhysicalPosition::new(0, 0)
++    }
++
++    pub fn video_modes(&self) -> impl Iterator<Item = VideoModeHandle> {
++        std::iter::empty()
++    }
++
++    pub fn from_hm(_handle: RootMonitorHandle) -> Option<Self> {
++        Some(Self)
++    }
++}
++
++impl From<MonitorHandle> for RootMonitorHandle {
++    fn from(handle: MonitorHandle) -> Self {
++        RootMonitorHandle { inner: handle }
++    }
++}
++
++#[derive(Clone, Debug, Eq, Hash, PartialEq)]
++pub struct VideoModeHandle {
++    size: (u32, u32),
++    bit_depth: u16,
++    refresh_rate_millihertz: u32,
++    monitor: MonitorHandle,
++}
++
++impl VideoModeHandle {
++    pub fn size(&self) -> crate::dpi::PhysicalSize<u32> {
++        self.size.into()
++    }
++
++    pub fn bit_depth(&self) -> u16 {
++        self.bit_depth
++    }
++
++    pub fn refresh_rate_millihertz(&self) -> u32 {
++        self.refresh_rate_millihertz
++    }
++
++    pub fn monitor(&self) -> MonitorHandle {
++        self.monitor.clone()
++    }
++}
+diff --git a/src/platform_impl/orbital/event_loop.rs b/src/platform_impl/orbital/event_loop.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/orbital/mod.rs b/src/platform_impl/orbital/mod.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/orbital/window.rs b/src/platform_impl/orbital/window.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/async/abortable.rs b/src/platform_impl/web/async/abortable.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/async/atomic_waker.rs b/src/platform_impl/web/async/atomic_waker.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/async/channel.rs b/src/platform_impl/web/async/channel.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/async/concurrent_queue.rs b/src/platform_impl/web/async/concurrent_queue.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/async/dispatcher.rs b/src/platform_impl/web/async/dispatcher.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/async/mod.rs b/src/platform_impl/web/async/mod.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/async/notifier.rs b/src/platform_impl/web/async/notifier.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/async/waker.rs b/src/platform_impl/web/async/waker.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/async/wrapper.rs b/src/platform_impl/web/async/wrapper.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/cursor.rs b/src/platform_impl/web/cursor.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/device.rs b/src/platform_impl/web/device.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/error.rs b/src/platform_impl/web/error.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/event_loop/mod.rs b/src/platform_impl/web/event_loop/mod.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/event_loop/proxy.rs b/src/platform_impl/web/event_loop/proxy.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/event_loop/runner.rs b/src/platform_impl/web/event_loop/runner.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/event_loop/state.rs b/src/platform_impl/web/event_loop/state.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/event_loop/window_target.rs b/src/platform_impl/web/event_loop/window_target.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/keyboard.rs b/src/platform_impl/web/keyboard.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/main_thread.rs b/src/platform_impl/web/main_thread.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/mod.rs b/src/platform_impl/web/mod.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/monitor.rs b/src/platform_impl/web/monitor.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/web_sys/animation_frame.rs b/src/platform_impl/web/web_sys/animation_frame.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/web_sys/canvas.rs b/src/platform_impl/web/web_sys/canvas.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/web_sys/event.rs b/src/platform_impl/web/web_sys/event.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/web_sys/event_handle.rs b/src/platform_impl/web/web_sys/event_handle.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/web_sys/fullscreen.rs b/src/platform_impl/web/web_sys/fullscreen.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/web_sys/intersection_handle.rs b/src/platform_impl/web/web_sys/intersection_handle.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/web_sys/media_query_handle.rs b/src/platform_impl/web/web_sys/media_query_handle.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/web_sys/mod.rs b/src/platform_impl/web/web_sys/mod.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/web_sys/pointer.rs b/src/platform_impl/web/web_sys/pointer.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/web_sys/resize_scaling.rs b/src/platform_impl/web/web_sys/resize_scaling.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/web_sys/schedule.rs b/src/platform_impl/web/web_sys/schedule.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/web_sys/worker.js b/src/platform_impl/web/web_sys/worker.js
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/web_sys/worker.min.js b/src/platform_impl/web/web_sys/worker.min.js
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/web/window.rs b/src/platform_impl/web/window.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/windows/dark_mode.rs b/src/platform_impl/windows/dark_mode.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/windows/definitions.rs b/src/platform_impl/windows/definitions.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/windows/dpi.rs b/src/platform_impl/windows/dpi.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/windows/drop_handler.rs b/src/platform_impl/windows/drop_handler.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/windows/event_loop.rs b/src/platform_impl/windows/event_loop.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/windows/event_loop/runner.rs b/src/platform_impl/windows/event_loop/runner.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/windows/icon.rs b/src/platform_impl/windows/icon.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/windows/ime.rs b/src/platform_impl/windows/ime.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/windows/keyboard.rs b/src/platform_impl/windows/keyboard.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/windows/keyboard_layout.rs b/src/platform_impl/windows/keyboard_layout.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/windows/minimal_ime.rs b/src/platform_impl/windows/minimal_ime.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/windows/mod.rs b/src/platform_impl/windows/mod.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/windows/monitor.rs b/src/platform_impl/windows/monitor.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/windows/raw_input.rs b/src/platform_impl/windows/raw_input.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/windows/util.rs b/src/platform_impl/windows/util.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/windows/window.rs b/src/platform_impl/windows/window.rs
+old mode 100644
+new mode 100755
+diff --git a/src/platform_impl/windows/window_state.rs b/src/platform_impl/windows/window_state.rs
+old mode 100644
+new mode 100755
+diff --git a/src/utils.rs b/src/utils.rs
+old mode 100644
+new mode 100755
+diff --git a/src/window.rs b/src/window.rs
+old mode 100644
+new mode 100755
+diff --git a/tests/send_objects.rs b/tests/send_objects.rs
+old mode 100644
+new mode 100755
+diff --git a/tests/serde_objects.rs b/tests/serde_objects.rs
+old mode 100644
+new mode 100755
+diff --git a/tests/sync_object.rs b/tests/sync_object.rs
+old mode 100644
+new mode 100755
+diff --git a/typos.toml b/typos.toml
+old mode 100644
+new mode 100755

@@ -1,0 +1,101 @@
+diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' /home/user/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gettext-sys-0.21.3/build.rs /mnt/linux_share/warp-winit/patches/gettext-sys/build.rs
+--- /home/user/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gettext-sys-0.21.3/build.rs	1973-11-30 05:33:09.000000000 +0800
++++ /mnt/linux_share/warp-winit/patches/gettext-sys/build.rs	2026-07-17 13:38:44.000000000 +0800
+@@ -84,6 +84,8 @@
+ 
+ fn main() {
+     let target = env::var("TARGET").unwrap();
++    // OHOS: map to linux-musl so configure's config.sub can recognize the target.
++    let target_for_configure = target.replace("-ohos", "-musl");
+ 
+     if cfg!(feature = "gettext-system") || env("GETTEXT_SYSTEM").is_some() {
+         if target.contains("linux") && (target.contains("-gnu") || target.contains("-musl")) {
+@@ -160,6 +162,8 @@
+     check_dependencies(vec!["cmp", "diff", "find", "xz"]);
+ 
+     let host = env::var("HOST").unwrap();
++    // OHOS: map -ohos to -musl so config.sub can recognize the build system too.
++    let host_for_configure = host.replace("-ohos", "-musl");
+     let src = env::current_dir().unwrap();
+     let build_dir = TempDir::new().unwrap();
+     let build_dir = build_dir.path();
+@@ -193,10 +197,31 @@
+     }
+     run(&mut cmd, "tar");
+ 
++    // OHOS: strip umask 077 && prefix from configure scripts so that
++    // config.status temp directories inherit the default umask instead
++    // of being created with 0700 permissions, which hmdfs rejects.
++    fn patch_umask(dir: &std::path::Path) {
++        if let Ok(entries) = fs::read_dir(dir) {
++            for entry in entries.flatten() {
++                let path = entry.path();
++                if path.is_dir() {
++                    patch_umask(&path);
++                } else if path.file_name() == Some(std::ffi::OsStr::new("configure")) {
++                    let content = fs::read_to_string(&path)
++                        .unwrap_or_else(|e| fail(&format!("Cannot read {}: {}", path.display(), e)));
++                    let patched = content.replace("umask 077 && ", "");
++                    fs::write(&path, &patched)
++                        .unwrap_or_else(|e| fail(&format!("Cannot write {}: {}", path.display(), e)));
++                }
++            }
++        }
++    }
++    patch_umask(&build_dir.join("gettext"));
++
+     let mut cmd = Command::new("sh");
+     cmd.env("CC", compiler.path())
+         .env("CFLAGS", cflags)
+-        .env("LD", &which("ld").unwrap())
++        .env("LD", &resolve_ld())
+         .env("VERBOSE", "1")
+         .current_dir(&build_dir.join("build"))
+         .arg(&posix_path(&build_dir.join("gettext").join("configure")));
+@@ -222,20 +247,20 @@
+     cmd.arg(format!("--prefix={}", &posix_path(&build_dir)));
+     cmd.arg(format!("--libdir={}", &posix_path(&build_dir.join("lib"))));
+ 
+-    if target != host && (!target.contains("windows") || !host.contains("windows")) {
++    if target != host || target != host_for_configure {
+         // NOTE GNU terminology
+-        // BUILD = machine where we are (cross) compiling curl
+-        // HOST = machine where the compiled curl will be used
++        // BUILD = machine where we are (cross) compiling
++        // HOST = machine where the compiled gettext will be used
+         // TARGET = only relevant when compiling compilers
+         if target.contains("windows") {
+-            // curl's configure can't parse `-windows-` triples when used
++            // configure can't parse `-windows-` triples when used
+             // as `--host`s. In those cases we use this combination of
+             // `host` and `target` that appears to do the right thing.
+-            cmd.arg(format!("--host={}", host));
++            cmd.arg(format!("--host={}", host_for_configure));
+             cmd.arg(format!("--target={}", target));
+         } else {
+-            cmd.arg(format!("--build={}", host));
+-            cmd.arg(format!("--host={}", target));
++            cmd.arg(format!("--build={}", host_for_configure));
++            cmd.arg(format!("--host={}", target_for_configure));
+         }
+     }
+     run(&mut cmd, "sh");
+@@ -308,6 +333,18 @@
+         .find(|p| fs::metadata(p).is_ok())
+ }
+ 
++/// Resolve a linker binary for LD env var.
++/// Tries the given name first, then falls back to alternatives.
++fn resolve_ld() -> PathBuf {
++    let candidates = ["ld", "ld.lld", "lld"];
++    for name in &candidates {
++        if let Some(path) = which(name) {
++            return path;
++        }
++    }
++    fail("Failed to find a linker (tried: ld, ld.lld, lld)")
++}
++
+ fn make() -> Command {
+     let cmd = if cfg!(target_os = "freebsd") {
+         "gmake"
