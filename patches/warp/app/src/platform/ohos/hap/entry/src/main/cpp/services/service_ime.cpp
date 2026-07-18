@@ -1,0 +1,230 @@
+// §2.2.5 — IME 输入法服务
+//
+// NAPI 方法 closeIme()，
+// 通过 ArkTS inputMethod.getController().stopInputSession() 关闭输入法面板。
+//
+// stopInputSession 返回 Promise<void>，NAPI 方法不等待 Promise 完成，
+// 因为 close_ime_async 已隐含异步语义，调用者不依赖输入法关闭的完成确认。
+//
+// C FFI 桥（ohos_close_ime）由 Rust 侧通过 extern "C" 调用，
+// 使用全局 g_napi_env 和 g_exports_ref 调用注册的 NAPI 方法。
+//
+// == 重要实现约束 ==
+// napi_load_module 内部会调用 GetCurrentEntryPoint() 获取调用方的模块信息，
+// 该 API 只在 ArkTS 函数调用栈可用时生效。
+// CloseIme 通过 TSFN 桥接在 UI 线程上以 C 回调方式执行，不处于 ArkTS 调用上下文中，
+// 因此不能在 CloseIme 内调用 napi_load_module，否则将导致 ReferenceError 崩溃。
+//
+// 解决方案：在 RegisterIme 阶段（有 ArkTS 上下文时）预加载模块并缓存
+// InputMethodController 的全局引用，CloseIme 直接使用缓存引用。
+
+#include <cstring>
+#include <napi/native_api.h>
+#include "napi_utils.h"
+
+#undef LOG_TAG
+#define LOG_TAG "Ime"
+
+/// 缓存的 InputMethodController 全局引用。
+/// 在 RegisterIme 阶段预加载并初始化，供 TSFN 回调的 CloseIme 使用。
+/// 避免在无 ArkTS 调用上下文的 C 回调中调用 napi_load_module。
+static napi_ref g_controller_ref = nullptr;
+
+/// 枚举 NAPI 对象的所有属性名并记录日志（调试用）。
+/// @return 有 named property 返回 true
+static bool LogPropertyNames(napi_env env, napi_value obj, const char* label) {
+    napi_value names;
+    napi_status s = napi_get_all_property_names(
+        env, obj, napi_key_own_only,
+        static_cast<napi_key_filter>(0),
+        static_cast<napi_key_conversion>(0),
+        &names);
+    if (s != napi_ok) {
+        OH_LOG_WARN(LOG_APP, "%{public}s: cannot enumerate properties", label);
+        return false;
+    }
+    uint32_t len = 0;
+    napi_get_array_length(env, names, &len);
+    OH_LOG_INFO(LOG_APP, "%{public}s: %{public}u properties", label, len);
+    bool has_named = false;
+    for (uint32_t i = 0; i < len; i++) {
+        napi_value name_val;
+        napi_get_element(env, names, i, &name_val);
+        napi_valuetype type;
+        napi_typeof(env, name_val, &type);
+        if (type == napi_string) {
+            char buf[256] = {0};
+            size_t sz = 0;
+            napi_get_value_string_utf8(env, name_val, buf, sizeof(buf), &sz);
+            OH_LOG_INFO(LOG_APP, "  %{public}s[%{public}u] = '%{private}s'", label, i, buf);
+            has_named = true;
+        }
+    }
+    return has_named;
+}
+
+static napi_value CloseIme(napi_env env, napi_callback_info info) {
+    if (g_controller_ref == nullptr) {
+        OH_LOG_WARN(LOG_APP, "CloseIme: no cached controller reference, skipping");
+        return nullptr;
+    }
+
+    // 获取缓存的 InputMethodController
+    napi_value controller;
+    napi_status status = napi_get_reference_value(env, g_controller_ref, &controller);
+    if (status != napi_ok) {
+        OH_LOG_WARN(LOG_APP, "CloseIme: failed to get controller reference");
+        return nullptr;
+    }
+
+    // 获取 stopInputSession 方法
+    napi_value stopInputSession;
+    status = napi_get_named_property(env, controller, "stopInputSession", &stopInputSession);
+    if (status != napi_ok) {
+        OH_LOG_WARN(LOG_APP, "CloseIme: stopInputSession not found");
+        return nullptr;
+    }
+
+    // 调用 stopInputSession()（返回 Promise<void>，fire-and-forget）
+    napi_value promise;
+    napi_call_function(env, controller, stopInputSession, 0, nullptr, &promise);
+    return nullptr;
+}
+
+void RegisterIme(napi_env env, napi_value exports) {
+    OH_LOG_INFO(LOG_APP, "Ime::Register called");
+
+    // 预加载 IME 模块并缓存 InputMethodController 引用
+    // 必须在 RegisterIme 阶段（有 ArkTS 调用上下文时）完成，
+    // 不能在 TSFN dispatched 的 C 回调中动态加载模块。
+    napi_ref controller_ref = nullptr;
+
+    {
+        // 依次尝试各种可能的 IME 模块路径
+        struct ModuleTry {
+            const char* path;
+            const char* input_method_prop; // module 上的 inputMethod 属性名（NULL=none）
+            const char* get_controller_prop; // getController 的模块级直接属性名（NULL=skip）
+        };
+        ModuleTry attempts[] = {
+            {"@kit.IMEKit",       "inputMethod",       nullptr},  // inputMethod.getController()
+            {"@kit.IMMeKit",      "inputMethod",       nullptr},  // 可能的拼写变体
+            {"@ohos.inputmethod", "inputMethod",       "getController"},  // 两种结构都试
+            {"@ohos.inputMethod", "inputMethod",       "getController"},  // 大小写变体
+        };
+
+        bool ok = false;
+        for (const auto& a : attempts) {
+            // 清除上次尝试可能的 pending exception
+            napi_value ignore = nullptr;
+            napi_get_and_clear_last_exception(env, &ignore);
+
+            napi_value imeModule;
+            napi_status status = napi_load_module(env, a.path, &imeModule);
+            if (status != napi_ok) {
+                OH_LOG_INFO(LOG_APP, "Ime::Register: '%{public}s' not found", a.path);
+                continue;
+            }
+            OH_LOG_INFO(LOG_APP, "Ime::Register: loaded '%{public}s'", a.path);
+
+            // 调试：枚举模块导出属性
+            LogPropertyNames(env, imeModule, a.path);
+
+            // 策略 A：module.inputMethod.getController()
+            if (a.input_method_prop != nullptr) {
+                napi_value inputMethod;
+                status = napi_get_named_property(env, imeModule, a.input_method_prop, &inputMethod);
+                if (status == napi_ok) {
+                    OH_LOG_INFO(LOG_APP, "Ime::Register: '%{public}s.inputMethod' found", a.path);
+                    LogPropertyNames(env, inputMethod, "inputMethod");
+
+                    napi_value getControllerFn;
+                    status = napi_get_named_property(env, inputMethod, "getController", &getControllerFn);
+                    if (status == napi_ok) {
+                        napi_value controller;
+                        status = napi_call_function(env, inputMethod, getControllerFn, 0, nullptr, &controller);
+                        if (status == napi_ok) {
+                            napi_create_reference(env, controller, 1, &controller_ref);
+                            OH_LOG_INFO(LOG_APP, "Ime::Register: cached via inputMethod.getController");
+                            ok = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // 策略 B：module.getController()（仅当 input_method_prop 无效时）
+            if (a.get_controller_prop != nullptr) {
+                napi_value getControllerFn;
+                status = napi_get_named_property(env, imeModule, a.get_controller_prop, &getControllerFn);
+                if (status == napi_ok) {
+                    napi_value controller;
+                    status = napi_call_function(env, imeModule, getControllerFn, 0, nullptr, &controller);
+                    if (status == napi_ok) {
+                        napi_create_reference(env, controller, 1, &controller_ref);
+                        OH_LOG_INFO(LOG_APP, "Ime::Register: cached via getController()");
+                        ok = true;
+                        break;
+                    }
+                }
+            }
+
+            // 策略 C：检查 module.default.inputMethod.getController()（ES default 导出）
+            napi_value defaultExport;
+            status = napi_get_named_property(env, imeModule, "default", &defaultExport);
+            if (status == napi_ok) {
+                OH_LOG_INFO(LOG_APP, "Ime::Register: found 'default' export");
+                LogPropertyNames(env, defaultExport, "default");
+
+                napi_value inputMethod;
+                status = napi_get_named_property(env, defaultExport, "inputMethod", &inputMethod);
+                if (status == napi_ok) {
+                    napi_value getControllerFn;
+                    status = napi_get_named_property(env, inputMethod, "getController", &getControllerFn);
+                    if (status == napi_ok) {
+                        napi_value controller;
+                        status = napi_call_function(env, inputMethod, getControllerFn, 0, nullptr, &controller);
+                        if (status == napi_ok) {
+                            napi_create_reference(env, controller, 1, &controller_ref);
+                            OH_LOG_INFO(LOG_APP, "Ime::Register: cached via default.inputMethod.getController");
+                            ok = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            OH_LOG_INFO(LOG_APP, "Ime::Register: '%{public}s' loaded but getController not found", a.path);
+        }
+
+        if (!ok) {
+            // 清除最后一轮尝试的 pending exception
+            napi_value ignore = nullptr;
+            napi_get_and_clear_last_exception(env, &ignore);
+            OH_LOG_WARN(LOG_APP, "Ime::Register: all module paths exhausted, IME close disabled");
+        }
+    }
+
+    if (controller_ref != nullptr) {
+        g_controller_ref = controller_ref;
+        OH_LOG_INFO(LOG_APP, "Ime::Register: InputMethodController cached");
+    }
+
+    napi_property_descriptor desc[] = {
+        {"closeIme", nullptr, CloseIme, nullptr, nullptr, nullptr, napi_default, nullptr},
+    };
+    napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc);
+}
+
+// ── C FFI 桥：通过 TSFN 安全调用 ArkTS ───────────────────────────────────────
+
+extern "C" {
+extern void ohos_call_napi(const char* method, char* result, size_t max_len);
+
+void ohos_close_ime() {
+    OH_LOG_INFO(LOG_APP, "Ime::ohos_close_ime called");
+    char result[8] = {0};
+    ohos_call_napi("closeIme", result, sizeof(result));
+}
+
+} // extern "C"

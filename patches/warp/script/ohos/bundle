@@ -1,0 +1,145 @@
+#!/usr/bin/env bash
+set -eo pipefail
+
+# §16.6 — OHOS 全量构建脚本
+#
+# 构建流水线：
+#   1. Rust 交叉编译 libwarp.so
+#   2. 拷贝 libwarp.so 到 HAP libs 目录
+#   3. 准备捆绑资源
+#   4. hvigor HAP 全量编译
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+cd "${REPO_ROOT}"
+
+# ── 配置 ──────────────────────────────────────────────────────────────
+OHOS_ARCH="${OHOS_ARCH:-arm64-v8a}"
+CARGO_PROFILE="${CARGO_PROFILE:-release-lto}"
+RUST_TARGET="aarch64-unknown-linux-ohos"
+HAP_DIR="${REPO_ROOT}/app/src/platform/ohos/hap"
+LIBS_DIR="${HAP_DIR}/entry/libs/${OHOS_ARCH}"
+WARP_SO="target/${RUST_TARGET}/release/libwarp.so"
+
+# 并行构建任务数（默认使用核数减1，至少1）
+JOBS="${CARGO_BUILD_JOBS:-$(($(nproc 2>/dev/null || echo 4) - 1))}"
+[[ "${JOBS}" -lt 1 ]] && JOBS=1
+
+usage() {
+  cat <<EOF
+Usage: ./script/ohos/bundle [options]
+
+Build Warp for HarmonyOS NEXT and produce a HAP package.
+
+Options:
+  -h, --help           Show this help message.
+  --profile <name>     Cargo build profile (default: release-lto).
+  --jobs <N>           Parallel build jobs (default: nproc - 1).
+  --skip-rust          Skip Rust compilation, only rebuild HAP.
+  --skip-hap           Skip HAP packaging, only build Rust .so.
+  --debug              Build debug profile instead of release-lto.
+
+Environment:
+  OHOS_ARCH            Target architecture (default: arm64-v8a).
+  CARGO_PROFILE        Cargo build profile override.
+  OHOS_NDK_HOME        Path to OHOS NDK (needed for linker).
+EOF
+}
+
+SKIP_RUST=0
+SKIP_HAP=0
+
+for arg in "$@"; do
+  case "${arg}" in
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    --skip-rust)
+      SKIP_RUST=1
+      ;;
+    --skip-hap)
+      SKIP_HAP=1
+      ;;
+    *)
+      echo "Unknown option: ${arg}"
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+echo "═══ OHOS Bundle: ${RUST_TARGET} (${CARGO_PROFILE}) ═══"
+
+# ── Phase 1: Rust 交叉编译 ──────────────────────────────────────────
+if [[ "${SKIP_RUST}" -eq 0 ]]; then
+  echo ""
+  echo "--- Phase 1: Rust cross-compilation ---"
+
+  # 检查 rustup target
+  if ! rustup target list --installed 2>/dev/null | grep -q "${RUST_TARGET}"; then
+    echo "Rust target ${RUST_TARGET} not installed. Run script/ohos/install_build_deps first."
+    exit 1
+  fi
+
+  cargo build \
+    --target "${RUST_TARGET}" \
+    --profile "${CARGO_PROFILE}" \
+    --package app \
+    -j "${JOBS}"
+
+  echo "Rust build complete: ${WARP_SO}"
+else
+  echo "Skipping Rust compilation (--skip-rust)."
+fi
+
+# ── Phase 2: 拷贝 libwarp.so 到 HAP libs 目录 ──────────────────────
+if [[ "${SKIP_HAP}" -eq 0 ]]; then
+  echo ""
+  echo "--- Phase 2: Deploy libwarp.so to HAP ---"
+
+  mkdir -p "${LIBS_DIR}"
+  if [[ -f "${WARP_SO}" ]]; then
+    cp "${WARP_SO}" "${LIBS_DIR}/libwarp.so"
+    echo "Copied: ${WARP_SO} → ${LIBS_DIR}/libwarp.so"
+  else
+    echo "Error: ${WARP_SO} not found. Build Rust first or use --skip-hap."
+    exit 1
+  fi
+
+  # ── Phase 3: 准备捆绑资源 ────────────────────────────────────────
+  echo ""
+  echo "--- Phase 3: Prepare bundled resources ---"
+
+  if [[ -f "${REPO_ROOT}/script/prepare_bundled_resources" ]]; then
+    "${REPO_ROOT}/script/prepare_bundled_resources"
+    echo "Bundled resources prepared."
+  fi
+
+  if [[ -f "${REPO_ROOT}/script/compile_icon" ]]; then
+    "${REPO_ROOT}/script/compile_icon"
+    echo "Icons compiled."
+  fi
+
+  # ── Phase 4: HAP 全量编译 ─────────────────────────────────────────
+  echo ""
+  echo "--- Phase 4: HAP compilation ---"
+
+  if command -v hvigor >/dev/null 2>&1; then
+    cd "${HAP_DIR}"
+    hvigor assembleHap --mode module -p buildMode=release
+    cd "${REPO_ROOT}"
+
+    HAP_OUTPUT="${HAP_DIR}/build/outputs/bundle/release/entry.hap"
+    if [[ -f "${HAP_OUTPUT}" ]]; then
+      echo "HAP build complete: ${HAP_OUTPUT}"
+    fi
+  else
+    echo "Warning: hvigor not found in PATH. HAP packaging skipped."
+    echo "Install HarmonyOS SDK and ensure hvigor is in PATH."
+  fi
+else
+  echo "Skipping HAP packaging (--skip-hap)."
+fi
+
+echo ""
+echo "═══ OHOS Bundle complete ═══"

@@ -5,6 +5,7 @@
 set -eu
 
 BASE_DIR="$(pwd)"
+DEPS_DIR="$BASE_DIR/depends"
 PATCH_DIR="$(cd "$(dirname "$0")" && pwd)/patches"
 
 # ── 函数：提取已有文件的修改 ──────────────────────────────
@@ -62,7 +63,7 @@ make_modified_patch "$BASE_DIR/warp" "$PATCH_DIR/warp/00-tracked.patch" \
 
 echo "  → 01-new-files.patch (新增的文件)..."
 make_newfile_patch "$BASE_DIR/warp" "$PATCH_DIR/warp/01-new-files.patch" \
-  '\.cxx|build|oh_modules|\.hvigor|\.bitfun|target|deps/@ohos-rs|\.bak$|libwarp\.so|local\.properties|code-linter|oh-package-lock|This PC|hvigorfile|oh-package\.json5$|\.gitignore|hvigor-config|deps/test'
+  '\.cxx|build|oh_modules|\.hvigor|\.bitfun|target|\.bak$|libwarp\.so|local\.properties|code-linter|oh-package-lock|This PC|\.gitignore|deps/test'
 
 # ════════════════════════════════════════════════════════════
 #  winit
@@ -73,10 +74,10 @@ echo " winit"
 echo "=========================================="
 
 echo "  → 00-tracked.patch (已有文件的修改)..."
-make_modified_patch "$BASE_DIR/winit" "$PATCH_DIR/winit/00-tracked.patch"
+make_modified_patch "$DEPS_DIR/winit" "$PATCH_DIR/winit/00-tracked.patch"
 
 echo "  → 01-new-files.patch (新增的文件)..."
-make_newfile_patch "$BASE_DIR/winit" "$PATCH_DIR/winit/01-new-files.patch" '\.bak$'
+make_newfile_patch "$DEPS_DIR/winit" "$PATCH_DIR/winit/01-new-files.patch" '\.bak$'
 
 # ════════════════════════════════════════════════════════════
 #  openharmony-ability
@@ -87,10 +88,10 @@ echo " openharmony-ability"
 echo "=========================================="
 
 echo "  → 00-tracked.patch (已有文件的修改)..."
-make_modified_patch "$BASE_DIR/openharmony-ability" "$PATCH_DIR/openharmony-ability/00-tracked.patch"
+make_modified_patch "$DEPS_DIR/openharmony-ability" "$PATCH_DIR/openharmony-ability/00-tracked.patch"
 
 echo "  → 01-new-files.patch (新增的文件)..."
-make_newfile_patch "$BASE_DIR/openharmony-ability" "$PATCH_DIR/openharmony-ability/01-new-files.patch"
+make_newfile_patch "$DEPS_DIR/openharmony-ability" "$PATCH_DIR/openharmony-ability/01-new-files.patch"
 
 # ════════════════════════════════════════════════════════════
 echo ""
