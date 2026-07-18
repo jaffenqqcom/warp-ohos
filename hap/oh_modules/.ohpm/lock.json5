@@ -1,0 +1,90 @@
+{
+  "lockVersion": "1.0",
+  "settings": {
+    "resolveConflict": true,
+    "resolveConflictStrict": false,
+    "installAll": true
+  },
+  "overrides": {},
+  "overrideDependencyMap": {},
+  "modules": {
+    ".": {
+      "name": "",
+      "dependencies": {},
+      "devDependencies": {
+        "@ohos/hypium": {
+          "specifier": "1.0.19",
+          "version": "1.0.19"
+        },
+        "@ohos/hamock": {
+          "specifier": "1.0.0",
+          "version": "1.0.0"
+        }
+      },
+      "dynamicDependencies": {},
+      "maskedByOverrideDependencyMap": false
+    },
+    "../depends/openharmony-ability/native_ability": {
+      "name": "native_ability",
+      "dependencies": {
+        "libnative_ability.so": {
+          "specifier": "file:../depends/openharmony-ability/native_ability/src/main/cpp/types/libnative_ability",
+          "version": "file:../depends/openharmony-ability/native_ability/src/main/cpp/types/libnative_ability"
+        }
+      },
+      "devDependencies": {},
+      "dynamicDependencies": {},
+      "maskedByOverrideDependencyMap": false
+    },
+    "entry": {
+      "name": "entry",
+      "dependencies": {
+        "@ohos-rs/ability": {
+          "specifier": "file:../depends/openharmony-ability/native_ability",
+          "version": "file:../depends/openharmony-ability/native_ability"
+        }
+      },
+      "devDependencies": {},
+      "dynamicDependencies": {},
+      "maskedByOverrideDependencyMap": false
+    }
+  },
+  "packages": {
+    "@ohos/hypium@1.0.19": {
+      "integrity": "sha512-cEjDgLFCm3cWZDeRXk7agBUkPqjWxUo6AQeiu0gEkb3J8ESqlduQLSIXeo3cCsm8U/asL7iKjF85ZyOuufAGSQ==",
+      "storePath": "oh_modules/.ohpm/@ohos+hypium@1.0.19",
+      "dependencies": {},
+      "dynamicDependencies": {},
+      "dev": true,
+      "dynamic": false,
+      "maskedByOverrideDependencyMap": false
+    },
+    "@ohos/hamock@1.0.0": {
+      "integrity": "sha512-K6lDPYc6VkKe6ZBNQa9aoG+ZZMiwqfcR/7yAVFSUGIuOAhPvCJAo9+t1fZnpe0dBRBPxj2bxPPbKh69VuyAtDg==",
+      "storePath": "oh_modules/.ohpm/@ohos+hamock@1.0.0",
+      "dependencies": {},
+      "dynamicDependencies": {},
+      "dev": true,
+      "dynamic": false,
+      "maskedByOverrideDependencyMap": false
+    },
+    "@ohos-rs/ability@file:../depends/openharmony-ability/native_ability": {
+      "storePath": "../depends/openharmony-ability/native_ability",
+      "dependencies": {
+        "libnative_ability.so": "../depends/openharmony-ability/native_ability/src/main/cpp/types/libnative_ability"
+      },
+      "dynamicDependencies": {},
+      "dev": false,
+      "dynamic": false,
+      "maskedByOverrideDependencyMap": false
+    },
+    "libnative_ability.so@file:../depends/openharmony-ability/native_ability/src/main/cpp/types/libnative_ability": {
+      "storePath": "../depends/openharmony-ability/native_ability/src/main/cpp/types/libnative_ability",
+      "dependencies": {},
+      "dynamicDependencies": {},
+      "dev": false,
+      "dynamic": false,
+      "maskedByOverrideDependencyMap": false
+    }
+  }
+}

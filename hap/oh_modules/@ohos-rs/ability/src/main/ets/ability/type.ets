@@ -1,0 +1,92 @@
+import { NodeContent } from "@kit.ArkUI";
+import resourceManager from "@ohos.resourceManager";
+
+export interface ApplicationLifecycle {
+  environmentCallback: EnvironmentCallback;
+  windowStageEventCallback: WindowStageEventCallback;
+  keyboardEventCallback: KeyboardCallback;
+}
+
+export interface EnvironmentCallback {
+  onConfigurationUpdated: (arg: object) => void;
+  onMemoryLevel: (arg: number) => void;
+}
+
+export interface KeyboardCallback {
+  onKeyboardHeightChange: (height: number) => void;
+}
+
+export interface WindowStageEventCallback {
+  onWindowStageCreate: () => void;
+  onWindowStageDestroy: () => void;
+  onAbilityCreate: (arg: string) => void;
+  onAbilityDestroy: () => void;
+  onAbilitySaveState: () => string;
+  onWindowStageEvent: (arg: number) => void;
+  onWindowSizeChange: (arg: object) => void;
+  onWindowRectChange: (arg: object) => void;
+  onAvoidAreaChange: (arg: object) => void;
+}
+
+export interface WebViewComponentEventCallback {
+  onComponentCreated: () => void;
+  onComponentDestroyed: () => void;
+}
+
+export interface OnDownloadStartResult {
+  allow?: boolean;
+  tempPath?: string;
+}
+
+export interface WebViewInitData {
+  url?: string;
+  id?: string;
+  style?: WebViewStyle;
+  javascriptEnable?: boolean;
+  devtools?: boolean;
+  transparent?: boolean;
+  autoplay?: boolean;
+  userAgent?: string;
+  initializationScripts?: string[];
+  headers?: Record<string, string>;
+  html?: string;
+  onDragAndDrop?: (event: string) => void;
+  onDownloadStart?: (url: string, tempPath: string | undefined) => OnDownloadStartResult;
+  onDownloadEnd?: (url: string, tempPath: string | undefined, success: boolean) => void;
+  onNavigationRequest?: (url: string) => boolean;
+  onTitleChange?: (title: string) => void;
+}
+
+export interface WebViewStyle {
+  x?: number | string;
+  y?: number | string;
+  visible?: boolean;
+  backgroundColor?: string | Color;
+}
+
+export interface AbilityInitContext {
+  basePath?: string;
+  prefPath?: string;
+  preferredLocales?: string;
+  moduleName?: string;
+  resourceManager?: resourceManager.ResourceManager;
+}
+
+export interface Module {
+  init: (context?: AbilityInitContext) => ApplicationLifecycle;
+  render: (helper: ArkHelper, slot: NodeContent) => void;
+  registerCustomProtocol?: () => void;
+}
+
+export interface ArkHelper {
+  exit: (code: number) => void;
+  createWebview: (data: WebViewInitData) => Object;
+  createEmbeddedWebview: (data: WebViewInitData) => Object;
+  requestPermission: (permission: string | string[]) => Promise<number | number[]>;
+  getWindowAvoidArea: (type: number) => WindowAvoidAreaInfo | undefined;
+}
+
+export interface WindowAvoidAreaInfo {
+  type: number;
+  area: Object;
+}

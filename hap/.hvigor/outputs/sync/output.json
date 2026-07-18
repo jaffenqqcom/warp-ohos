@@ -1,0 +1,359 @@
+{
+  "version": 1,
+  "ohos-module-entry": {
+    "SELECT_TARGET": "default",
+    "MODULE_BUILD_DIR": "/storage/Users/currentUser/workspace/warp-ohos/hap/entry/build",
+    "TARGETS": {
+      "default": {
+        "SOURCE_ROOT": "/storage/Users/currentUser/workspace/warp-ohos/hap/entry/src/main",
+        "RESOURCES_PATH": [
+          "/storage/Users/currentUser/workspace/warp-ohos/hap/entry/src/main/resources"
+        ],
+        "BUILD_PATH": {
+          "OUTPUT_PATH": "/storage/Users/currentUser/workspace/warp-ohos/hap/entry/build/default/outputs/default",
+          "INTERMEDIA_PATH": "/storage/Users/currentUser/workspace/warp-ohos/hap/entry/build/default/intermediates",
+          "JS_ASSETS_PATH": "/storage/Users/currentUser/workspace/warp-ohos/hap/entry/build/default/intermediates/loader_out/default",
+          "JS_LITE_ASSETS_PATH": "/storage/Users/currentUser/workspace/warp-ohos/hap/entry/build/default/intermediates/loader_out_lite/default",
+          "RES_PATH": "/storage/Users/currentUser/workspace/warp-ohos/hap/entry/build/default/intermediates/res/default",
+          "RES_PROFILE_PATH": "/storage/Users/currentUser/workspace/warp-ohos/hap/entry/build/default/intermediates/res/default/resources/base/profile",
+          "ETS_SUPER_VISUAL_PATH": "/storage/Users/currentUser/workspace/warp-ohos/hap/entry/build/default/cache/default/default@CompileArkTS/esmodule",
+          "JS_SUPER_VISUAL_PATH": "/storage/Users/currentUser/workspace/warp-ohos/hap/entry/build/default/cache/default/default@CompileJS/jsbundle",
+          "WORKER_LOADER": "/storage/Users/currentUser/workspace/warp-ohos/hap/entry/build/default/intermediates/loader/default/loader.json",
+          "MANIFEST_JSON": "/storage/Users/currentUser/workspace/warp-ohos/hap/entry/build/default/intermediates/manifest/default",
+          "OUTPUT_METADATA_JSON": "/storage/Users/currentUser/workspace/warp-ohos/hap/entry/build/default/intermediates/hap_metadata/default/output_metadata.json",
+          "SOURCE_MAP_DIR": "/storage/Users/currentUser/workspace/warp-ohos/hap/entry/build/default/intermediates/source_map/default"
+        },
+        "BUILD_OPTION": {
+          "debuggable": true
+        }
+      },
+      "ohosTest": {
+        "SOURCE_ROOT": "/storage/Users/currentUser/workspace/warp-ohos/hap/entry/src/ohosTest",
+        "RESOURCES_PATH": [
+          "/storage/Users/currentUser/workspace/warp-ohos/hap/entry/src/ohosTest/resources"
+        ],
+        "BUILD_PATH": {
+          "OUTPUT_PATH": "/storage/Users/currentUser/workspace/warp-ohos/hap/entry/build/default/outputs/ohosTest",
+          "INTERMEDIA_PATH": "/storage/Users/currentUser/workspace/warp-ohos/hap/entry/build/default/intermediates",
+          "JS_ASSETS_PATH": "/storage/Users/currentUser/workspace/warp-ohos/hap/entry/build/default/intermediates/loader_out/ohosTest",
+          "JS_LITE_ASSETS_PATH": "/storage/Users/currentUser/workspace/warp-ohos/hap/entry/build/default/intermediates/loader_out_lite/ohosTest",
+          "RES_PATH": "/storage/Users/currentUser/workspace/warp-ohos/hap/entry/build/default/intermediates/res/ohosTest",
+          "RES_PROFILE_PATH": "/storage/Users/currentUser/workspace/warp-ohos/hap/entry/build/default/intermediates/res/ohosTest/resources/base/profile",
+          "ETS_SUPER_VISUAL_PATH": "/storage/Users/currentUser/workspace/warp-ohos/hap/entry/build/default/cache/ohosTest/ohosTest@OhosTestCompileArkTS/esmodule",
+          "JS_SUPER_VISUAL_PATH": "/storage/Users/currentUser/workspace/warp-ohos/hap/entry/build/default/cache/ohosTest/ohosTest@OhosTestCompileJS/jsbundle",
+          "WORKER_LOADER": "/storage/Users/currentUser/workspace/warp-ohos/hap/entry/build/default/intermediates/loader/ohosTest/loader.json",
+          "MANIFEST_JSON": "/storage/Users/currentUser/workspace/warp-ohos/hap/entry/build/default/intermediates/manifest/ohosTest",
+          "OUTPUT_METADATA_JSON": "/storage/Users/currentUser/workspace/warp-ohos/hap/entry/build/default/intermediates/hap_metadata/ohosTest/output_metadata.json",
+          "SOURCE_MAP_DIR": "/storage/Users/currentUser/workspace/warp-ohos/hap/entry/build/default/intermediates/source_map/ohosTest"
+        },
+        "BUILD_OPTION": {
+          "debuggable": true
+        }
+      }
+    },
+    "BUILD_OPTION": {
+      "default-default": {
+        "debuggable": true,
+        "copyFrom": "default",
+        "strictMode": {
+          "caseSensitiveCheck": true,
+          "useNormalizedOHMUrl": true
+        },
+        "externalNativeOptions": {
+          "path": "./src/main/cpp/CMakeLists.txt",
+          "abiFilters": [
+            "arm64-v8a"
+          ]
+        },
+        "resOptions": {
+          "copyCodeResource": {
+            "enable": false
+          }
+        },
+        "name": "debug",
+        "arkOptions": {
+          "obfuscation": {
+            "ruleOptions": {
+              "enable": false
+            }
+          }
+        }
+      }
+    },
+    "BUILD_PROFILE_OPT": {
+      "apiType": "stageMode",
+      "buildOption": {
+        "resOptions": {
+          "copyCodeResource": {
+            "enable": false
+          }
+        }
+      },
+      "buildOptionSet": [
+        {
+          "name": "release",
+          "arkOptions": {
+            "obfuscation": {
+              "ruleOptions": {
+                "enable": false,
+                "files": [
+                  "./obfuscation-rules.txt"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "name": "default"
+        },
+        {
+          "name": "debug"
+        }
+      ],
+      "targets": [
+        {
+          "name": "default",
+          "config": {
+            "deviceType": [
+              "tablet",
+              "2in1"
+            ],
+            "buildOption": {
+              "arkOptions": {
+                "obfuscation": {
+                  "ruleOptions": {
+                    "enable": false
+                  }
+                }
+              }
+            }
+          },
+          "runtimeOS": "HarmonyOS"
+        },
+        {
+          "name": "ohosTest",
+          "runtimeOS": "HarmonyOS"
+        }
+      ]
+    },
+    "BUILD_CACHE_DIR": ""
+  },
+  "ohos-module-native_ability": {
+    "SELECT_TARGET": "default",
+    "MODULE_BUILD_DIR": "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/build",
+    "TARGETS": {
+      "default": {
+        "SOURCE_ROOT": "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/src/main",
+        "RESOURCES_PATH": [
+          "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/src/main/resources"
+        ],
+        "BUILD_PATH": {
+          "OUTPUT_PATH": "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/build/default/outputs/default",
+          "INTERMEDIA_PATH": "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/build/default/intermediates",
+          "JS_ASSETS_PATH": "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/build/default/intermediates/loader_out/default",
+          "JS_LITE_ASSETS_PATH": "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/build/default/intermediates/loader_out_lite/default",
+          "RES_PATH": "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/build/default/intermediates/res/default",
+          "RES_PROFILE_PATH": "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/build/default/intermediates/res/default/resources/base/profile",
+          "ETS_SUPER_VISUAL_PATH": "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/build/default/cache/default/default@HarCompileArkTS/esmodule",
+          "JS_SUPER_VISUAL_PATH": "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/build/default/cache/default/default@HarCompileJS/jsbundle",
+          "WORKER_LOADER": "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/build/default/intermediates/loader/default/loader.json",
+          "MANIFEST_JSON": "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/build/default/intermediates/manifest/default",
+          "OUTPUT_METADATA_JSON": "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/build/default/intermediates/hap_metadata/default/output_metadata.json",
+          "SOURCE_MAP_DIR": "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/build/default/intermediates/source_map/default"
+        },
+        "BUILD_OPTION": {
+          "debuggable": true
+        }
+      },
+      "ohosTest": {
+        "SOURCE_ROOT": "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/src/ohosTest",
+        "RESOURCES_PATH": [
+          "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/src/ohosTest/resources"
+        ],
+        "BUILD_PATH": {
+          "OUTPUT_PATH": "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/build/default/outputs/ohosTest",
+          "INTERMEDIA_PATH": "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/build/default/intermediates",
+          "JS_ASSETS_PATH": "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/build/default/intermediates/loader_out/ohosTest",
+          "JS_LITE_ASSETS_PATH": "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/build/default/intermediates/loader_out_lite/ohosTest",
+          "RES_PATH": "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/build/default/intermediates/res/ohosTest",
+          "RES_PROFILE_PATH": "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/build/default/intermediates/res/ohosTest/resources/base/profile",
+          "ETS_SUPER_VISUAL_PATH": "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/build/default/cache/ohosTest/ohosTest@OhosTestCompileArkTS/esmodule",
+          "JS_SUPER_VISUAL_PATH": "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/build/default/cache/ohosTest/ohosTest@OhosTestCompileJS/jsbundle",
+          "WORKER_LOADER": "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/build/default/intermediates/loader/ohosTest/loader.json",
+          "MANIFEST_JSON": "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/build/default/intermediates/manifest/ohosTest",
+          "OUTPUT_METADATA_JSON": "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/build/default/intermediates/hap_metadata/ohosTest/output_metadata.json",
+          "SOURCE_MAP_DIR": "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/build/default/intermediates/source_map/ohosTest"
+        },
+        "BUILD_OPTION": {
+          "debuggable": true
+        }
+      }
+    },
+    "BUILD_OPTION": {
+      "default-default": {
+        "debuggable": true,
+        "copyFrom": "default",
+        "strictMode": {
+          "caseSensitiveCheck": true,
+          "useNormalizedOHMUrl": true
+        },
+        "externalNativeOptions": {
+          "path": "./src/main/cpp/CMakeLists.txt",
+          "abiFilters": [
+            "arm64-v8a"
+          ]
+        },
+        "name": "debug"
+      }
+    },
+    "BUILD_PROFILE_OPT": {
+      "apiType": "stageMode",
+      "buildOption": {},
+      "buildOptionSet": [
+        {
+          "name": "release",
+          "arkOptions": {
+            "obfuscation": {
+              "ruleOptions": {
+                "enable": false,
+                "files": [
+                  "./obfuscation-rules.txt"
+                ]
+              },
+              "consumerFiles": [
+                "./consumer-rules.txt"
+              ]
+            }
+          },
+          "nativeLib": {
+            "debugSymbol": {
+              "strip": true,
+              "exclude": []
+            }
+          }
+        },
+        {
+          "name": "default"
+        },
+        {
+          "name": "debug"
+        }
+      ],
+      "targets": [
+        {
+          "name": "default"
+        },
+        {
+          "name": "ohosTest"
+        }
+      ]
+    },
+    "BUILD_CACHE_DIR": ""
+  },
+  "ohos-project": {
+    "SELECT_PRODUCT_NAME": "default",
+    "MODULE_BUILD_DIR": "/storage/Users/currentUser/workspace/warp-ohos/hap/build",
+    "BUNDLE_NAME": "com.warp_ohos.terminal",
+    "VERSION_CODE": 1000000,
+    "VERSION_NAME": "1.0.0",
+    "BUILD_PATH": {
+      "OUTPUT_PATH": "/storage/Users/currentUser/workspace/warp-ohos/hap/build/outputs/default"
+    },
+    "MODULES": [
+      {
+        "name": "entry",
+        "srcPath": "/storage/Users/currentUser/workspace/warp-ohos/hap/entry",
+        "targets": [
+          {
+            "name": "default",
+            "applyToProducts": [
+              "default"
+            ]
+          }
+        ],
+        "belongProjectPath": "/storage/Users/currentUser/workspace/warp-ohos/hap"
+      },
+      {
+        "name": "native_ability",
+        "srcPath": "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability",
+        "belongProjectPath": "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability"
+      }
+    ],
+    "PROFILE_OPT": {
+      "app": {
+        "signingConfigs": [
+          {
+            "name": "default",
+            "material": {
+              "storePassword": "00000020BD69AE3ED15C31BC91F4F789A7A3972382EC1F0D7CED9C46F9CB11B2E31C4E20B51209FBB9C51C77F8ABF83A",
+              "certpath": "/storage/Users/currentUser/Documents/ohos/config/default_hapHD-v_0wt3fmlK17SYeXMGJOjh-mUjvGMnRbzqYQPLtU.cer",
+              "keyAlias": "debugKey",
+              "keyPassword": "00000020BD69AE3ED15C31BC91F4F789A7A3972382EC1F0D7CED9C46F9CB11B2E31C4E20B51209FBB9C51C77F8ABF83A",
+              "profile": "/storage/Users/currentUser/Documents/ohos/config/default_hapHD-v_0wt3fmlK17SYeXMGJOjh-mUjvGMnRbzqYQPLtU.p7b",
+              "signAlg": "SHA256withECDSA",
+              "storeFile": "/storage/Users/currentUser/Documents/ohos/config/default_hapHD-v_0wt3fmlK17SYeXMGJOjh-mUjvGMnRbzqYQPLtU.p12"
+            },
+            "type": "HarmonyOS"
+          }
+        ],
+        "products": [
+          {
+            "name": "default",
+            "signingConfig": "default",
+            "targetSdkVersion": "6.1.0(23)",
+            "compatibleSdkVersion": "6.1.0(23)",
+            "runtimeOS": "HarmonyOS",
+            "buildOption": {
+              "strictMode": {
+                "caseSensitiveCheck": true,
+                "useNormalizedOHMUrl": true
+              },
+              "externalNativeOptions": {
+                "path": "./src/main/cpp/CMakeLists.txt",
+                "abiFilters": [
+                  "arm64-v8a"
+                ]
+              }
+            }
+          }
+        ],
+        "buildModeSet": [
+          {
+            "name": "debug"
+          },
+          {
+            "name": "release"
+          }
+        ]
+      },
+      "modules": [
+        {
+          "name": "entry",
+          "srcPath": "./entry",
+          "targets": [
+            {
+              "name": "default",
+              "applyToProducts": [
+                "default"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "native_ability",
+          "srcPath": "../depends/openharmony-ability/native_ability"
+        }
+      ]
+    },
+    "CONFIG_PROPERTIES": {
+      "enableSignTask": true,
+      "skipNativeIncremental": false,
+      "hvigor.keepDependency": true
+    },
+    "OVERALL_PROJECT_PATHS": [
+      "/storage/Users/currentUser/workspace/warp-ohos/hap",
+      "/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability"
+    ],
+    "BUILD_CACHE_DIR": ""
+  }
+}
