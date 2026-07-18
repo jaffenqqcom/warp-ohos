@@ -1,0 +1,108 @@
+diff --git a/Cargo.toml b/Cargo.toml
+old mode 100644
+new mode 100755
+index 5b2d09a..d7da71d
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -360,6 +360,10 @@ concurrent-queue = { version = "2", default-features = false }
+ console_error_panic_hook = "0.1"
+ tracing-web = "0.1"
+ 
++[target.'cfg(target_env = "ohos")'.dependencies]
++openharmony-ability = { path = "../openharmony-ability/crates/ability" }
++openharmony-ability-derive = { path = "../openharmony-ability/crates/derive" }
++
+ [[example]]
+ doc-scrape-examples = true
+ name = "window"
+diff --git a/build.rs b/build.rs
+old mode 100644
+new mode 100755
+index 6a4528b..c5c0ff9
+--- a/build.rs
++++ b/build.rs
+@@ -13,13 +13,14 @@ fn main() {
+         ios_platform: { target_os = "ios" },
+         windows_platform: { target_os = "windows" },
+         apple: { any(target_os = "ios", target_os = "macos") },
+-        free_unix: { all(unix, not(apple), not(android_platform), not(target_os = "emscripten")) },
++        free_unix: { all(unix, not(apple), not(android_platform), not(target_os = "emscripten"), not(ohos_platform)) },
+         redox: { target_os = "redox" },
+ 
+         // Native displays.
+         x11_platform: { all(feature = "x11", free_unix, not(redox)) },
+         wayland_platform: { all(feature = "wayland", free_unix, not(redox)) },
+         orbital_platform: { redox },
++        ohos_platform: { all(target_env = "ohos") },
+     }
+ 
+     // Winit defined cfgs.
+diff --git a/src/event_loop.rs b/src/event_loop.rs
+old mode 100644
+new mode 100755
+index 233374b..edc5329
+--- a/src/event_loop.rs
++++ b/src/event_loop.rs
+@@ -556,7 +556,7 @@ impl<T: 'static> Clone for EventLoopProxy<T> {
+     }
+ }
+ 
+-impl<T: 'static> EventLoopProxy<T> {
++impl<T: 'static + Send> EventLoopProxy<T> {
+     /// Send an event to the [`EventLoop`] from which this proxy was created. This emits a
+     /// `UserEvent(event)` event in the event loop, where `event` is the value passed to this
+     /// function.
+diff --git a/src/platform/mod.rs b/src/platform/mod.rs
+old mode 100644
+new mode 100755
+index 4f59303..08a25c6
+--- a/src/platform/mod.rs
++++ b/src/platform/mod.rs
+@@ -20,6 +20,8 @@ pub mod web;
+ pub mod windows;
+ #[cfg(any(x11_platform, docsrs))]
+ pub mod x11;
++#[cfg(any(ohos_platform, docsrs))]
++pub mod ohos;
+ 
+ #[cfg(any(
+     windows_platform,
+@@ -47,6 +49,7 @@ pub mod pump_events;
+     x11_platform,
+     wayland_platform,
+     orbital_platform,
++    ohos_platform,
+     docsrs
+ ))]
+ pub mod modifier_supplement;
+diff --git a/src/platform_impl/mod.rs b/src/platform_impl/mod.rs
+old mode 100644
+new mode 100755
+index 3bfce68..dee8379
+--- a/src/platform_impl/mod.rs
++++ b/src/platform_impl/mod.rs
+@@ -15,6 +15,8 @@ mod orbital;
+ mod web;
+ #[cfg(windows_platform)]
+ mod windows;
++#[cfg(ohos_platform)]
++pub(crate) mod ohos;
+ 
+ #[cfg(android_platform)]
+ use android as platform;
+@@ -30,6 +32,8 @@ use orbital as platform;
+ use web as platform;
+ #[cfg(windows_platform)]
+ use windows as platform;
++#[cfg(ohos_platform)]
++use ohos as platform;
+ 
+ pub use self::platform::*;
+ 
+@@ -74,5 +78,6 @@ impl From<Fullscreen> for RootFullscreen {
+     not(wayland_platform),
+     not(web_platform),
+     not(orbital_platform),
++    not(ohos_platform),
+ ))]
+ compile_error!("The platform you're compiling for is not supported by winit");

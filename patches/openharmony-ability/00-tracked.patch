@@ -1,0 +1,287 @@
+diff --git a/Cargo.toml b/Cargo.toml
+old mode 100644
+new mode 100755
+index 3d70163..bee6ad5
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -17,7 +17,7 @@ proc-macro2 = { version = "1.0" }
+ 
+ ohos-arkui-binding = { version = "0.1" }
+ ohos-xcomponent-binding = { version = "0.2" }
+-ohos-ime-binding = { version = "0.1" }
++ohos-ime-binding = { path = "../ohos-ime-binding" }
+ ohos-web-binding = { version = "0.1" }
+ ohos-display-binding = { version = "0.0.1" }
+ ohos-resource-manager-binding = { version = "0.2" }
+diff --git a/crates/ability/src/app.rs b/crates/ability/src/app.rs
+old mode 100644
+new mode 100755
+index cebae34..3128a88
+--- a/crates/ability/src/app.rs
++++ b/crates/ability/src/app.rs
+@@ -372,15 +372,19 @@ impl OpenHarmonyApp {
+             .set_resource_manager(resource_manager);
+     }
+ 
+-    pub fn show_keyboard(&self) {
++    pub fn show_keyboard(&self) -> bool {
+         let _guard = self
+             .is_keyboard_show
+             .lock()
+             .expect("Failed to lock is_keyboard_show");
+         if let Some(ime) = self.ime.borrow().as_ref() {
+-            ime.show_keyboard();
++            ime.show_keyboard()
++        } else {
++            eprintln!("OpenHarmonyApp::show_keyboard: no ime instance");
++            false
+         }
+     }
++
+     pub fn hide_keyboard(&self) {
+         let _guard = self
+             .is_keyboard_show
+@@ -390,6 +394,7 @@ impl OpenHarmonyApp {
+             ime.hide_keyboard();
+         }
+     }
++
+     pub fn create_waker(&self) -> OpenHarmonyWaker {
+         self.inner.read().unwrap().create_waker()
+     }
+@@ -457,6 +462,20 @@ impl OpenHarmonyApp {
+         self.inner.read().unwrap().native_window()
+     }
+ 
++    /// Query the XComponent surface dimensions (pixels).
++    /// Calls OH_NativeXComponent_GetXComponentSize internally, which just reads
++    /// cached ints from the NDK surface struct — zero allocation, < 1μs.
++    /// Returns None if the XComponent or native window is not yet available.
++    pub fn surface_size(&self) -> Option<(u64, u64)> {
++        let inner = self.inner.read().unwrap();
++        let xc = inner.xcomponent.as_ref()?;
++        let nw = inner.raw_window?;
++        let native = xc.native_xcomponent();
++        native.size(ohos_xcomponent_binding::WindowRaw(nw.raw()))
++            .ok()
++            .map(|s| (s.width as u64, s.height as u64))
++    }
++
+     /// Get current app scale
+     pub fn scale(&self) -> f32 {
+         self.inner.read().unwrap().scale()
+diff --git a/crates/ability/src/event.rs b/crates/ability/src/event.rs
+old mode 100644
+new mode 100755
+index 8948ff2..4677ddb
+--- a/crates/ability/src/event.rs
++++ b/crates/ability/src/event.rs
+@@ -84,6 +84,9 @@ pub enum Event<'a> {
+     /// surface input event
+     /// IME
+     Input(InputEvent),
++    /// axis event (mouse wheel / touchpad scroll)
++    /// contains (vertical_delta, horizontal_delta)
++    AxisEvent(f64, f64),
+ 
+     /// keyboard event
+     /// alias onKeyboardHeightChange
+@@ -116,6 +119,7 @@ impl<'a> Event<'a> {
+             Event::SurfaceCreate => "SurfaceCreate",
+             Event::SurfaceDestroy => "SurfaceDestroy",
+             Event::Input(_) => "Input",
++            Event::AxisEvent(_, _) => "AxisEvent",
+             Event::UserEvent => "UserEvent",
+             Event::KeyboardEvent(_) => "KeyboardEvent",
+         }
+diff --git a/crates/ability/src/input/ime.rs b/crates/ability/src/input/ime.rs
+old mode 100644
+new mode 100755
+index b0ea99c..5c7d5bc
+--- a/crates/ability/src/input/ime.rs
++++ b/crates/ability/src/input/ime.rs
+@@ -40,10 +40,6 @@ pub fn ime_ts_fn(env: &Env, app: OpenHarmonyApp) -> Result<ImeCallback> {
+             let value = ctx.first_arg::<u32>().unwrap();
+ 
+             let status = KeyboardStatus::from(value);
+-            if matches!(status, KeyboardStatus::Hide) {
+-                // Keep native IME lifecycle aligned with hide callbacks.
+-                on_ime_hide_app.hide_keyboard();
+-            }
+             if let Some(ref mut h) = *on_ime_hide_app.event_loop.borrow_mut() {
+                 h(Event::Input(InputEvent::ImeEvent(
+                     ImeEvent::ImeStatusEvent(status),
+diff --git a/crates/ability/src/render/xcomponent.rs b/crates/ability/src/render/xcomponent.rs
+old mode 100644
+new mode 100755
+index b548eab..e807801
+--- a/crates/ability/src/render/xcomponent.rs
++++ b/crates/ability/src/render/xcomponent.rs
+@@ -1,11 +1,38 @@
++use std::sync::{Arc, Mutex, OnceLock};
++
+ use napi_ohos::threadsafe_function::ThreadsafeFunctionCallMode::NonBlocking;
+ use napi_ohos::{bindgen_prelude::ObjectRef, Env, Error, Result};
+ use ohos_arkui_binding::{ArkUIHandle, RootNode, XComponent};
+-use ohos_ime_binding::IME;
++use ohos_ime_binding::{AttachOptions, IME, KeyboardStatus};
++
++/// Axis event FFI declarations.
++extern "C" {
++    fn OH_NativeXComponent_RegisterUIInputEventCallback(
++        component: *mut std::ffi::c_void,
++        callback: Option<
++            unsafe extern "C" fn(
++                component: *mut std::ffi::c_void,
++                event: *mut std::ffi::c_void,
++                input_type: i32,
++            ),
++        >,
++        input_type: i32,
++    ) -> i32;
++    fn OH_ArkUI_AxisEvent_GetVerticalAxisValue(event: *mut std::ffi::c_void) -> f64;
++    fn OH_ArkUI_AxisEvent_GetHorizontalAxisValue(event: *mut std::ffi::c_void) -> f64;
++}
++
++
++/// Global event handler for Axis events, set by render() and called from C callback.
++struct SendPtr(*mut std::ffi::c_void);
++unsafe impl Send for SendPtr {}
++unsafe impl Sync for SendPtr {}
+ 
++static AXIS_EVENT_LOOP: Mutex<Option<SendPtr>> =
++    Mutex::new(None);
+ use crate::{
+     create_permission_request_tsfn, input, set_helper, set_main_thread_env, Event, InputEvent,
+-    IntervalInfo, OpenHarmonyApp, Rect, Size,
++    IntervalInfo, ImeEvent, OpenHarmonyApp, Rect, Size,
+ };
+ 
+ /// create lifecycle object and return to arkts
+@@ -36,7 +63,6 @@ pub fn render(
+ 
+     let on_surface_created_app = app.clone();
+     let insert_text_app = app.clone();
+-    let redraw_app = app.clone();
+ 
+     let (
+         insert_text_callback_tsfn,
+@@ -59,8 +85,7 @@ pub fn render(
+         {
+             let raw_window = xc.native_window();
+             on_surface_created_app.inner.write().unwrap().raw_window = raw_window;
+-            // We need to create IME instance when app is foucsed
+-            let ime = IME::new(Default::default());
++            let ime = IME::new(AttachOptions::new(false));
+ 
+             *on_surface_created_app.ime.borrow_mut() = Some(ime);
+         }
+@@ -79,24 +104,19 @@ pub fn render(
+             b_ime.on_enter(|key| {
+                 on_ime_enter_callback_tsfn.call(key as i32, NonBlocking);
+             });
++            // IME 不再主动 attach，由系统管理输入法连接。
+         }
+ 
+         {
+             if let Some(ref mut h) = *on_surface_created_app.event_loop.borrow_mut() {
+-                h(Event::SurfaceCreate)
++                h(Event::SurfaceCreate);
++                // 通知 warp IME 可用（不弹键盘，只设状态标记）。
++                h(Event::Input(InputEvent::ImeEvent(
++                    ImeEvent::ImeStatusEvent(KeyboardStatus::Show),
++                )));
+             }
+         }
+ 
+-        let inner_redraw_app = redraw_app.clone();
+-        xc.on_frame_callback(move |_xcomponent, _time, _time_stamp| {
+-            if let Some(ref mut h) = *inner_redraw_app.event_loop.borrow_mut() {
+-                h(Event::WindowRedraw(IntervalInfo {
+-                    time_stamp: _time_stamp as _,
+-                    target_time_stamp: _time as _,
+-                }))
+-            }
+-            Ok(())
+-        })?;
+         Ok(())
+     });
+ 
+@@ -137,18 +157,48 @@ pub fn render(
+         Ok(())
+     });
+ 
+-    let on_key_event_app = app.clone();
+-    let _ = xcomponent.on_key_event(move |_, _, data| {
+-        if let Some(ref mut h) = *on_key_event_app.event_loop.borrow_mut() {
+-            h(Event::Input(InputEvent::KeyEvent(data)));
++    // ── Register Axis (mouse wheel / trackpad scroll) callback ──
++    const ARKUI_UIINPUTEVENT_TYPE_AXIS: i32 = 2;
++    let xc_raw = xcomponent.raw();
++
++    let axis_app = app.clone();
++    let el_arc = Arc::as_ptr(&axis_app.event_loop.clone()) as *mut std::ffi::c_void;
++    *AXIS_EVENT_LOOP.lock().unwrap() = Some(SendPtr(el_arc));
++
++    unsafe extern "C" fn on_axis_event(
++        _component: *mut std::ffi::c_void,
++        event: *mut std::ffi::c_void,
++        _input_type: i32,
++    ) {
++        let vertical = OH_ArkUI_AxisEvent_GetVerticalAxisValue(event);
++        let horizontal = OH_ArkUI_AxisEvent_GetHorizontalAxisValue(event);
++        if let Some(el_ptr) = AXIS_EVENT_LOOP.lock().unwrap().as_ref() {
++            let el: &std::cell::RefCell<Option<Box<dyn FnMut(crate::Event) + Send + Sync>>> =
++                unsafe { &*(el_ptr.0 as *const _) };
++            if let Some(ref mut h) = *el.borrow_mut() {
++                // Diagnostic: log axis event
++                let v = vertical;
++                let h_val = horizontal;
++                h(crate::Event::AxisEvent(v, h_val));
++            }
+         }
+-        Ok(())
+-    });
++    }
+ 
+-    xcomponent.register_callback()?;
++    unsafe {
++        let ret = OH_NativeXComponent_RegisterUIInputEventCallback(
++            xc_raw as *mut std::ffi::c_void,
++            Some(on_axis_event),
++            ARKUI_UIINPUTEVENT_TYPE_AXIS,
++        );
++        if ret != 0 {
++            // Registration failed; axis events won't work (diagnostic only)
++        }
++    }
+ 
+     root.mount(xcomponent_native)
+         .map_err(|e| Error::from_reason(e.reason.to_string()))?;
+ 
++    xcomponent.register_callback()?;
++
+     Ok(root)
+ }
+diff --git a/native_ability/src/main/ets/ability/NativeAbility.ets b/native_ability/src/main/ets/ability/NativeAbility.ets
+old mode 100644
+new mode 100755
+index f7097e7..88d1ce0
+--- a/native_ability/src/main/ets/ability/NativeAbility.ets
++++ b/native_ability/src/main/ets/ability/NativeAbility.ets
+@@ -2,6 +2,7 @@ import { AbilityConstant, Configuration, UIAbility, Want } from "@kit.AbilityKit
+ import common from "@ohos.app.ability.common";
+ import window from "@ohos.window";
+ import webview from "@ohos.web.webview";
++import { hilog } from "@kit.PerformanceAnalysisKit";
+ import * as Entry from "../components/MainPage";
+ import { AbilityInitContext, ApplicationLifecycle, Module } from "./type";
+ import { Loadable } from "../helper/loadable";
+@@ -129,6 +130,7 @@ export class NativeAbility extends UIAbility {
+     if (win) {
+       try {
+         win.on("windowSizeChange", (size: window.Size) => {
++          hilog.info(0x0001, "NativeAbility", "windowSizeChange fired: width=%{public}d, height=%{public}d", size.width, size.height);
+           this.forEachLifecycle((lifecycle) =>
+             lifecycle.windowStageEventCallback.onWindowSizeChange(size),
+           );

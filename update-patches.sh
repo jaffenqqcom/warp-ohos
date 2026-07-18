@@ -1,58 +1,101 @@
-#!/bin/bash
-# 将各仓库当前代码相对于 git 干净代码的差异，提取为 patch 更新到 patches/ 目录。
-#
-# 适用场景：修改代码（warp/winit/openharmony-ability/三个 crate）后，
-# 运行此脚本自动更新对应的 patch 文件。
-#
-# 用法: cd <工作目录> && bash update-patches.sh
-set -euo pipefail
+#!/bin/sh
+# 将各仓库当前代码相对于 git 干净代码的差异，提取为 patch
+# 自动处理：已有文件修改 + 新增文件（未跟踪）
+# 用法: cd <工作目录> && sh update-patches.sh
+set -eu
 
 BASE_DIR="$(pwd)"
 PATCH_DIR="$(cd "$(dirname "$0")" && pwd)/patches"
 
+# ── 函数：提取已有文件的修改 ──────────────────────────────
+# 参数: <仓库路径> <输出 patch 文件> [额外的 git pathspec 排除规则...]
+make_modified_patch() {
+    dir="$1" patch="$2"
+    shift 2
+
+    cd "$dir" || { echo "  ✗ 无法进入 $dir"; return 1; }
+    files=$(git diff HEAD --numstat -- "$@" | awk '$1+$2 > 0 {print $3}')
+    if [ -n "$files" ]; then
+        git diff HEAD -- $files > "$patch"
+        echo "      $(wc -l < "$patch") 行"
+    else
+        echo "      0 行（无修改）"
+        # 确保空 patch 文件存在，避免下游 wc 报错
+        : > "$patch"
+    fi
+}
+
+# ── 函数：提取新增文件（未跟踪，排除隐藏目录） ────────────
+# 参数: <仓库路径> <输出 patch 文件> [额外的 grep -v 排除规则]
+make_newfile_patch() {
+    dir="$1" patch="$2"
+    extra_exclude="${3:-}"
+
+    cd "$dir" || { echo "  ✗ 无法进入 $dir"; return 1; }
+
+    # 构造过滤命令
+    # 用 grep -v '^\.' || true 防止无匹配时 set -eu 终止脚本
+    cmd="git ls-files --others --exclude-standard | grep -v '^\.' || true"
+    if [ -n "$extra_exclude" ]; then
+        cmd="$cmd | grep -v -E '$extra_exclude' || true"
+    fi
+
+    eval "$cmd" | while IFS= read -r f; do
+        git diff --no-index --binary --src-prefix=a/ --dst-prefix=b/ /dev/null "$f" >> "$patch" || true
+    done
+}
+
+# ════════════════════════════════════════════════════════════
+#  warp
+# ════════════════════════════════════════════════════════════
 echo "=========================================="
-echo " 更新 warp patches"
+echo " warp"
 echo "=========================================="
-cd "$BASE_DIR/warp"
 
-echo "  → 更新 00-tracked.patch (已有文件的修改)..."
-git diff HEAD > "$PATCH_DIR/warp/00-tracked.patch"
-echo "      $(wc -l < "$PATCH_DIR/warp/00-tracked.patch") 行"
+echo "  → 00-tracked.patch (已有文件的修改)..."
+make_modified_patch "$BASE_DIR/warp" "$PATCH_DIR/warp/00-tracked.patch" \
+  .cargo/config.toml . \
+  ':!.agents/*' ':!.claude/*' ':!.github/*' ':!.vscode/*' ':!.warp/*' \
+  ':!.PSScriptAnalyzerSettings.psd1' ':!.clippy.toml' ':!.config/*' \
+  ':!.dockerignore' ':!.gitattributes' ':!.gitignore' ':!.mcp.json' \
+  ':!.rustfmt.toml' ':!.warpindexingignore'
 
-echo "  → 更新 01-new-files.patch (新增文件的修改)..."
-# 找出所有未被 git 跟踪的源文件（排除构建产物）
-NEW_FILES=$(git ls-files --others --exclude-standard | \
-  grep -v -E '\.cxx|build|oh_modules|\.hvigor|\.bitfun|target|deps/@ohos-rs|\.bak$|libwarp\.so|local\.properties|code-linter|oh-package-lock|This PC|hvigorfile|oh-package\.json5$|\.gitignore|hvigor-config|deps/test' || true)
-if [ -n "$NEW_FILES" ]; then
-    echo "$NEW_FILES" | tr '\n' '\0' | xargs -0 git add
-    git diff --cached HEAD --binary > "$PATCH_DIR/warp/01-new-files.patch"
-    git reset HEAD -- . > /dev/null 2>&1
-    echo "      $(wc -l < "$PATCH_DIR/warp/01-new-files.patch") 行"
-else
-    echo "      (无新增文件)"
-fi
+echo "  → 01-new-files.patch (新增的文件)..."
+make_newfile_patch "$BASE_DIR/warp" "$PATCH_DIR/warp/01-new-files.patch" \
+  '\.cxx|build|oh_modules|\.hvigor|\.bitfun|target|deps/@ohos-rs|\.bak$|libwarp\.so|local\.properties|code-linter|oh-package-lock|This PC|hvigorfile|oh-package\.json5$|\.gitignore|hvigor-config|deps/test'
 
+# ════════════════════════════════════════════════════════════
+#  winit
+# ════════════════════════════════════════════════════════════
 echo ""
 echo "=========================================="
-echo " 更新 winit patch"
+echo " winit"
 echo "=========================================="
-cd "$BASE_DIR/winit"
-git diff HEAD > "$PATCH_DIR/winit/full.patch"
-echo "  $(wc -l < "$PATCH_DIR/winit/full.patch") 行"
 
+echo "  → 00-tracked.patch (已有文件的修改)..."
+make_modified_patch "$BASE_DIR/winit" "$PATCH_DIR/winit/00-tracked.patch"
+
+echo "  → 01-new-files.patch (新增的文件)..."
+make_newfile_patch "$BASE_DIR/winit" "$PATCH_DIR/winit/01-new-files.patch" '\.bak$'
+
+# ════════════════════════════════════════════════════════════
+#  openharmony-ability
+# ════════════════════════════════════════════════════════════
 echo ""
 echo "=========================================="
-echo " 更新 openharmony-ability patch"
+echo " openharmony-ability"
 echo "=========================================="
-cd "$BASE_DIR/openharmony-ability"
-git diff HEAD > "$PATCH_DIR/openharmony-ability/full.patch"
-echo "  $(wc -l < "$PATCH_DIR/openharmony-ability/full.patch") 行"
 
+echo "  → 00-tracked.patch (已有文件的修改)..."
+make_modified_patch "$BASE_DIR/openharmony-ability" "$PATCH_DIR/openharmony-ability/00-tracked.patch"
 
+echo "  → 01-new-files.patch (新增的文件)..."
+make_newfile_patch "$BASE_DIR/openharmony-ability" "$PATCH_DIR/openharmony-ability/01-new-files.patch"
+
+# ════════════════════════════════════════════════════════════
 echo ""
 echo "=========================================="
 echo " 新patches 制作完成！"
 echo "=========================================="
 ls -lh "$PATCH_DIR/warp/"*.patch "$PATCH_DIR/winit/"*.patch "$PATCH_DIR/openharmony-ability/"*.patch "$PATCH_DIR/"*.patch 2>/dev/null
-echo ""
-echo "提示: 提交到 warp-ohos 仓库保存：git add clone.sh README.md update-patches.sh patches/ && git commit -m "更新脚本与补丁目录" && git push"
+echo "提交指令：git add clone.sh update-patches.sh patches/ && git commit -m "更新脚本与补丁目录" && git push"
