@@ -12358,3 +12358,717 @@ Require stack:
 [2026-07-18T20:40:18.295] [DEBUG] debug-file - watch worker: worker id should be larger than 0. Nothing will be sent to any worker thread.
 [2026-07-18T20:40:18.297] [DEBUG] debug-file - watch worker: worker id should be larger than 0. Nothing will be sent to any worker thread.
 [2026-07-18T20:40:18.297] [DEBUG] debug-file - watch worker: worker id should be larger than 0. Nothing will be sent to any worker thread.
+[2026-07-18T21:50:28.114] [DEBUG] debug-file - env: nodejsVersion=v22.7.0
+[2026-07-18T21:50:28.693] [DEBUG] debug-file - Hvigor init with startParameters:{
+  hvigorfileTypeCheck: false,
+  parallelExecution: true,
+  incrementalExecution: true,
+  printStackTrace: false,
+  daemon: false,
+  analyze: 0,
+  logLevel: Level { level: 20000, levelStr: 'INFO', colour: 'green' },
+  optimizationStrategy: 'memory',
+  hotCompile: undefined,
+  hotReloadBuild: undefined,
+  customizedParam: undefined
+}
+[2026-07-18T21:50:31.709] [DEBUG] debug-file - hvigorfile, require result:  { default: { system: [Function: appTasks], plugins: [] } }
+[2026-07-18T21:50:31.990] [DEBUG] debug-file - Start initialize project's product build option map with build mode debug.
+[2026-07-18T21:50:31.987] [DEBUG] debug-file - App plugin register hook start...
+[2026-07-18T21:50:31.996] [DEBUG] debug-file - Obtain build option for product 'default'in this build.
+[2026-07-18T21:50:32.028] [DEBUG] debug-file - Start recording SDK configuration permission data.
+[2026-07-18T21:50:32.041] [DEBUG] debug-file - Project task initialization takes 10 ms 
+[2026-07-18T21:50:32.071] [DEBUG] debug-file - Start initialize module-target build option map, moduleName=entry, buildMode=debug
+[2026-07-18T21:50:32.101] [DEBUG] debug-file - hvigorfile, resolving /storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/hvigorfile.ts
+[2026-07-18T21:50:32.053] [DEBUG] debug-file - failed to load cangjie to dynamically generate schemas: Error: Cannot find module '@ohos/cangjie-build-support/index'
+Require stack:
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/src/plugin/hooks/cangjie-register.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/src/plugin/strategy/stage-init-strategy.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/src/plugin/builder/abstract-plugin-builder.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/src/plugin/builder/app-plugin-builder.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/src/plugin/factory/plugin-factory.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/index.js
+- /storage/Users/currentUser/workspace/warp-ohos/hap/hvigorfile.ts
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor/src/base/internal/lifecycle/configuration.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor/src/base/boot/index.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor/src/cli/main/cli.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor/bin/hvigor.js
+[2026-07-18T21:50:32.181] [DEBUG] debug-file - Start to initialize dependency information.
+[2026-07-18T21:50:32.214] [DEBUG] debug-file - Executing task :native_ability:default@PreBuild
+[2026-07-18T21:50:32.166] [DEBUG] debug-file - start to load updatedOhPackageInfo to the disk
+[2026-07-18T21:50:31.711] [DEBUG] debug-file - Starting plugin build process
+[2026-07-18T21:50:28.117] [DEBUG] debug-file - env: hvigor-config.json5 content = {
+  modelVersion: '6.1.0',
+  dependencies: {},
+  execution: {},
+  logging: {},
+  debugging: {},
+  nodeOptions: {}
+}
+[2026-07-18T21:50:28.706] [DEBUG] debug-file - Cache service initialization finished in 13 ms 
+[2026-07-18T21:50:31.709] [DEBUG] debug-file - hvigorfile, binding system plugins [Function: appTasks]
+[2026-07-18T21:50:31.990] [DEBUG] debug-file - Picking option from product 'default' with build mode 'debug'.
+[2026-07-18T21:50:31.988] [DEBUG] debug-file - App plugin register hook end...
+[2026-07-18T21:50:32.016] [DEBUG] debug-file - /storage/Users/currentUser/workspace/warp-ohos/hap/build/cache/default/remote_hsp/remoteHspCache.json not exists.
+[2026-07-18T21:50:32.028] [DEBUG] debug-file - The file does not exist. At /data/app/sdk.org/sdk_1.0.0/default/openharmony/previewer/common/resources/module.json
+[2026-07-18T21:50:32.042] [DEBUG] debug-file - hvigorfile, begin to bind custom plugins...
+[2026-07-18T21:50:32.071] [DEBUG] debug-file - Target 'default' config initialized
+[2026-07-18T21:50:32.111] [DEBUG] debug-file - hvigorfile, require result:  { default: { system: [Function: harTasks], plugins: [] } }
+[2026-07-18T21:50:32.188] [DEBUG] debug-file - Module entry Collected Dependency: /storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability,/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/src/main/cpp/types/libnative_ability
+[2026-07-18T21:50:32.226] [DEBUG] debug-file - Task 'native_ability:default@PreBuild' cost while wrapping incremental declarations: 1 ms 
+[2026-07-18T21:50:32.168] [DEBUG] debug-file - load to the disk finished
+[2026-07-18T21:50:31.711] [DEBUG] debug-file - App plugin prepare start...
+[2026-07-18T21:50:28.119] [DEBUG] debug-file - env: daemon=false
+[2026-07-18T21:50:28.710] [DEBUG] debug-file - hvigorfile, resolving /storage/Users/currentUser/workspace/warp-ohos/hap/hvigorfile.ts
+[2026-07-18T21:50:31.992] [DEBUG] debug-file - Product 'default' build option initialized
+[2026-07-18T21:50:31.988] [DEBUG] debug-file - Plugin build process completed
+[2026-07-18T21:50:32.020] [DEBUG] debug-file - Local scan or download HarmonyOS sdk components toolchains,ets,js,native,previewer
+[2026-07-18T21:50:32.029] [DEBUG] debug-file - Sdk init in 12 ms 
+[2026-07-18T21:50:32.042] [DEBUG] debug-file - hvigorfile, no custom plugins were found in /storage/Users/currentUser/workspace/warp-ohos/hap/hvigorfile.ts
+[2026-07-18T21:50:32.072] [DEBUG] debug-file - Target 'ohosTest' config initialized
+[2026-07-18T21:50:32.112] [DEBUG] debug-file - hvigorfile, binding system plugins [Function: harTasks]
+[2026-07-18T21:50:32.188] [DEBUG] debug-file - Module entry's total dependency: 2
+[2026-07-18T21:50:32.237] [DEBUG] debug-file - native_ability:default@PreBuild is not up-to-date, since the task snapshots are different.
+[2026-07-18T21:50:32.169] [DEBUG] debug-file - Start to initialize dependency information.
+[2026-07-18T21:50:31.711] [DEBUG] debug-file - App plugin prepare end...
+[2026-07-18T21:50:28.120] [DEBUG] debug-file - no-daemon, use the parent process.execArgv --max-old-space-size=8192,--max-semi-space-size=64,--min-semi-space-size=64,--expose-gc
+[2026-07-18T21:50:31.992] [DEBUG] debug-file - End initialize project's product build option map with build mode 'debug'.
+[2026-07-18T21:50:32.023] [DEBUG] debug-file - Local scan or download hmscore sdk components toolchains,ets,native
+[2026-07-18T21:50:32.042] [DEBUG] debug-file - hvigorfile, resolve finished /storage/Users/currentUser/workspace/warp-ohos/hap/hvigorfile.ts
+[2026-07-18T21:50:32.073] [DEBUG] debug-file - Module 'entry' target 'default' build option initialized
+[2026-07-18T21:50:32.112] [DEBUG] debug-file - Starting plugin build process
+[2026-07-18T21:50:32.196] [DEBUG] debug-file - Start to initialize dependency information.
+[2026-07-18T21:50:32.237] [DEBUG] debug-file - Incremental task native_ability:default@PreBuild pre-execution cost: 7 ms .
+[2026-07-18T21:50:32.179] [DEBUG] debug-file - Module hap Collected Dependency: 
+[2026-07-18T21:50:31.711] [DEBUG] debug-file - App plugin creating...
+[2026-07-18T21:50:32.042] [DEBUG] debug-file - hvigorfile, resolving /storage/Users/currentUser/workspace/warp-ohos/hap/entry/hvigorfile.ts
+[2026-07-18T21:50:32.073] [DEBUG] debug-file - Module 'entry' target 'ohosTest' build option initialized
+[2026-07-18T21:50:32.112] [DEBUG] debug-file - Har plugin creating...
+[2026-07-18T21:50:32.199] [DEBUG] debug-file - Module native_ability Collected Dependency: /storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/src/main/cpp/types/libnative_ability
+[2026-07-18T21:50:32.240] [WARN] debug-file - The version number of the '@ohos-rs/ability' module does not comply with the SemVer specification.
+               This will affect the installation and publication by ohpm.
+               Make sure the value of version in the oh-package.json5 file of the module complies with the SemVer specification.
+[2026-07-18T21:50:32.179] [DEBUG] debug-file - Module hap's total dependency: 0
+[2026-07-18T21:50:32.051] [DEBUG] debug-file - hvigorfile, require result:  { default: { system: [Function: hapTasks], plugins: [] } }
+[2026-07-18T21:50:32.073] [DEBUG] debug-file - End initialize module-target build option map, moduleName=entry
+[2026-07-18T21:50:32.113] [DEBUG] debug-file - failed to load cangjie to dynamically generate schemas: Error: Cannot find module '@ohos/cangjie-build-support/index'
+Require stack:
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/src/plugin/hooks/cangjie-register.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/src/plugin/strategy/stage-init-strategy.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/src/plugin/builder/abstract-plugin-builder.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/src/plugin/builder/app-plugin-builder.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/src/plugin/factory/plugin-factory.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/index.js
+- /storage/Users/currentUser/workspace/warp-ohos/hap/hvigorfile.ts
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor/src/base/internal/lifecycle/configuration.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor/src/base/boot/index.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor/src/cli/main/cli.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor/bin/hvigor.js
+[2026-07-18T21:50:32.199] [DEBUG] debug-file - Module native_ability's total dependency: 1
+[2026-07-18T21:50:32.407] [DEBUG] debug-file - current product is not Atomic service.
+[2026-07-18T21:50:32.051] [DEBUG] debug-file - hvigorfile, binding system plugins [Function: hapTasks]
+[2026-07-18T21:50:32.073] [DEBUG] debug-file - Start initialize module-target build option map, moduleName=entry, buildMode=release
+[2026-07-18T21:50:32.157] [DEBUG] debug-file - Start initialize module-target build option map, moduleName=native_ability, buildMode=debug
+[2026-07-18T21:50:32.201] [DEBUG] debug-file - Configuration phase cost:3 s 495 ms 
+[2026-07-18T21:50:32.407] [DEBUG] debug-file - Use tool [openharmony: JAVA_HOME, CLASSPATH]
+ [
+  { JAVA_HOME: 'root directory not existed' },
+  { CLASSPATH: undefined }
+]
+[2026-07-18T21:50:32.052] [DEBUG] debug-file - Starting plugin build process
+[2026-07-18T21:50:32.073] [DEBUG] debug-file - Target 'default' config initialized
+[2026-07-18T21:50:32.206] [DEBUG] debug-file - Configuration task cost before running: 3 s 531 ms 
+[2026-07-18T21:50:32.157] [DEBUG] debug-file - Target 'default' config initialized
+[2026-07-18T21:50:32.407] [DEBUG] debug-file - Use tool [openharmony: NODE_HOME]
+ [ { NODE_HOME: undefined } ]
+[2026-07-18T21:50:32.052] [DEBUG] debug-file - Hap plugin creating...
+[2026-07-18T21:50:32.473] [DEBUG] debug-file - Executing task :native_ability:default@BuildNativeWithCmake
+[2026-07-18T21:50:32.074] [DEBUG] debug-file - Target 'ohosTest' config initialized
+[2026-07-18T21:50:32.158] [DEBUG] debug-file - Target 'ohosTest' config initialized
+[2026-07-18T21:50:32.445] [DEBUG] debug-file - native_ability : default@PreBuild cost memory -8.324455261230469
+[2026-07-18T21:50:32.074] [DEBUG] debug-file - Module 'entry' target 'default' build option initialized
+[2026-07-18T21:50:32.445] [DEBUG] debug-file - runTaskFromQueue task cost before running: 3 s 770 ms 
+[2026-07-18T21:50:32.158] [DEBUG] debug-file - Module 'native_ability' target 'default' build option initialized
+[2026-07-18T21:50:32.074] [DEBUG] debug-file - Module 'entry' target 'ohosTest' build option initialized
+[2026-07-18T21:50:32.449] [INFO] debug-file - Finished :native_ability:default@PreBuild... after 232 ms 
+[2026-07-18T21:50:32.158] [DEBUG] debug-file - Module 'native_ability' target 'ohosTest' build option initialized
+[2026-07-18T21:50:32.479] [DEBUG] debug-file - Use tool [Cmake]
+ [
+  '/data/app/sdk.org/sdk_1.0.0/default/openharmony/native/build-tools/cmake/bin/cmake',
+  '-H/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/src/main/cpp',
+  '-B/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/.cxx/default/default/debug/arm64-v8a',
+  '-DOHOS_ARCH=arm64-v8a',
+  '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/build/default/intermediates/cmake/default/obj/arm64-v8a',
+  '-DCMAKE_BUILD_TYPE=Debug',
+  '-DOHOS_SDK_NATIVE=/data/app/sdk.org/sdk_1.0.0/default/openharmony/native',
+  '-DCMAKE_SYSTEM_NAME=OHOS',
+  '-DCMAKE_OHOS_ARCH_ABI=arm64-v8a',
+  '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON',
+  '-DCMAKE_TOOLCHAIN_FILE=/data/app/sdk.org/sdk_1.0.0/default/hms/native/build/cmake/hmos.toolchain.bisheng.cmake',
+  '-GNinja',
+  '-DCMAKE_MAKE_PROGRAM=/data/app/sdk.org/sdk_1.0.0/default/openharmony/native/build-tools/cmake/bin/ninja',
+  '-DCMAKE_FIND_ROOT_PATH=/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/.cxx/default/default/debug/hvigor/arm64-v8a',
+  '-DPACKAGE_FIND_FILE=/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/.cxx/default/default/debug/hvigor/arm64-v8a/summary.cmake',
+  '--no-warn-unused-cli',
+  '-DHMOS_SDK_NATIVE=/data/app/sdk.org/sdk_1.0.0/default/hms/native',
+  '-DOHOS_COMPATIBLE_SDK_VERSION=6.1.0(23)'
+]
+[2026-07-18T21:50:32.074] [DEBUG] debug-file - End initialize module-target build option map, moduleName=entry
+[2026-07-18T21:50:32.451] [DEBUG] debug-file - Executing task :native_ability:default@ConfigureCmake
+[2026-07-18T21:50:32.158] [DEBUG] debug-file - End initialize module-target build option map, moduleName=native_ability
+[2026-07-18T21:50:32.074] [DEBUG] debug-file - Start initialize module-target build option map, moduleName=entry, buildMode=debug
+[2026-07-18T21:50:32.469] [DEBUG] debug-file - native_ability : default@ConfigureCmake cost memory -19.722862243652344
+[2026-07-18T21:50:32.158] [DEBUG] debug-file - Start initialize module-target build option map, moduleName=native_ability, buildMode=release
+[2026-07-18T21:50:32.074] [DEBUG] debug-file - Target 'default' config initialized
+[2026-07-18T21:50:32.470] [DEBUG] debug-file - runTaskFromQueue task cost before running: 3 s 795 ms 
+[2026-07-18T21:50:32.158] [DEBUG] debug-file - Target 'default' config initialized
+[2026-07-18T21:50:32.075] [DEBUG] debug-file - Target 'ohosTest' config initialized
+[2026-07-18T21:50:32.470] [INFO] debug-file - Finished :native_ability:default@ConfigureCmake... after 19 ms 
+[2026-07-18T21:50:32.159] [DEBUG] debug-file - Target 'ohosTest' config initialized
+[2026-07-18T21:50:32.075] [DEBUG] debug-file - Module 'entry' target 'default' build option initialized
+[2026-07-18T21:50:32.159] [DEBUG] debug-file - Module 'native_ability' target 'default' build option initialized
+[2026-07-18T21:50:32.075] [DEBUG] debug-file - Module 'entry' target 'ohosTest' build option initialized
+[2026-07-18T21:50:32.159] [DEBUG] debug-file - Module 'native_ability' target 'ohosTest' build option initialized
+[2026-07-18T21:50:32.075] [DEBUG] debug-file - End initialize module-target build option map, moduleName=entry
+[2026-07-18T21:50:32.159] [DEBUG] debug-file - End initialize module-target build option map, moduleName=native_ability
+[2026-07-18T21:50:32.075] [DEBUG] debug-file - Obtain build option for module 'entry' target 'default'in this build.
+[2026-07-18T21:50:32.159] [DEBUG] debug-file - Start initialize module-target build option map, moduleName=native_ability, buildMode=debug
+[2026-07-18T21:50:32.099] [DEBUG] debug-file - Module entry task initialization takes 23 ms 
+[2026-07-18T21:50:32.159] [DEBUG] debug-file - Target 'default' config initialized
+[2026-07-18T21:50:32.099] [DEBUG] debug-file - Hap plugin register hook start...
+[2026-07-18T21:50:32.160] [DEBUG] debug-file - Target 'ohosTest' config initialized
+[2026-07-18T21:50:32.099] [DEBUG] debug-file - Hap plugin register hook end...
+[2026-07-18T21:50:32.160] [DEBUG] debug-file - Module 'native_ability' target 'default' build option initialized
+[2026-07-18T21:50:32.099] [DEBUG] debug-file - Plugin build process completed
+[2026-07-18T21:50:32.160] [DEBUG] debug-file - Module 'native_ability' target 'ohosTest' build option initialized
+[2026-07-18T21:50:32.100] [DEBUG] debug-file - hvigorfile, begin to bind custom plugins...
+[2026-07-18T21:50:32.160] [DEBUG] debug-file - End initialize module-target build option map, moduleName=native_ability
+[2026-07-18T21:50:32.100] [DEBUG] debug-file - hvigorfile, no custom plugins were found in /storage/Users/currentUser/workspace/warp-ohos/hap/entry/hvigorfile.ts
+[2026-07-18T21:50:32.160] [DEBUG] debug-file - Obtain build option for module 'native_ability' target 'default'in this build.
+[2026-07-18T21:50:32.100] [DEBUG] debug-file - hvigorfile, resolve finished /storage/Users/currentUser/workspace/warp-ohos/hap/entry/hvigorfile.ts
+[2026-07-18T21:50:32.163] [DEBUG] debug-file - Module native_ability task initialization takes 3 ms 
+[2026-07-18T21:50:32.163] [DEBUG] debug-file - Har plugin register hook start...
+[2026-07-18T21:50:32.163] [DEBUG] debug-file - Har plugin register hook end...
+[2026-07-18T21:50:32.163] [DEBUG] debug-file - Plugin build process completed
+[2026-07-18T21:50:32.163] [DEBUG] debug-file - hvigorfile, begin to bind custom plugins...
+[2026-07-18T21:50:32.163] [DEBUG] debug-file - hvigorfile, no custom plugins were found in /storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/hvigorfile.ts
+[2026-07-18T21:50:32.163] [DEBUG] debug-file - hvigorfile, resolve finished /storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/hvigorfile.ts
+[2026-07-18T21:50:32.164] [DEBUG] debug-file - project has submodules:entry,native_ability
+[2026-07-18T21:50:32.164] [DEBUG] debug-file - module:native_ability no need to execute packageHap
+[2026-07-18T21:50:32.492] [DEBUG] debug-file - CMake configuration was up-to-date
+[2026-07-18T21:50:32.501] [DEBUG] debug-file - native_ability : default@BuildNativeWithCmake cost memory 0.5866775512695312
+[2026-07-18T21:50:32.502] [DEBUG] debug-file - runTaskFromQueue task cost before running: 3 s 826 ms 
+[2026-07-18T21:50:32.533] [DEBUG] debug-file - Create  resident worker with id: 0.
+[2026-07-18T21:50:32.502] [INFO] debug-file - Finished :native_ability:default@BuildNativeWithCmake... after 29 ms 
+[2026-07-18T21:50:32.538] [DEBUG] debug-file - Create  resident worker with id: 1.
+[2026-07-18T21:50:32.503] [DEBUG] debug-file - Executing task :native_ability:compileNative
+[2026-07-18T21:50:32.541] [DEBUG] debug-file - Current worker pool is stopped or closed.
+[2026-07-18T21:50:32.503] [DEBUG] debug-file - native_ability : compileNative cost memory 0.01090240478515625
+[2026-07-18T21:50:32.542] [DEBUG] debug-file - Clear worker 0.
+[2026-07-18T21:50:32.503] [DEBUG] debug-file - runTaskFromQueue task cost before running: 3 s 828 ms 
+[2026-07-18T21:50:32.543] [DEBUG] debug-file - Worker 0 has been cleared.
+[2026-07-18T21:50:32.504] [INFO] debug-file - Finished :native_ability:compileNative... after 1 ms 
+[2026-07-18T21:50:32.543] [DEBUG] debug-file - Current idle worker size: 1.
+[2026-07-18T21:50:32.507] [INFO] debug-file - BUILD SUCCESSFUL in 3 s 832 ms 
+[2026-07-18T21:50:32.543] [DEBUG] debug-file - Current busy worker size: 0.
+[2026-07-18T21:50:32.510] [DEBUG] debug-file - Update task native_ability:default@PreBuild input file:/storage/Users/currentUser/workspace/warp-ohos/hap/AppScope/app.json5 cache by regenerate.
+[2026-07-18T21:50:32.543] [DEBUG] debug-file - Clear worker 1.
+[2026-07-18T21:50:32.510] [DEBUG] debug-file - Update task native_ability:default@PreBuild input file:/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/src/main/module.json5 cache by regenerate.
+[2026-07-18T21:50:32.543] [DEBUG] debug-file - Worker 1 has been cleared.
+[2026-07-18T21:50:32.511] [DEBUG] debug-file - Update task native_ability:default@PreBuild input file:/storage/Users/currentUser/workspace/warp-ohos/hap/build-profile.json5 cache by regenerate.
+[2026-07-18T21:50:32.543] [DEBUG] debug-file - Current idle worker size: 0.
+[2026-07-18T21:50:32.511] [DEBUG] debug-file - Update task native_ability:default@PreBuild input file:/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/build-profile.json5 cache by regenerate.
+[2026-07-18T21:50:32.543] [DEBUG] debug-file - Current busy worker size: 0.
+[2026-07-18T21:50:32.511] [DEBUG] debug-file - Update task native_ability:default@PreBuild input file:/storage/Users/currentUser/workspace/warp-ohos/hap/hvigor/hvigor-config.json5 cache by regenerate.
+[2026-07-18T21:50:32.546] [DEBUG] debug-file - hvigor build process will be closed.
+[2026-07-18T21:50:32.511] [DEBUG] debug-file - Update task native_ability:default@PreBuild input file:/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/oh-package.json5 cache by regenerate.
+[2026-07-18T21:50:32.511] [DEBUG] debug-file - Update task native_ability:default@PreBuild input file:/storage/Users/currentUser/workspace/warp-ohos/hap/oh-package.json5 cache by regenerate.
+[2026-07-18T21:50:32.511] [DEBUG] debug-file - Incremental task native_ability:default@PreBuild post-execution cost:3 ms .
+[2026-07-18T21:50:32.530] [DEBUG] debug-file - Since there is no instance or instance is terminated, create a new worker pool.
+[2026-07-18T21:50:32.531] [DEBUG] debug-file - Worker pool is initialized with config:  {
+  minPoolNum: 2,
+  maxPoolNum: undefined,
+  maxCoreSize: undefined,
+  cacheCapacity: undefined,
+  cacheTtl: undefined
+}
+[2026-07-18T21:50:32.563] [DEBUG] debug-file - worker[1] exits with exit code 0.
+[2026-07-18T21:50:32.567] [DEBUG] debug-file - worker[0] exits with exit code 0.
+[2026-07-18T21:50:32.569] [DEBUG] debug-file - Current worker pool is terminated.
+[2026-07-18T21:50:33.702] [DEBUG] debug-file - env: nodejsVersion=v22.7.0
+[2026-07-18T21:50:34.111] [DEBUG] debug-file - Hvigor init with startParameters:{
+  hvigorfileTypeCheck: false,
+  parallelExecution: true,
+  incrementalExecution: true,
+  printStackTrace: false,
+  daemon: false,
+  analyze: 0,
+  logLevel: Level { level: 20000, levelStr: 'INFO', colour: 'green' },
+  optimizationStrategy: 'memory',
+  hotCompile: undefined,
+  hotReloadBuild: undefined,
+  customizedParam: undefined
+}
+[2026-07-18T21:50:35.581] [DEBUG] debug-file - hvigorfile, require result:  { default: { system: [Function: appTasks], plugins: [] } }
+[2026-07-18T21:50:35.583] [DEBUG] debug-file - Starting plugin build process
+[2026-07-18T21:50:35.835] [DEBUG] debug-file - App plugin register hook start...
+[2026-07-18T21:50:35.838] [DEBUG] debug-file - Start initialize project's product build option map with build mode debug.
+[2026-07-18T21:50:35.843] [DEBUG] debug-file - Obtain build option for product 'default'in this build.
+[2026-07-18T21:50:35.871] [DEBUG] debug-file - Start recording SDK configuration permission data.
+[2026-07-18T21:50:35.893] [DEBUG] debug-file - failed to load cangjie to dynamically generate schemas: Error: Cannot find module '@ohos/cangjie-build-support/index'
+Require stack:
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/src/plugin/hooks/cangjie-register.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/src/plugin/strategy/stage-init-strategy.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/src/plugin/builder/abstract-plugin-builder.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/src/plugin/builder/app-plugin-builder.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/src/plugin/factory/plugin-factory.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/index.js
+- /storage/Users/currentUser/workspace/warp-ohos/hap/hvigorfile.ts
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor/src/base/internal/lifecycle/configuration.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor/src/base/boot/index.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor/src/cli/main/cli.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor/bin/hvigor.js
+[2026-07-18T21:50:35.882] [DEBUG] debug-file - Project task initialization takes 9 ms 
+[2026-07-18T21:50:35.909] [DEBUG] debug-file - Start initialize module-target build option map, moduleName=entry, buildMode=debug
+[2026-07-18T21:50:35.941] [DEBUG] debug-file - hvigorfile, resolving /storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/hvigorfile.ts
+[2026-07-18T21:50:36.004] [DEBUG] debug-file - start to load updatedOhPackageInfo to the disk
+[2026-07-18T21:50:36.018] [DEBUG] debug-file - Start to initialize dependency information.
+[2026-07-18T21:50:33.705] [DEBUG] debug-file - env: hvigor-config.json5 content = {
+  modelVersion: '6.1.0',
+  dependencies: {},
+  execution: {},
+  logging: {},
+  debugging: {},
+  nodeOptions: {}
+}
+[2026-07-18T21:50:36.048] [DEBUG] debug-file - Executing task :entry:default@PreBuild
+[2026-07-18T21:50:34.123] [DEBUG] debug-file - Cache service initialization finished in 12 ms 
+[2026-07-18T21:50:35.581] [DEBUG] debug-file - hvigorfile, binding system plugins [Function: appTasks]
+[2026-07-18T21:50:35.583] [DEBUG] debug-file - App plugin prepare start...
+[2026-07-18T21:50:35.836] [DEBUG] debug-file - App plugin register hook end...
+[2026-07-18T21:50:35.839] [DEBUG] debug-file - Picking option from product 'default' with build mode 'debug'.
+[2026-07-18T21:50:35.862] [DEBUG] debug-file - /storage/Users/currentUser/workspace/warp-ohos/hap/build/cache/default/remote_hsp/remoteHspCache.json not exists.
+[2026-07-18T21:50:35.871] [DEBUG] debug-file - The file does not exist. At /data/app/sdk.org/sdk_1.0.0/default/openharmony/previewer/common/resources/module.json
+[2026-07-18T21:50:35.882] [DEBUG] debug-file - hvigorfile, begin to bind custom plugins...
+[2026-07-18T21:50:35.910] [DEBUG] debug-file - Target 'default' config initialized
+[2026-07-18T21:50:35.951] [DEBUG] debug-file - hvigorfile, require result:  { default: { system: [Function: harTasks], plugins: [] } }
+[2026-07-18T21:50:36.005] [DEBUG] debug-file - load to the disk finished
+[2026-07-18T21:50:36.024] [DEBUG] debug-file - Module entry Collected Dependency: /storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability,/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/src/main/cpp/types/libnative_ability
+[2026-07-18T21:50:33.709] [DEBUG] debug-file - env: daemon=false
+[2026-07-18T21:50:36.058] [DEBUG] debug-file - Task 'entry:default@PreBuild' cost while wrapping incremental declarations: 1 ms 
+[2026-07-18T21:50:34.126] [DEBUG] debug-file - hvigorfile, resolving /storage/Users/currentUser/workspace/warp-ohos/hap/hvigorfile.ts
+[2026-07-18T21:50:35.583] [DEBUG] debug-file - App plugin prepare end...
+[2026-07-18T21:50:35.836] [DEBUG] debug-file - Plugin build process completed
+[2026-07-18T21:50:35.840] [DEBUG] debug-file - Product 'default' build option initialized
+[2026-07-18T21:50:35.864] [DEBUG] debug-file - Local scan or download HarmonyOS sdk components toolchains,ets,js,native,previewer
+[2026-07-18T21:50:35.872] [DEBUG] debug-file - Sdk init in 9 ms 
+[2026-07-18T21:50:35.882] [DEBUG] debug-file - hvigorfile, no custom plugins were found in /storage/Users/currentUser/workspace/warp-ohos/hap/hvigorfile.ts
+[2026-07-18T21:50:35.911] [DEBUG] debug-file - Target 'ohosTest' config initialized
+[2026-07-18T21:50:35.951] [DEBUG] debug-file - hvigorfile, binding system plugins [Function: harTasks]
+[2026-07-18T21:50:36.006] [DEBUG] debug-file - Start to initialize dependency information.
+[2026-07-18T21:50:36.024] [DEBUG] debug-file - Module entry's total dependency: 2
+[2026-07-18T21:50:33.709] [DEBUG] debug-file - no-daemon, use the parent process.execArgv --max-old-space-size=8192,--max-semi-space-size=64,--min-semi-space-size=64,--expose-gc
+[2026-07-18T21:50:36.068] [DEBUG] debug-file - entry:default@PreBuild is not up-to-date, since the task snapshots are different.
+[2026-07-18T21:50:35.583] [DEBUG] debug-file - App plugin creating...
+[2026-07-18T21:50:35.840] [DEBUG] debug-file - End initialize project's product build option map with build mode 'debug'.
+[2026-07-18T21:50:35.868] [DEBUG] debug-file - Local scan or download hmscore sdk components toolchains,ets,native
+[2026-07-18T21:50:35.882] [DEBUG] debug-file - hvigorfile, resolve finished /storage/Users/currentUser/workspace/warp-ohos/hap/hvigorfile.ts
+[2026-07-18T21:50:35.911] [DEBUG] debug-file - Module 'entry' target 'default' build option initialized
+[2026-07-18T21:50:35.951] [DEBUG] debug-file - Starting plugin build process
+[2026-07-18T21:50:36.016] [DEBUG] debug-file - Module hap Collected Dependency: 
+[2026-07-18T21:50:36.032] [DEBUG] debug-file - Start to initialize dependency information.
+[2026-07-18T21:50:36.260] [DEBUG] debug-file - Executing task :native_ability:default@BuildNativeWithCmake
+[2026-07-18T21:50:36.265] [DEBUG] debug-file - Use tool [Cmake]
+ [
+  '/data/app/sdk.org/sdk_1.0.0/default/openharmony/native/build-tools/cmake/bin/cmake',
+  '-H/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/src/main/cpp',
+  '-B/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/.cxx/default/default/debug/arm64-v8a',
+  '-DOHOS_ARCH=arm64-v8a',
+  '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/build/default/intermediates/cmake/default/obj/arm64-v8a',
+  '-DCMAKE_BUILD_TYPE=Debug',
+  '-DOHOS_SDK_NATIVE=/data/app/sdk.org/sdk_1.0.0/default/openharmony/native',
+  '-DCMAKE_SYSTEM_NAME=OHOS',
+  '-DCMAKE_OHOS_ARCH_ABI=arm64-v8a',
+  '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON',
+  '-DCMAKE_TOOLCHAIN_FILE=/data/app/sdk.org/sdk_1.0.0/default/hms/native/build/cmake/hmos.toolchain.bisheng.cmake',
+  '-GNinja',
+  '-DCMAKE_MAKE_PROGRAM=/data/app/sdk.org/sdk_1.0.0/default/openharmony/native/build-tools/cmake/bin/ninja',
+  '-DCMAKE_FIND_ROOT_PATH=/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/.cxx/default/default/debug/hvigor/arm64-v8a',
+  '-DPACKAGE_FIND_FILE=/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/.cxx/default/default/debug/hvigor/arm64-v8a/summary.cmake',
+  '--no-warn-unused-cli',
+  '-DHMOS_SDK_NATIVE=/data/app/sdk.org/sdk_1.0.0/default/hms/native',
+  '-DOHOS_COMPATIBLE_SDK_VERSION=6.1.0(23)'
+]
+[2026-07-18T21:50:36.068] [DEBUG] debug-file - Incremental task entry:default@PreBuild pre-execution cost: 6 ms .
+[2026-07-18T21:50:35.883] [DEBUG] debug-file - hvigorfile, resolving /storage/Users/currentUser/workspace/warp-ohos/hap/entry/hvigorfile.ts
+[2026-07-18T21:50:35.911] [DEBUG] debug-file - Module 'entry' target 'ohosTest' build option initialized
+[2026-07-18T21:50:35.951] [DEBUG] debug-file - Har plugin creating...
+[2026-07-18T21:50:36.016] [DEBUG] debug-file - Module hap's total dependency: 0
+[2026-07-18T21:50:36.034] [DEBUG] debug-file - Module native_ability Collected Dependency: /storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/src/main/cpp/types/libnative_ability
+[2026-07-18T21:50:36.208] [WARN] debug-file - Missing module info for local modules '@ohos-rs/ability'. Check project-level build-profile.json5. 
+[2026-07-18T21:50:35.911] [DEBUG] debug-file - End initialize module-target build option map, moduleName=entry
+[2026-07-18T21:50:35.891] [DEBUG] debug-file - hvigorfile, require result:  { default: { system: [Function: hapTasks], plugins: [] } }
+[2026-07-18T21:50:36.034] [DEBUG] debug-file - Module native_ability's total dependency: 1
+[2026-07-18T21:50:35.952] [DEBUG] debug-file - failed to load cangjie to dynamically generate schemas: Error: Cannot find module '@ohos/cangjie-build-support/index'
+Require stack:
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/src/plugin/hooks/cangjie-register.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/src/plugin/strategy/stage-init-strategy.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/src/plugin/builder/abstract-plugin-builder.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/src/plugin/builder/app-plugin-builder.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/src/plugin/factory/plugin-factory.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/index.js
+- /storage/Users/currentUser/workspace/warp-ohos/hap/hvigorfile.ts
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor/src/base/internal/lifecycle/configuration.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor/src/base/boot/index.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor/src/cli/main/cli.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor/bin/hvigor.js
+[2026-07-18T21:50:36.208] [DEBUG] debug-file - current product is not Atomic service.
+[2026-07-18T21:50:35.911] [DEBUG] debug-file - Start initialize module-target build option map, moduleName=entry, buildMode=release
+[2026-07-18T21:50:35.891] [DEBUG] debug-file - hvigorfile, binding system plugins [Function: hapTasks]
+[2026-07-18T21:50:35.995] [DEBUG] debug-file - Start initialize module-target build option map, moduleName=native_ability, buildMode=debug
+[2026-07-18T21:50:36.036] [DEBUG] debug-file - Configuration phase cost:1 s 912 ms 
+[2026-07-18T21:50:36.209] [DEBUG] debug-file - Use tool [openharmony: JAVA_HOME, CLASSPATH]
+ [
+  { JAVA_HOME: 'root directory not existed' },
+  { CLASSPATH: undefined }
+]
+[2026-07-18T21:50:35.911] [DEBUG] debug-file - Target 'default' config initialized
+[2026-07-18T21:50:35.891] [DEBUG] debug-file - Starting plugin build process
+[2026-07-18T21:50:35.995] [DEBUG] debug-file - Target 'default' config initialized
+[2026-07-18T21:50:36.040] [DEBUG] debug-file - Configuration task cost before running: 1 s 946 ms 
+[2026-07-18T21:50:36.209] [DEBUG] debug-file - Use tool [openharmony: NODE_HOME]
+ [ { NODE_HOME: undefined } ]
+[2026-07-18T21:50:35.912] [DEBUG] debug-file - Target 'ohosTest' config initialized
+[2026-07-18T21:50:35.892] [DEBUG] debug-file - Hap plugin creating...
+[2026-07-18T21:50:35.995] [DEBUG] debug-file - Target 'ohosTest' config initialized
+[2026-07-18T21:50:36.210] [DEBUG] debug-file - entry : default@PreBuild cost memory 42.99720764160156
+[2026-07-18T21:50:35.912] [DEBUG] debug-file - Module 'entry' target 'default' build option initialized
+[2026-07-18T21:50:35.995] [DEBUG] debug-file - Module 'native_ability' target 'default' build option initialized
+[2026-07-18T21:50:36.210] [DEBUG] debug-file - runTaskFromQueue task cost before running: 2 s 115 ms 
+[2026-07-18T21:50:35.913] [DEBUG] debug-file - Module 'entry' target 'ohosTest' build option initialized
+[2026-07-18T21:50:35.996] [DEBUG] debug-file - Module 'native_ability' target 'ohosTest' build option initialized
+[2026-07-18T21:50:36.212] [INFO] debug-file - Finished :entry:default@PreBuild... after 163 ms 
+[2026-07-18T21:50:35.913] [DEBUG] debug-file - End initialize module-target build option map, moduleName=entry
+[2026-07-18T21:50:35.996] [DEBUG] debug-file - End initialize module-target build option map, moduleName=native_ability
+[2026-07-18T21:50:36.214] [DEBUG] debug-file - Executing task :native_ability:default@PreBuild
+[2026-07-18T21:50:35.913] [DEBUG] debug-file - Start initialize module-target build option map, moduleName=entry, buildMode=debug
+[2026-07-18T21:50:35.996] [DEBUG] debug-file - Start initialize module-target build option map, moduleName=native_ability, buildMode=release
+[2026-07-18T21:50:36.217] [DEBUG] debug-file - Task 'native_ability:default@PreBuild' cost while wrapping incremental declarations: 1 ms 
+[2026-07-18T21:50:35.913] [DEBUG] debug-file - Target 'default' config initialized
+[2026-07-18T21:50:35.996] [DEBUG] debug-file - Target 'default' config initialized
+[2026-07-18T21:50:36.222] [DEBUG] debug-file - Incremental task native_ability:default@PreBuild pre-execution cost: 5 ms .
+[2026-07-18T21:50:35.913] [DEBUG] debug-file - Target 'ohosTest' config initialized
+[2026-07-18T21:50:36.275] [DEBUG] debug-file - CMake configuration was up-to-date
+[2026-07-18T21:50:35.997] [DEBUG] debug-file - Target 'ohosTest' config initialized
+[2026-07-18T21:50:36.222] [DEBUG] debug-file - native_ability : default@PreBuild cost memory 0.9118728637695312
+[2026-07-18T21:50:35.913] [DEBUG] debug-file - Module 'entry' target 'default' build option initialized
+[2026-07-18T21:50:35.997] [DEBUG] debug-file - Module 'native_ability' target 'default' build option initialized
+[2026-07-18T21:50:36.223] [INFO] debug-file - UP-TO-DATE :native_ability:default@PreBuild...  
+[2026-07-18T21:50:35.913] [DEBUG] debug-file - Module 'entry' target 'ohosTest' build option initialized
+[2026-07-18T21:50:35.997] [DEBUG] debug-file - Module 'native_ability' target 'ohosTest' build option initialized
+[2026-07-18T21:50:36.225] [DEBUG] debug-file - Executing task :native_ability:default@ConfigureCmake
+[2026-07-18T21:50:35.913] [DEBUG] debug-file - End initialize module-target build option map, moduleName=entry
+[2026-07-18T21:50:36.258] [DEBUG] debug-file - native_ability : default@ConfigureCmake cost memory -52.084266662597656
+[2026-07-18T21:50:35.914] [DEBUG] debug-file - Obtain build option for module 'entry' target 'default'in this build.
+[2026-07-18T21:50:36.258] [DEBUG] debug-file - runTaskFromQueue task cost before running: 2 s 163 ms 
+[2026-07-18T21:50:35.939] [DEBUG] debug-file - Module entry task initialization takes 24 ms 
+[2026-07-18T21:50:35.997] [DEBUG] debug-file - End initialize module-target build option map, moduleName=native_ability
+[2026-07-18T21:50:36.258] [INFO] debug-file - Finished :native_ability:default@ConfigureCmake... after 34 ms 
+[2026-07-18T21:50:35.939] [DEBUG] debug-file - Hap plugin register hook start...
+[2026-07-18T21:50:35.997] [DEBUG] debug-file - Start initialize module-target build option map, moduleName=native_ability, buildMode=debug
+[2026-07-18T21:50:35.939] [DEBUG] debug-file - Hap plugin register hook end...
+[2026-07-18T21:50:35.997] [DEBUG] debug-file - Target 'default' config initialized
+[2026-07-18T21:50:35.939] [DEBUG] debug-file - Plugin build process completed
+[2026-07-18T21:50:35.997] [DEBUG] debug-file - Target 'ohosTest' config initialized
+[2026-07-18T21:50:35.939] [DEBUG] debug-file - hvigorfile, begin to bind custom plugins...
+[2026-07-18T21:50:35.997] [DEBUG] debug-file - Module 'native_ability' target 'default' build option initialized
+[2026-07-18T21:50:36.279] [DEBUG] debug-file - native_ability : default@BuildNativeWithCmake cost memory 0.8196258544921875
+[2026-07-18T21:50:35.939] [DEBUG] debug-file - hvigorfile, no custom plugins were found in /storage/Users/currentUser/workspace/warp-ohos/hap/entry/hvigorfile.ts
+[2026-07-18T21:50:35.997] [DEBUG] debug-file - Module 'native_ability' target 'ohosTest' build option initialized
+[2026-07-18T21:50:36.280] [DEBUG] debug-file - runTaskFromQueue task cost before running: 2 s 185 ms 
+[2026-07-18T21:50:35.939] [DEBUG] debug-file - hvigorfile, resolve finished /storage/Users/currentUser/workspace/warp-ohos/hap/entry/hvigorfile.ts
+[2026-07-18T21:50:35.997] [DEBUG] debug-file - End initialize module-target build option map, moduleName=native_ability
+[2026-07-18T21:50:36.280] [INFO] debug-file - Finished :native_ability:default@BuildNativeWithCmake... after 20 ms 
+[2026-07-18T21:50:35.997] [DEBUG] debug-file - Obtain build option for module 'native_ability' target 'default'in this build.
+[2026-07-18T21:50:36.281] [DEBUG] debug-file - Resolve native package @ohos-rs/ability.
+[2026-07-18T21:50:36.000] [DEBUG] debug-file - Module native_ability task initialization takes 3 ms 
+[2026-07-18T21:50:36.282] [DEBUG] debug-file - Executing task :entry:default@ConfigureCmake
+[2026-07-18T21:50:36.001] [DEBUG] debug-file - Har plugin register hook start...
+[2026-07-18T21:50:36.283] [DEBUG] debug-file - Local module ability, reading cmake code model in /storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/.cxx/default/default/debug/arm64-v8a.
+[2026-07-18T21:50:36.001] [DEBUG] debug-file - Har plugin register hook end...
+[2026-07-18T21:50:36.001] [DEBUG] debug-file - Plugin build process completed
+[2026-07-18T21:50:36.001] [DEBUG] debug-file - hvigorfile, begin to bind custom plugins...
+[2026-07-18T21:50:36.001] [DEBUG] debug-file - hvigorfile, no custom plugins were found in /storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/hvigorfile.ts
+[2026-07-18T21:50:36.001] [DEBUG] debug-file - hvigorfile, resolve finished /storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/hvigorfile.ts
+[2026-07-18T21:50:36.001] [DEBUG] debug-file - project has submodules:entry,native_ability
+[2026-07-18T21:50:36.002] [DEBUG] debug-file - module:native_ability no need to execute packageHap
+[2026-07-18T21:50:36.308] [DEBUG] debug-file - entry : default@ConfigureCmake cost memory -18.836631774902344
+[2026-07-18T21:50:36.308] [DEBUG] debug-file - runTaskFromQueue task cost before running: 2 s 214 ms 
+[2026-07-18T21:50:36.309] [INFO] debug-file - Finished :entry:default@ConfigureCmake... after 27 ms 
+[2026-07-18T21:50:36.309] [DEBUG] debug-file - Executing task :entry:default@BuildNativeWithCmake
+[2026-07-18T21:50:36.310] [DEBUG] debug-file - Use tool [Cmake]
+ [
+  '/data/app/sdk.org/sdk_1.0.0/default/openharmony/native/build-tools/cmake/bin/cmake',
+  '-H/storage/Users/currentUser/workspace/warp-ohos/hap/entry/src/main/cpp',
+  '-B/storage/Users/currentUser/workspace/warp-ohos/hap/entry/.cxx/default/default/debug/arm64-v8a',
+  '-DOHOS_ARCH=arm64-v8a',
+  '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=/storage/Users/currentUser/workspace/warp-ohos/hap/entry/build/default/intermediates/cmake/default/obj/arm64-v8a',
+  '-DCMAKE_BUILD_TYPE=Debug',
+  '-DOHOS_SDK_NATIVE=/data/app/sdk.org/sdk_1.0.0/default/openharmony/native',
+  '-DCMAKE_SYSTEM_NAME=OHOS',
+  '-DCMAKE_OHOS_ARCH_ABI=arm64-v8a',
+  '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON',
+  '-DCMAKE_TOOLCHAIN_FILE=/data/app/sdk.org/sdk_1.0.0/default/hms/native/build/cmake/hmos.toolchain.bisheng.cmake',
+  '-GNinja',
+  '-DCMAKE_MAKE_PROGRAM=/data/app/sdk.org/sdk_1.0.0/default/openharmony/native/build-tools/cmake/bin/ninja',
+  '-DCMAKE_FIND_ROOT_PATH=/storage/Users/currentUser/workspace/warp-ohos/hap/entry/.cxx/default/default/debug/hvigor/arm64-v8a',
+  '-DPACKAGE_FIND_FILE=/storage/Users/currentUser/workspace/warp-ohos/hap/entry/.cxx/default/default/debug/hvigor/arm64-v8a/summary.cmake',
+  '--no-warn-unused-cli',
+  '-DHMOS_SDK_NATIVE=/data/app/sdk.org/sdk_1.0.0/default/hms/native',
+  '-DOHOS_COMPATIBLE_SDK_VERSION=6.1.0(23)'
+]
+[2026-07-18T21:50:36.316] [DEBUG] debug-file - CMake configuration was up-to-date
+[2026-07-18T21:50:36.319] [DEBUG] debug-file - entry : default@BuildNativeWithCmake cost memory 0.283355712890625
+[2026-07-18T21:50:36.319] [DEBUG] debug-file - runTaskFromQueue task cost before running: 2 s 225 ms 
+[2026-07-18T21:50:36.341] [DEBUG] debug-file - Create  resident worker with id: 0.
+[2026-07-18T21:50:36.320] [INFO] debug-file - Finished :entry:default@BuildNativeWithCmake... after 10 ms 
+[2026-07-18T21:50:36.345] [DEBUG] debug-file - Create  resident worker with id: 1.
+[2026-07-18T21:50:36.320] [DEBUG] debug-file - Executing task :entry:compileNative
+[2026-07-18T21:50:36.348] [DEBUG] debug-file - Current worker pool is stopped or closed.
+[2026-07-18T21:50:36.320] [DEBUG] debug-file - entry : compileNative cost memory 0.01084136962890625
+[2026-07-18T21:50:36.349] [DEBUG] debug-file - Clear worker 0.
+[2026-07-18T21:50:36.321] [DEBUG] debug-file - runTaskFromQueue task cost before running: 2 s 226 ms 
+[2026-07-18T21:50:36.349] [DEBUG] debug-file - Worker 0 has been cleared.
+[2026-07-18T21:50:36.321] [INFO] debug-file - Finished :entry:compileNative... after 1 ms 
+[2026-07-18T21:50:36.349] [DEBUG] debug-file - Current idle worker size: 1.
+[2026-07-18T21:50:36.323] [INFO] debug-file - BUILD SUCCESSFUL in 2 s 228 ms 
+[2026-07-18T21:50:36.349] [DEBUG] debug-file - Current busy worker size: 0.
+[2026-07-18T21:50:36.325] [DEBUG] debug-file - Update task entry:default@PreBuild input file:/storage/Users/currentUser/workspace/warp-ohos/hap/AppScope/app.json5 cache by regenerate.
+[2026-07-18T21:50:36.349] [DEBUG] debug-file - Clear worker 1.
+[2026-07-18T21:50:36.325] [DEBUG] debug-file - Update task entry:default@PreBuild input file:/storage/Users/currentUser/workspace/warp-ohos/hap/entry/src/main/module.json5 cache by regenerate.
+[2026-07-18T21:50:36.349] [DEBUG] debug-file - Worker 1 has been cleared.
+[2026-07-18T21:50:36.325] [DEBUG] debug-file - Update task entry:default@PreBuild input file:/storage/Users/currentUser/workspace/warp-ohos/hap/build-profile.json5 cache by regenerate.
+[2026-07-18T21:50:36.349] [DEBUG] debug-file - Current idle worker size: 0.
+[2026-07-18T21:50:36.325] [DEBUG] debug-file - Update task entry:default@PreBuild input file:/storage/Users/currentUser/workspace/warp-ohos/hap/entry/build-profile.json5 cache by regenerate.
+[2026-07-18T21:50:36.349] [DEBUG] debug-file - Current busy worker size: 0.
+[2026-07-18T21:50:36.325] [DEBUG] debug-file - Update task entry:default@PreBuild input file:/storage/Users/currentUser/workspace/warp-ohos/hap/entry/src/main/resources/base/profile/main_pages.json cache by regenerate.
+[2026-07-18T21:50:36.351] [DEBUG] debug-file - hvigor build process will be closed.
+[2026-07-18T21:50:36.325] [DEBUG] debug-file - Update task entry:default@PreBuild input file:/storage/Users/currentUser/workspace/warp-ohos/hap/hvigor/hvigor-config.json5 cache by regenerate.
+[2026-07-18T21:50:36.326] [DEBUG] debug-file - Update task entry:default@PreBuild input file:/storage/Users/currentUser/workspace/warp-ohos/hap/entry/oh-package.json5 cache by regenerate.
+[2026-07-18T21:50:36.326] [DEBUG] debug-file - Update task entry:default@PreBuild input file:/storage/Users/currentUser/workspace/warp-ohos/hap/oh-package.json5 cache by regenerate.
+[2026-07-18T21:50:36.326] [DEBUG] debug-file - Incremental task entry:default@PreBuild post-execution cost:2 ms .
+[2026-07-18T21:50:36.326] [DEBUG] debug-file - There is no need to refresh cache, since the incremental task native_ability:default@PreBuild is up-to-date.
+[2026-07-18T21:50:36.339] [DEBUG] debug-file - Since there is no instance or instance is terminated, create a new worker pool.
+[2026-07-18T21:50:36.339] [DEBUG] debug-file - Worker pool is initialized with config:  {
+  minPoolNum: 2,
+  maxPoolNum: undefined,
+  maxCoreSize: undefined,
+  cacheCapacity: undefined,
+  cacheTtl: undefined
+}
+[2026-07-18T21:50:36.371] [DEBUG] debug-file - worker[0] exits with exit code 0.
+[2026-07-18T21:50:36.373] [DEBUG] debug-file - worker[1] exits with exit code 0.
+[2026-07-18T21:50:36.374] [DEBUG] debug-file - Current worker pool is terminated.
+[2026-07-18T21:50:48.162] [DEBUG] debug-file - env: nodejsVersion=v22.7.0
+[2026-07-18T21:50:48.211] [DEBUG] debug-file - env: daemon=true
+[2026-07-18T21:50:48.164] [DEBUG] debug-file - env: hvigor-config.json5 content = {
+  modelVersion: '6.1.0',
+  dependencies: {},
+  execution: {},
+  logging: {},
+  debugging: {},
+  nodeOptions: {}
+}
+[2026-07-18T21:50:48.955] [DEBUG] debug-file - session manager: set active socket. socketId=yi3sKHZrW6eDCSjzAAAB
+[2026-07-18T21:50:49.708] [DEBUG] debug-file - watch worker: worker id should be larger than 0. Nothing will be sent to any worker thread.
+[2026-07-18T21:50:49.716] [DEBUG] debug-file - Since there is no instance or instance is terminated, create a new worker pool.
+[2026-07-18T21:50:49.717] [DEBUG] debug-file - Worker pool is initialized with config:  {
+  minPoolNum: 2,
+  maxPoolNum: undefined,
+  maxCoreSize: undefined,
+  cacheCapacity: undefined,
+  cacheTtl: undefined
+}
+[2026-07-18T21:50:49.718] [DEBUG] debug-file - Create  resident worker with id: 0.
+[2026-07-18T21:50:49.723] [DEBUG] debug-file - Create  resident worker with id: 1.
+[2026-07-18T21:50:49.726] [DEBUG] debug-file - Workers' log level updated to INFO
+[2026-07-18T21:50:49.746] [DEBUG] debug-file - Hvigor init with startParameters:{
+  hvigorfileTypeCheck: false,
+  parallelExecution: true,
+  incrementalExecution: true,
+  printStackTrace: false,
+  daemon: true,
+  analyze: 0,
+  logLevel: Level { level: 20000, levelStr: 'INFO', colour: 'green' },
+  optimizationStrategy: 'memory',
+  hotCompile: undefined,
+  hotReloadBuild: undefined,
+  customizedParam: undefined
+}
+[2026-07-18T21:50:49.761] [DEBUG] debug-file - Cache service initialization finished in 14 ms 
+[2026-07-18T21:50:49.765] [DEBUG] debug-file - hvigorfile, resolving /storage/Users/currentUser/workspace/warp-ohos/hap/hvigorfile.ts
+[2026-07-18T21:50:51.257] [DEBUG] debug-file - hvigorfile, require result:  { default: { plugins: [] } }
+[2026-07-18T21:50:51.258] [DEBUG] debug-file - hvigorfile, binding system plugins null
+[2026-07-18T21:50:51.258] [DEBUG] debug-file - Starting plugin build process
+[2026-07-18T21:50:51.259] [DEBUG] debug-file - App plugin prepare start...
+[2026-07-18T21:50:51.259] [DEBUG] debug-file - App plugin prepare end...
+[2026-07-18T21:50:51.259] [DEBUG] debug-file - App plugin creating...
+[2026-07-18T21:50:51.526] [DEBUG] debug-file - App plugin register hook start...
+[2026-07-18T21:50:51.527] [DEBUG] debug-file - App plugin register hook end...
+[2026-07-18T21:50:51.527] [DEBUG] debug-file - Plugin build process completed
+[2026-07-18T21:50:51.528] [DEBUG] debug-file - Start initialize project's product build option map with build mode debug.
+[2026-07-18T21:50:51.529] [DEBUG] debug-file - Picking option from product 'default' with build mode 'debug'.
+[2026-07-18T21:50:51.530] [DEBUG] debug-file - Product 'default' build option initialized
+[2026-07-18T21:50:51.530] [DEBUG] debug-file - End initialize project's product build option map with build mode 'debug'.
+[2026-07-18T21:50:51.533] [DEBUG] debug-file - Obtain build option for product 'default'in this build.
+[2026-07-18T21:50:51.551] [DEBUG] debug-file - /storage/Users/currentUser/workspace/warp-ohos/hap/build/cache/default/remote_hsp/remoteHspCache.json not exists.
+[2026-07-18T21:50:51.555] [DEBUG] debug-file - Local scan or download HarmonyOS sdk components toolchains,ets,js,native,previewer
+[2026-07-18T21:50:51.559] [DEBUG] debug-file - Local scan or download hmscore sdk components toolchains,ets,native
+[2026-07-18T21:50:51.561] [DEBUG] debug-file - Start recording SDK configuration permission data.
+[2026-07-18T21:50:51.561] [DEBUG] debug-file - The file does not exist. At /data/app/sdk.org/sdk_1.0.0/default/openharmony/previewer/common/resources/module.json
+[2026-07-18T21:50:51.562] [DEBUG] debug-file - Sdk init in 9 ms 
+[2026-07-18T21:50:51.570] [DEBUG] debug-file - Project task initialization takes 7 ms 
+[2026-07-18T21:50:51.570] [DEBUG] debug-file - hvigorfile, begin to bind custom plugins...
+[2026-07-18T21:50:51.570] [DEBUG] debug-file - hvigorfile, no custom plugins were found in /storage/Users/currentUser/workspace/warp-ohos/hap/hvigorfile.ts
+[2026-07-18T21:50:51.570] [DEBUG] debug-file - hvigorfile, resolve finished /storage/Users/currentUser/workspace/warp-ohos/hap/hvigorfile.ts
+[2026-07-18T21:50:51.571] [DEBUG] debug-file - hvigorfile, resolving /storage/Users/currentUser/workspace/warp-ohos/hap/entry/hvigorfile.ts
+[2026-07-18T21:50:51.580] [DEBUG] debug-file - hvigorfile, require result:  { default: { plugins: [] } }
+[2026-07-18T21:50:51.581] [DEBUG] debug-file - hvigorfile, binding system plugins null
+[2026-07-18T21:50:51.581] [DEBUG] debug-file - Starting plugin build process
+[2026-07-18T21:50:51.581] [DEBUG] debug-file - Hap plugin creating...
+[2026-07-18T21:50:51.582] [DEBUG] debug-file - failed to load cangjie to dynamically generate schemas: Error: Cannot find module '@ohos/cangjie-build-support/index'
+Require stack:
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/src/plugin/hooks/cangjie-register.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/src/plugin/strategy/stage-init-strategy.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/src/plugin/builder/abstract-plugin-builder.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/src/plugin/builder/app-plugin-builder.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/src/plugin/factory/plugin-factory.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/index.js
+- /storage/Users/currentUser/workspace/warp-ohos/hap/hvigorfile.ts
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor/src/base/internal/lifecycle/configuration.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor/src/base/boot/index.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor/src/base/daemon/cluster/worker-process-lifecycle.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor/src/base/daemon/process/daemon-process-boot-script.js
+[2026-07-18T21:50:51.598] [DEBUG] debug-file - Start initialize module-target build option map, moduleName=entry, buildMode=debug
+[2026-07-18T21:50:51.599] [DEBUG] debug-file - Target 'default' config initialized
+[2026-07-18T21:50:51.600] [DEBUG] debug-file - Target 'ohosTest' config initialized
+[2026-07-18T21:50:51.600] [DEBUG] debug-file - Module 'entry' target 'default' build option initialized
+[2026-07-18T21:50:51.601] [DEBUG] debug-file - Module 'entry' target 'ohosTest' build option initialized
+[2026-07-18T21:50:51.601] [DEBUG] debug-file - End initialize module-target build option map, moduleName=entry
+[2026-07-18T21:50:51.601] [DEBUG] debug-file - Start initialize module-target build option map, moduleName=entry, buildMode=release
+[2026-07-18T21:50:51.601] [DEBUG] debug-file - Target 'default' config initialized
+[2026-07-18T21:50:51.602] [DEBUG] debug-file - Target 'ohosTest' config initialized
+[2026-07-18T21:50:51.602] [DEBUG] debug-file - Module 'entry' target 'default' build option initialized
+[2026-07-18T21:50:51.602] [DEBUG] debug-file - Module 'entry' target 'ohosTest' build option initialized
+[2026-07-18T21:50:51.602] [DEBUG] debug-file - End initialize module-target build option map, moduleName=entry
+[2026-07-18T21:50:51.602] [DEBUG] debug-file - Start initialize module-target build option map, moduleName=entry, buildMode=debug
+[2026-07-18T21:50:51.602] [DEBUG] debug-file - Target 'default' config initialized
+[2026-07-18T21:50:51.603] [DEBUG] debug-file - Target 'ohosTest' config initialized
+[2026-07-18T21:50:51.603] [DEBUG] debug-file - Module 'entry' target 'default' build option initialized
+[2026-07-18T21:50:51.603] [DEBUG] debug-file - Module 'entry' target 'ohosTest' build option initialized
+[2026-07-18T21:50:51.603] [DEBUG] debug-file - End initialize module-target build option map, moduleName=entry
+[2026-07-18T21:50:51.603] [DEBUG] debug-file - Obtain build option for module 'entry' target 'default'in this build.
+[2026-07-18T21:50:51.614] [DEBUG] debug-file - Module entry task initialization takes 10 ms 
+[2026-07-18T21:50:51.614] [DEBUG] debug-file - Hap plugin register hook start...
+[2026-07-18T21:50:51.614] [DEBUG] debug-file - Hap plugin register hook end...
+[2026-07-18T21:50:51.614] [DEBUG] debug-file - Plugin build process completed
+[2026-07-18T21:50:51.614] [DEBUG] debug-file - hvigorfile, begin to bind custom plugins...
+[2026-07-18T21:50:51.614] [DEBUG] debug-file - hvigorfile, no custom plugins were found in /storage/Users/currentUser/workspace/warp-ohos/hap/entry/hvigorfile.ts
+[2026-07-18T21:50:51.614] [DEBUG] debug-file - hvigorfile, resolve finished /storage/Users/currentUser/workspace/warp-ohos/hap/entry/hvigorfile.ts
+[2026-07-18T21:50:51.615] [DEBUG] debug-file - hvigorfile, resolving /storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/hvigorfile.ts
+[2026-07-18T21:50:51.626] [DEBUG] debug-file - hvigorfile, require result:  { default: { plugins: [] } }
+[2026-07-18T21:50:51.626] [DEBUG] debug-file - hvigorfile, binding system plugins null
+[2026-07-18T21:50:51.626] [DEBUG] debug-file - Starting plugin build process
+[2026-07-18T21:50:51.626] [DEBUG] debug-file - Har plugin creating...
+[2026-07-18T21:50:51.627] [DEBUG] debug-file - failed to load cangjie to dynamically generate schemas: Error: Cannot find module '@ohos/cangjie-build-support/index'
+Require stack:
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/src/plugin/hooks/cangjie-register.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/src/plugin/strategy/stage-init-strategy.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/src/plugin/builder/abstract-plugin-builder.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/src/plugin/builder/app-plugin-builder.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/src/plugin/factory/plugin-factory.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor-ohos-plugin/index.js
+- /storage/Users/currentUser/workspace/warp-ohos/hap/hvigorfile.ts
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor/src/base/internal/lifecycle/configuration.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor/src/base/boot/index.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor/src/base/daemon/cluster/worker-process-lifecycle.js
+- /data/app/hvigor.org/hvigor_1.0.0/hvigor/src/base/daemon/process/daemon-process-boot-script.js
+[2026-07-18T21:50:51.687] [DEBUG] debug-file - Start initialize module-target build option map, moduleName=native_ability, buildMode=debug
+[2026-07-18T21:50:51.687] [DEBUG] debug-file - Target 'default' config initialized
+[2026-07-18T21:50:51.688] [DEBUG] debug-file - Target 'ohosTest' config initialized
+[2026-07-18T21:50:51.688] [DEBUG] debug-file - Module 'native_ability' target 'default' build option initialized
+[2026-07-18T21:50:51.688] [DEBUG] debug-file - Module 'native_ability' target 'ohosTest' build option initialized
+[2026-07-18T21:50:51.688] [DEBUG] debug-file - End initialize module-target build option map, moduleName=native_ability
+[2026-07-18T21:50:51.688] [DEBUG] debug-file - Start initialize module-target build option map, moduleName=native_ability, buildMode=release
+[2026-07-18T21:50:51.688] [DEBUG] debug-file - Target 'default' config initialized
+[2026-07-18T21:50:51.690] [DEBUG] debug-file - Target 'ohosTest' config initialized
+[2026-07-18T21:50:51.690] [DEBUG] debug-file - Module 'native_ability' target 'default' build option initialized
+[2026-07-18T21:50:51.690] [DEBUG] debug-file - Module 'native_ability' target 'ohosTest' build option initialized
+[2026-07-18T21:50:51.690] [DEBUG] debug-file - End initialize module-target build option map, moduleName=native_ability
+[2026-07-18T21:50:51.690] [DEBUG] debug-file - Start initialize module-target build option map, moduleName=native_ability, buildMode=debug
+[2026-07-18T21:50:51.690] [DEBUG] debug-file - Target 'default' config initialized
+[2026-07-18T21:50:51.691] [DEBUG] debug-file - Target 'ohosTest' config initialized
+[2026-07-18T21:50:51.691] [DEBUG] debug-file - Module 'native_ability' target 'default' build option initialized
+[2026-07-18T21:50:51.691] [DEBUG] debug-file - Module 'native_ability' target 'ohosTest' build option initialized
+[2026-07-18T21:50:51.691] [DEBUG] debug-file - End initialize module-target build option map, moduleName=native_ability
+[2026-07-18T21:50:51.691] [DEBUG] debug-file - Obtain build option for module 'native_ability' target 'default'in this build.
+[2026-07-18T21:50:51.695] [DEBUG] debug-file - Module native_ability task initialization takes 4 ms 
+[2026-07-18T21:50:51.695] [DEBUG] debug-file - Har plugin register hook start...
+[2026-07-18T21:50:51.695] [DEBUG] debug-file - Har plugin register hook end...
+[2026-07-18T21:50:51.695] [DEBUG] debug-file - Plugin build process completed
+[2026-07-18T21:50:51.695] [DEBUG] debug-file - hvigorfile, begin to bind custom plugins...
+[2026-07-18T21:50:51.695] [DEBUG] debug-file - hvigorfile, no custom plugins were found in /storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/hvigorfile.ts
+[2026-07-18T21:50:51.695] [DEBUG] debug-file - hvigorfile, resolve finished /storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/hvigorfile.ts
+[2026-07-18T21:50:51.720] [DEBUG] debug-file - hvigorfile, resolve hvigorfile dependencies in 25 ms 
+[2026-07-18T21:50:51.720] [DEBUG] debug-file - project has submodules:entry,native_ability
+[2026-07-18T21:50:51.721] [DEBUG] debug-file - module:native_ability no need to execute packageHap
+[2026-07-18T21:50:51.722] [DEBUG] debug-file - Start to initialize dependency information.
+[2026-07-18T21:50:51.733] [DEBUG] debug-file - Module hap Collected Dependency: 
+[2026-07-18T21:50:51.733] [DEBUG] debug-file - Module hap's total dependency: 0
+[2026-07-18T21:50:51.736] [DEBUG] debug-file - Start to initialize dependency information.
+[2026-07-18T21:50:51.743] [DEBUG] debug-file - Module entry Collected Dependency: /storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability,/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/src/main/cpp/types/libnative_ability
+[2026-07-18T21:50:51.743] [DEBUG] debug-file - Module entry's total dependency: 2
+[2026-07-18T21:50:51.751] [DEBUG] debug-file - Start to initialize dependency information.
+[2026-07-18T21:50:51.753] [DEBUG] debug-file - Module native_ability Collected Dependency: /storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/src/main/cpp/types/libnative_ability
+[2026-07-18T21:50:51.753] [DEBUG] debug-file - Module native_ability's total dependency: 1
+[2026-07-18T21:50:51.755] [DEBUG] debug-file - Configuration phase cost:1 s 994 ms 
+[2026-07-18T21:50:51.760] [DEBUG] debug-file - Configuration task cost before running: 2 s 33 ms 
+[2026-07-18T21:50:51.761] [DEBUG] debug-file - Executing task :entry:clean
+[2026-07-18T21:50:51.762] [DEBUG] debug-file - clean: Worker pool is inactive.
+[2026-07-18T21:50:52.009] [DEBUG] debug-file - ninja: Entering directory `/storage/Users/currentUser/workspace/warp-ohos/hap/entry/.cxx/default/default/debug/arm64-v8a'
+[1/1] Cleaning all built files...
+Cleaning... 135 files.
+
+[2026-07-18T21:50:52.278] [DEBUG] debug-file - entry : clean cost memory 0.808563232421875
+[2026-07-18T21:50:52.278] [DEBUG] debug-file - runTaskFromQueue task cost before running: 2 s 552 ms 
+[2026-07-18T21:50:52.279] [INFO] debug-file - Finished :entry:clean... after 518 ms 
+[2026-07-18T21:50:52.280] [DEBUG] debug-file - Executing task :native_ability:clean
+[2026-07-18T21:50:52.280] [DEBUG] debug-file - clean: Worker pool is inactive.
+[2026-07-18T21:50:52.350] [DEBUG] debug-file - ninja: Entering directory `/storage/Users/currentUser/workspace/warp-ohos/depends/openharmony-ability/native_ability/.cxx/default/default/debug/arm64-v8a'
+[1/1] Cleaning all built files...
+Cleaning... 2 files.
+
+[2026-07-18T21:50:52.387] [DEBUG] debug-file - native_ability : clean cost memory 0.16887664794921875
+[2026-07-18T21:50:52.387] [DEBUG] debug-file - runTaskFromQueue task cost before running: 2 s 660 ms 
+[2026-07-18T21:50:52.387] [INFO] debug-file - Finished :native_ability:clean... after 107 ms 
+[2026-07-18T21:50:52.388] [DEBUG] debug-file - Executing task ::clean
+[2026-07-18T21:50:52.388] [DEBUG] debug-file - clean: Worker pool is inactive.
+[2026-07-18T21:50:52.389] [DEBUG] debug-file - hap : clean cost memory 0.034515380859375
+[2026-07-18T21:50:52.389] [DEBUG] debug-file - runTaskFromQueue task cost before running: 2 s 662 ms 
+[2026-07-18T21:50:52.389] [INFO] debug-file - Finished ::clean... after 2 ms 
+[2026-07-18T21:50:52.392] [INFO] debug-file - BUILD SUCCESSFUL in 2 s 666 ms 
+[2026-07-18T21:50:52.415] [DEBUG] debug-file - Cleanup worker 0.
+[2026-07-18T21:50:52.415] [DEBUG] debug-file - Worker 0 has been cleaned up.
+[2026-07-18T21:50:52.415] [DEBUG] debug-file - Current idle worker size: 1.
+[2026-07-18T21:50:52.415] [DEBUG] debug-file - Current resident worker size: 2.
+[2026-07-18T21:50:52.415] [DEBUG] debug-file - Cleanup worker 1.
+[2026-07-18T21:50:52.415] [DEBUG] debug-file - Worker 1 has been cleaned up.
+[2026-07-18T21:50:52.416] [DEBUG] debug-file - Current idle worker size: 0.
+[2026-07-18T21:50:52.416] [DEBUG] debug-file - Current resident worker size: 2.
+[2026-07-18T21:50:52.419] [DEBUG] debug-file - session manager: send message to worker process.
+[2026-07-18T21:50:52.419] [DEBUG] debug-file - session manager: send message to worker process.
+[2026-07-18T21:50:52.420] [DEBUG] debug-file - hvigor build process will be closed.
+[2026-07-18T21:50:52.441] [DEBUG] debug-file - worker[0] exits with exit code 1.
+[2026-07-18T21:50:52.442] [DEBUG] debug-file - worker[1] exits with exit code 1.
+[2026-07-18T21:50:52.444] [DEBUG] debug-file - watch worker: worker id should be larger than 0. Nothing will be sent to any worker thread.
+[2026-07-18T21:50:52.444] [DEBUG] debug-file - watch worker: worker id should be larger than 0. Nothing will be sent to any worker thread.

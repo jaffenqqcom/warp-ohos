@@ -4,157 +4,26 @@
       {
         "MODULE_NAME": "923fe53966c6cd9343e11af776cd4b05be315ea4b200b02e4d5dfb0f929b73bf",
         "API_TYPE": "stageMode",
-        "INCLUDE_IN_BUILD": true,
-        "IS_COMMAND_LINE_ENTRY_MODULE": true,
-        "BUILD_OPTION": [
-          {
-            "path": "debuggable",
-            "traceValue": true,
-            "value": true
-          },
-          {
-            "path": "copyFrom",
-            "traceValue": false,
-            "value": ""
-          },
-          {
-            "path": "strictMode",
-            "traceValue": false,
-            "value": ""
-          },
-          {
-            "path": "strictMode.caseSensitiveCheck",
-            "traceValue": true,
-            "value": true
-          },
-          {
-            "path": "strictMode.useNormalizedOHMUrl",
-            "traceValue": true,
-            "value": true
-          },
-          {
-            "path": "externalNativeOptions",
-            "traceValue": false,
-            "value": ""
-          },
-          {
-            "path": "externalNativeOptions.path",
-            "traceValue": false,
-            "value": ""
-          },
-          {
-            "path": "externalNativeOptions.abiFilters",
-            "traceValue": true,
-            "value": [
-              "arm64-v8a"
-            ]
-          },
-          {
-            "path": "resOptions",
-            "traceValue": false,
-            "value": ""
-          },
-          {
-            "path": "resOptions.copyCodeResource",
-            "traceValue": false,
-            "value": ""
-          },
-          {
-            "path": "resOptions.copyCodeResource.enable",
-            "traceValue": true,
-            "value": false
-          },
-          {
-            "path": "arkOptions",
-            "traceValue": false,
-            "value": ""
-          },
-          {
-            "path": "arkOptions.obfuscation",
-            "traceValue": false,
-            "value": ""
-          },
-          {
-            "path": "arkOptions.obfuscation.ruleOptions",
-            "traceValue": false,
-            "value": ""
-          },
-          {
-            "path": "arkOptions.obfuscation.ruleOptions.enable",
-            "traceValue": true,
-            "value": false
-          }
-        ],
+        "INCLUDE_IN_BUILD": false,
+        "IS_COMMAND_LINE_ENTRY_MODULE": false,
+        "BUILD_OPTION": [],
         "PACKAGE_JSON": [],
-        "MODULE_TYPE": "entry",
-        "INCREMENTAL_TASKS": {
-          "BUILD_NATIVE_WITH_CMAKE": true
-        },
-        "IS_INCREMENTAL_MODULE": true
+        "IS_INCREMENTAL_MODULE": false
       },
       {
         "MODULE_NAME": "d7b126637ee7d0595a37b04c212d335efdaec3202965da51a9b729ff5e328b8c",
         "API_TYPE": "stageMode",
-        "INCLUDE_IN_BUILD": true,
+        "INCLUDE_IN_BUILD": false,
         "IS_COMMAND_LINE_ENTRY_MODULE": false,
-        "BUILD_OPTION": [
-          {
-            "path": "debuggable",
-            "traceValue": true,
-            "value": true
-          },
-          {
-            "path": "copyFrom",
-            "traceValue": false,
-            "value": ""
-          },
-          {
-            "path": "strictMode",
-            "traceValue": false,
-            "value": ""
-          },
-          {
-            "path": "strictMode.caseSensitiveCheck",
-            "traceValue": true,
-            "value": true
-          },
-          {
-            "path": "strictMode.useNormalizedOHMUrl",
-            "traceValue": true,
-            "value": true
-          },
-          {
-            "path": "externalNativeOptions",
-            "traceValue": false,
-            "value": ""
-          },
-          {
-            "path": "externalNativeOptions.path",
-            "traceValue": false,
-            "value": ""
-          },
-          {
-            "path": "externalNativeOptions.abiFilters",
-            "traceValue": true,
-            "value": [
-              "arm64-v8a"
-            ]
-          }
-        ],
+        "BUILD_OPTION": [],
         "PACKAGE_JSON": [],
-        "MODULE_TYPE": "har",
-        "IS_BYTE_CODE_HAR": true,
-        "INCREMENTAL_TASKS": {
-          "BUILD_NATIVE_WITH_CMAKE": true
-        },
-        "IS_INCREMENTAL_MODULE": true
+        "IS_INCREMENTAL_MODULE": false
       }
     ],
     "NATIVE_COMPILER": "Default",
-    "IS_FULL_BUILD": false,
+    "IS_FULL_BUILD": true,
     "PACKAGE_JSON": [],
-    "BUILD_MODE": "debug",
-    "USE_NORMALIZED_OHMURL": true
+    "BUILD_MODE": "debug"
   },
   "HVIGOR": {
     "IS_INCREMENTAL": true,
@@ -165,40 +34,24 @@
     "BUILD_ANALYSIS_MODE": "normal",
     "TASK_TIME": {
       "923fe53966c6cd9343e11af776cd4b05be315ea4b200b02e4d5dfb0f929b73bf": {
-        "PreBuild": 196537656,
-        "CreateModuleInfo": 803125,
-        "PreCheckSyscap": 384844,
-        "GeneratePkgSdkInfo": 2040157,
-        "ProcessIntegratedHsp": 1049062,
-        "SyscapTransform": 1638281,
-        "ConfigureCmake": 13377969,
-        "BuildNativeWithCmake": 9825312,
-        "ProcessStartupConfig": 2480000,
-        "BuildJS": 2505469,
-        "BuildNativeWithNinja": 110304375,
-        "ProcessCompiledResources": 769844,
-        "PackingCheck": 4831563,
-        "CollectDebugSymbol": 1334218,
-        "assembleHap": 373281
+        "clean": 517715938
       },
       "d7b126637ee7d0595a37b04c212d335efdaec3202965da51a9b729ff5e328b8c": {
-        "PreBuild": 51147969,
-        "ConfigureCmake": 1059844,
-        "BuildNativeWithCmake": 7821250,
-        "BuildNativeWithNinja": 148660782
+        "clean": 107288750
+      },
+      "APP": {
+        "clean": 1519688
       }
     },
     "CUSTOM_TASK_TIME": {},
     "CUSTOM_PLUGIN_TIME": {},
-    "APIS": [
-      "getProperty"
-    ],
+    "APIS": [],
     "CONFIG_EXPERIMENT": {
       "ENABLE_MODULE_SKIP": false,
       "ENABLE_CPP_FUNCTION_LEVEL_INCREMENTAL": false
     },
     "CONFIG_PROPERTIES": {},
-    "TOTAL_TIME": 815320000,
-    "BUILD_ID": "202607182040174560"
+    "BUILD_ID": "202607182150497260",
+    "TOTAL_TIME": 2665085312
   }
 }
