@@ -360,7 +360,7 @@ echo ""
 
 run "warp"                do_git_archive "$BASE_DIR/warp"                "https://github.com/warpdotdev/warp"                "v0.2026.06.03.09.49.stable_00"             "warp"                "warp/00-tracked.patch" "warp/01-new-files.patch"
 run "winit"               do_git_archive "$DEPS_DIR/winit"               "https://github.com/warpdotdev/winit"               "a4e0ecb5f9626ccac9445a73dc28354b52423abc" "winit"               "winit/00-tracked.patch" "winit/01-new-files.patch"
-run "wgpu"                do_git_archive "$DEPS_DIR/wgpu"                "https://github.com/gfx-rs/wgpu"                    "v29.0.1"            "wgpu"                "wgpu/00-tracked.patch" "wgpu/01-new-files.patch"
+run "wgpu"                do_git_archive "$DEPS_DIR/wgpu"                "https://github.com/zed-industries/wgpu"             "357a0c56e0070480ad9daea5d2eaa83150b79e88" "wgpu"                "wgpu/00-tracked.patch" "wgpu/01-new-files.patch"
 run "openharmony-ability" do_git_archive "$DEPS_DIR/openharmony-ability" "https://github.com/harmony-contrib/openharmony-ability" "6c52bb44164ea2d6d7f573c090a75142f0dbd2ef" "openharmony-ability" "openharmony-ability/00-tracked.patch" "openharmony-ability/01-new-files.patch"
 run "nix"                 do_crate "nix" "0.26.4" "$DEPS_DIR"
 run "interprocess"        do_crate "interprocess" "1.2.1" "$DEPS_DIR"
