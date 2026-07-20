@@ -1,0 +1,262 @@
+// §2.2.5 — 文件选择器服务
+//
+// NAPI 方法 pickFiles(mimeTypes) / saveFile(name)，
+// 通过 ArkTS DocumentViewPicker.select() / DocumentSavePicker.save() 操作文件选择对话框。
+//
+// 异步处理：C FFI 桥通过 Promise.then() 等待异步结果，使用 std::promise/std::future
+// 在主叫线程上阻塞等待 ArkTS 线程上的 Promise 解析。
+
+#include <future>
+#include <string>
+#include <napi/native_api.h>
+#include "napi_utils.h"
+
+#undef LOG_TAG
+#define LOG_TAG "FilePicker"
+
+static napi_value PickFiles(napi_env env, napi_callback_info info) {
+    size_t argc = 1;
+    napi_value args[1];
+    napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
+
+    napi_value picker;
+    napi_value select;
+    napi_value global;
+    napi_get_global(env, &global);
+
+    if (napi_get_named_property(env, global, "DocumentViewPicker", &picker) != napi_ok) {
+        return nullptr;
+    }
+    napi_new_instance(env, picker, 0, nullptr, &picker);
+    if (napi_get_named_property(env, picker, "select", &select) != napi_ok) {
+        return nullptr;
+    }
+
+    napi_value result;
+    napi_call_function(env, picker, select, argc, args, &result);
+    return result;
+}
+
+static napi_value SaveFile(napi_env env, napi_callback_info info) {
+    size_t argc = 1;
+    napi_value args[1];
+    napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
+
+    napi_value picker;
+    napi_value save;
+    napi_value global;
+    napi_get_global(env, &global);
+
+    if (napi_get_named_property(env, global, "DocumentSavePicker", &picker) != napi_ok) {
+        return nullptr;
+    }
+    napi_new_instance(env, picker, 0, nullptr, &picker);
+    if (napi_get_named_property(env, picker, "save", &save) != napi_ok) {
+        return nullptr;
+    }
+
+    napi_value result;
+    napi_call_function(env, picker, save, argc, args, &result);
+    return result;
+}
+
+void RegisterFilePicker(napi_env env, napi_value exports) {
+    OH_LOG_INFO(LOG_APP, "FilePicker::Register called");
+    napi_property_descriptor desc[] = {
+        {"pickFiles", nullptr, PickFiles, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"saveFile", nullptr, SaveFile, nullptr, nullptr, nullptr, napi_default, nullptr},
+    };
+    napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc);
+}
+
+// ── Promise 等待辅助 ──────────────────────────────────────────────────────────
+//
+// 同步等待一个 NAPI 方法返回的 Promise 对象，阻塞当前线程直到 ArkTS 侧解析。
+// 流程（g_napi_mutex 保护初始设置）：
+//   1. napi_call_function(...) 得到 promise_val
+//   2. 设置 g_*_promise 指向栈上的 std::promise
+//   3. 调用 promise.then(resolve_fn).catch(reject_fn)
+//   4. 释放 g_napi_mutex
+//   5. future.get() 阻塞等待
+//   6. 重新获取 g_napi_mutex，清理指针
+//
+// 只有一次可以处于活动状态（由 g_napi_mutex 保证）。
+
+// pickFiles 的 Promise 上下文
+static std::promise<std::string>* g_picker_promise = nullptr;
+
+// saveFile 的 Promise 上下文
+static std::promise<std::string>* g_save_promise = nullptr;
+
+// pickFiles 解析回调：DocumentSelectResult[] → JSON 字符串数组 ["uri1","uri2"]
+static napi_value PickerResolve(napi_env env, napi_callback_info info) {
+    size_t argc = 1;
+    napi_value args[1];
+    napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
+
+    std::string result = "[]";
+    if (argc >= 1) {
+        bool is_array = false;
+        napi_is_array(env, args[0], &is_array);
+        if (is_array) {
+            uint32_t len = 0;
+            napi_get_array_length(env, args[0], &len);
+            std::string items;
+            for (uint32_t i = 0; i < len; i++) {
+                napi_value elem;
+                napi_get_element(env, args[0], i, &elem);
+                napi_value uri_val;
+                if (napi_get_named_property(env, elem, "uri", &uri_val) == napi_ok) {
+                    std::string uri = GetStringFromArg(env, uri_val);
+                    if (i > 0) items += ",";
+                    items += "\"" + uri + "\"";
+                }
+            }
+            result = "[" + items + "]";
+        }
+    }
+
+    auto* p = g_picker_promise;
+    if (p) {
+        try { p->set_value(result); } catch (...) {}
+    }
+    return nullptr;
+}
+
+// saveFile 解析回调：DocumentSaveResult[] → 第一个元素的 URI 字符串
+static napi_value SaveResolve(napi_env env, napi_callback_info info) {
+    size_t argc = 1;
+    napi_value args[1];
+    napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
+
+    std::string uri;
+    if (argc >= 1) {
+        bool is_array = false;
+        napi_is_array(env, args[0], &is_array);
+        if (is_array) {
+            napi_value elem;
+            if (napi_get_element(env, args[0], 0, &elem) == napi_ok) {
+                napi_value uri_val;
+                if (napi_get_named_property(env, elem, "uri", &uri_val) == napi_ok) {
+                    uri = GetStringFromArg(env, uri_val);
+                }
+            }
+        }
+    }
+
+    auto* p = g_save_promise;
+    if (p) {
+        try { p->set_value(uri); } catch (...) {}
+    }
+    return nullptr;
+}
+
+// 拒绝回调（解析失败时返回默认空值）
+static napi_value FilePickerReject(napi_env, napi_callback_info) {
+    // picker 和 save 共用同一个拒绝回调 — 谁设置了谁接收
+    if (g_picker_promise) {
+        try { g_picker_promise->set_value("[]"); } catch (...) {}
+    }
+    if (g_save_promise) {
+        try { g_save_promise->set_value(""); } catch (...) {}
+    }
+    return nullptr;
+}
+
+// ── C FFI 桥：Rust → C++ → NAPI → ArkTS（含 Promise 等待）────────────────────
+
+extern "C" {
+
+void ohos_pick_files(const char* mime_types, void (*callback)(const char* result_json)) {
+    OH_LOG_INFO(LOG_APP, "FilePicker::ohos_ called");
+    std::promise<std::string> promise;
+    auto future = promise.get_future();
+
+    {
+        std::lock_guard<std::mutex> lock(g_napi_mutex);
+
+        napi_value exports;
+        napi_get_reference_value(g_napi_env, g_exports_ref, &exports);
+
+        napi_value fn;
+        napi_get_named_property(g_napi_env, exports, "pickFiles", &fn);
+
+        napi_value arg = CreateString(g_napi_env, mime_types);
+        napi_value promise_val;
+        napi_call_function(g_napi_env, exports, fn, 1, &arg, &promise_val);
+
+        napi_value resolve_fn;
+        napi_create_function(g_napi_env, nullptr, 0, PickerResolve, nullptr, &resolve_fn);
+
+        napi_value then_fn;
+        napi_get_named_property(g_napi_env, promise_val, "then", &then_fn);
+
+        g_picker_promise = &promise;
+        napi_call_function(g_napi_env, promise_val, then_fn, 1, &resolve_fn, nullptr);
+
+        napi_value reject_fn;
+        napi_create_function(g_napi_env, nullptr, 0, FilePickerReject, nullptr, &reject_fn);
+
+        napi_value catch_fn;
+        napi_get_named_property(g_napi_env, promise_val, "catch", &catch_fn);
+        napi_call_function(g_napi_env, promise_val, catch_fn, 1, &reject_fn, nullptr);
+    } // g_napi_mutex 已释放
+
+    std::string result;
+    try { result = future.get(); } catch (...) { result = "[]"; }
+
+    {
+        std::lock_guard<std::mutex> lock(g_napi_mutex);
+        g_picker_promise = nullptr;
+    }
+
+    callback(result.c_str());
+}
+
+void ohos_save_file(const char* name, void (*callback)(const char* result_json)) {
+    OH_LOG_INFO(LOG_APP, "FilePicker::ohos_ called");
+    std::promise<std::string> promise;
+    auto future = promise.get_future();
+
+    {
+        std::lock_guard<std::mutex> lock(g_napi_mutex);
+
+        napi_value exports;
+        napi_get_reference_value(g_napi_env, g_exports_ref, &exports);
+
+        napi_value fn;
+        napi_get_named_property(g_napi_env, exports, "saveFile", &fn);
+
+        napi_value arg = CreateString(g_napi_env, name);
+        napi_value promise_val;
+        napi_call_function(g_napi_env, exports, fn, 1, &arg, &promise_val);
+
+        napi_value resolve_fn;
+        napi_create_function(g_napi_env, nullptr, 0, SaveResolve, nullptr, &resolve_fn);
+
+        napi_value then_fn;
+        napi_get_named_property(g_napi_env, promise_val, "then", &then_fn);
+
+        g_save_promise = &promise;
+        napi_call_function(g_napi_env, promise_val, then_fn, 1, &resolve_fn, nullptr);
+
+        napi_value reject_fn;
+        napi_create_function(g_napi_env, nullptr, 0, FilePickerReject, nullptr, &reject_fn);
+
+        napi_value catch_fn;
+        napi_get_named_property(g_napi_env, promise_val, "catch", &catch_fn);
+        napi_call_function(g_napi_env, promise_val, catch_fn, 1, &reject_fn, nullptr);
+    } // g_napi_mutex 已释放
+
+    std::string result;
+    try { result = future.get(); } catch (...) { result = ""; }
+
+    {
+        std::lock_guard<std::mutex> lock(g_napi_mutex);
+        g_save_promise = nullptr;
+    }
+
+    callback(result.c_str());
+}
+
+} // extern "C"
