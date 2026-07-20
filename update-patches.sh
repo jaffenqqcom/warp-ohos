@@ -15,7 +15,9 @@ make_modified_patch() {
     shift 2
 
     cd "$dir" || { echo "  ✗ 无法进入 $dir"; return 1; }
-    files=$(git diff HEAD --numstat -- "$@" | awk '$1+$2 > 0 {print $3}')
+    # 过滤掉隐藏文件/目录（路径以 . 开头或其任意父目录以 . 开头），
+    # 同时对 warp 额外排除指定的路径模式
+    files=$(git diff HEAD --numstat -- "$@" | awk '$1+$2 > 0 {print $3}' | grep -v '/\.\|^\.' || true)
     if [ -n "$files" ]; then
         git diff HEAD -- $files > "$patch"
         echo "      $(wc -l < "$patch") 行"
@@ -80,6 +82,20 @@ echo "  → 01-new-files.patch (新增的文件)..."
 make_newfile_patch "$DEPS_DIR/winit" "$PATCH_DIR/winit/01-new-files.patch" '\.bak$'
 
 # ════════════════════════════════════════════════════════════
+#  wgpu
+# ════════════════════════════════════════════════════════════
+echo ""
+echo "=========================================="
+echo " wgpu"
+echo "=========================================="
+
+echo "  → 00-tracked.patch (已有文件的修改)..."
+make_modified_patch "$DEPS_DIR/wgpu" "$PATCH_DIR/wgpu/00-tracked.patch"
+
+echo "  → 01-new-files.patch (新增的文件)..."
+make_newfile_patch "$DEPS_DIR/wgpu" "$PATCH_DIR/wgpu/01-new-files.patch" '\.bak$'
+
+# ════════════════════════════════════════════════════════════
 #  openharmony-ability
 # ════════════════════════════════════════════════════════════
 echo ""
@@ -98,5 +114,5 @@ echo ""
 echo "=========================================="
 echo " 新patches 制作完成！"
 echo "=========================================="
-ls -lh "$PATCH_DIR/warp/"*.patch "$PATCH_DIR/winit/"*.patch "$PATCH_DIR/openharmony-ability/"*.patch "$PATCH_DIR/"*.patch 2>/dev/null
-echo "提交指令：git add clone.sh update-patches.sh patches/ && git commit -m "更新脚本与补丁目录" && git push"
+ls -lh "$PATCH_DIR/warp/"*.patch "$PATCH_DIR/winit/"*.patch "$PATCH_DIR/wgpu/"*.patch "$PATCH_DIR/openharmony-ability/"*.patch "$PATCH_DIR/"*.patch 2>/dev/null
+echo "提交指令：git add fetch-full-code.sh  update-patches.sh patches/ && git commit -m "更新脚本与补丁目录" && git push"
