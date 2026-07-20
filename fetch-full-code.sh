@@ -35,6 +35,94 @@ detect_p_strip() {
     echo "$slash_count"
 }
 
+# ── git 仓库任务（从 GitHub 下载源码压缩包，替代 git clone） ──
+# 下载 tarball → 解压 → git init（用于 patch 管理） → 打 patch
+# 支持 tag 和 commit SHA 两种引用
+do_git_archive() {
+    dir="$1" base_url="$2" ref="$3" label="$4"
+    shift 4
+
+    echo "──────────────────────────────────────────"
+    echo "  [$label] 开始"
+    echo "──────────────────────────────────────────"
+
+    if [ -f "$dir/.complete" ]; then
+        echo "  → [$label] 已完成（.complete 存在），跳过"
+        return 0
+    fi
+
+    if [ -d "$dir" ]; then
+        echo "  → [$label] 目录已存在，删除重新下载"
+        rm -rf "$dir"
+    fi
+
+    # 构造 tarball URL：tag 或 commit
+    case "$ref" in
+        v*) archive_url="$base_url/archive/refs/tags/$ref.tar.gz" ;;
+        *)  archive_url="$base_url/archive/$ref.tar.gz" ;;
+    esac
+
+    echo "  → 下载 $label 源码压缩包..."
+    echo "     URL: $archive_url"
+    tmpf="$BASE_DIR/.${label}_dl.tmp"
+    if ! curl -SL "$archive_url" -o "$tmpf"; then
+        echo "  ✗ [$label] 下载失败（curl 错误）"
+        rm -f "$tmpf"
+        return 1
+    fi
+    echo "  ✓ 下载完成"
+
+    # 解压到临时目录
+    echo "  → 解压..."
+    extract_dir="$BASE_DIR/.${label}_extract"
+    rm -rf "$extract_dir"
+    mkdir -p "$extract_dir"
+    if ! tar xzf "$tmpf" -C "$extract_dir"; then
+        echo "  ✗ [$label] 解压失败"
+        rm -f "$tmpf"
+        rm -rf "$extract_dir"
+        return 1
+    fi
+    rm -f "$tmpf"
+
+    # GitHub tarball 顶层目录名为 {repo}-{ref}，重命名为目标目录
+    extracted_name=$(ls "$extract_dir" | head -1)
+    mkdir -p "$(dirname "$dir")"
+    mv "$extract_dir/$extracted_name" "$dir"
+    rm -rf "$extract_dir"
+    echo "  ✓ 解压完成 → $dir"
+
+    cd "$dir" || { echo "  ✗ [$label] 无法进入目录"; return 1; }
+
+    # tarball 不含 .git，初始化 git 以便 git apply 打 patch
+    echo "  → 初始化 git 仓库..."
+    git init > /dev/null 2>&1
+    git add -A > /dev/null 2>&1
+    git commit -m "base: $label $ref" --allow-empty > /dev/null 2>&1
+    echo "  ✓ git 初始化完成（已创建初始 commit）"
+
+    for patch in "$@"; do
+        if [ ! -s "$PATCH_DIR/$patch" ]; then
+            echo "  → patch $patch（空文件，跳过）"
+            continue
+        fi
+        echo "  → 应用 patch: $patch"
+        if ! git apply --ignore-whitespace --whitespace=nowarn "$PATCH_DIR/$patch"; then
+            echo "  ✗ [$label] patch $patch 应用失败"
+            return 1
+        fi
+        echo "  ✓ patch $patch 应用成功"
+    done
+
+    # 取消暂存（patch 中新文件可能被 git apply 自动加入 index）
+    git reset HEAD -- . > /dev/null 2>&1 || true
+
+    add_complete_to_gitignore "$dir"
+    touch "$dir/.complete"
+    echo "  ✓ [$label] 完成"
+    return 0
+}
+
 # ── git 仓库任务（有 tag 的仓库，用 --depth 1 加速） ─────
 do_git_repo_tag() {
     dir="$1" url="$2" tag="$3" label="$4"
@@ -270,10 +358,10 @@ echo " 开始下载所有仓库和 crate"
 echo "=========================================="
 echo ""
 
-run "warp"                do_git_repo_tag "$BASE_DIR/warp"                "https://github.com/warpdotdev/warp.git"                "v0.2026.06.03.09.49.stable_00"             "warp"                "warp/00-tracked.patch" "warp/01-new-files.patch"
-run "winit"               do_git_repo "$DEPS_DIR/winit"    "https://github.com/warpdotdev/winit.git"               "a4e0ecb5f9626ccac9445a73dc28354b52423abc" "winit"               "winit/00-tracked.patch" "winit/01-new-files.patch"
-run "wgpu"                do_git_repo_tag "$DEPS_DIR/wgpu"  "https://github.com/gfx-rs/wgpu.git"                    "v29.0.1"            "wgpu"                "wgpu/00-tracked.patch" "wgpu/01-new-files.patch"
-run "openharmony-ability" do_git_repo "$DEPS_DIR/openharmony-ability" "https://github.com/harmony-contrib/openharmony-ability.git" "6c52bb44164ea2d6d7f573c090a75142f0dbd2ef" "openharmony-ability" "openharmony-ability/00-tracked.patch" "openharmony-ability/01-new-files.patch"
+run "warp"                do_git_archive "$BASE_DIR/warp"                "https://github.com/warpdotdev/warp"                "v0.2026.06.03.09.49.stable_00"             "warp"                "warp/00-tracked.patch" "warp/01-new-files.patch"
+run "winit"               do_git_archive "$DEPS_DIR/winit"               "https://github.com/warpdotdev/winit"               "a4e0ecb5f9626ccac9445a73dc28354b52423abc" "winit"               "winit/00-tracked.patch" "winit/01-new-files.patch"
+run "wgpu"                do_git_archive "$DEPS_DIR/wgpu"                "https://github.com/gfx-rs/wgpu"                    "v29.0.1"            "wgpu"                "wgpu/00-tracked.patch" "wgpu/01-new-files.patch"
+run "openharmony-ability" do_git_archive "$DEPS_DIR/openharmony-ability" "https://github.com/harmony-contrib/openharmony-ability" "6c52bb44164ea2d6d7f573c090a75142f0dbd2ef" "openharmony-ability" "openharmony-ability/00-tracked.patch" "openharmony-ability/01-new-files.patch"
 run "nix"                 do_crate "nix" "0.26.4" "$DEPS_DIR"
 run "interprocess"        do_crate "interprocess" "1.2.1" "$DEPS_DIR"
 run "gettext-sys"         do_crate "gettext-sys" "0.21.3" "$DEPS_DIR"
