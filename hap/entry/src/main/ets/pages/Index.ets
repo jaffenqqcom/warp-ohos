@@ -3,8 +3,8 @@ import warpModule from 'libwarp.so';
 import common from '@ohos.app.ability.common';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
-const DOMAIN: number = 0x0001;
-const TAG: string = 'Index';
+const DOMAIN = 0x0001;
+const TAG = 'Index';
 
 @Entry
 @Component
@@ -14,8 +14,8 @@ struct Index {
 
   async aboutToAppear(): Promise<void> {
     try {
-      const context: common.UIAbilityContext =
-        this.getUIContext().getHostContext() as common.UIAbilityContext;
+      const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
+      // 传 AbilityContext 给 C++ NAPI 侧存为 napi_ref，供 openUrl 使用
       warpModule.setAbilityContext(context);
       warpModule.registerServiceBridge();
       hilog.info(DOMAIN, TAG, 'aboutToAppear: calling startWarpMain');
@@ -23,14 +23,16 @@ struct Index {
         context.filesDir,
         context.cacheDir,
         context.tempDir,
-        context.filesDir,
+        context.filesDir
       );
       hilog.info(DOMAIN, TAG, 'startWarpMain returned successfully');
     } catch (err) {
-      hilog.error(DOMAIN, TAG, 'aboutToAppear failed');
+      hilog.error(DOMAIN, TAG, 'aboutToAppear 失败');
     }
   }
 
+  // 拦截系统返回键（2in1 设备上 Escape 被映射为返回），阻止窗口最小化。
+  // Escape 键仍会通过 onKeyEvent 转发到 Rust 侧。
   onBackPress(): boolean {
     return true;
   }
@@ -43,7 +45,7 @@ struct Index {
     .height('100%')
     .focusable(true)
     .defaultFocus(true)
-    .onTouch((event: TouchEvent): void => {
+    .onTouch((event: TouchEvent) => {
       if (event.touches.length === 1) {
         if (event.type === TouchType.Down) {
           this.lastTouchX = event.touches[0].x;
@@ -52,8 +54,8 @@ struct Index {
         } else if (event.type === TouchType.Up) {
           warpModule.onTouchEvent(event.type, event.touches[0].x, event.touches[0].y);
         } else if (event.type === TouchType.Move) {
-          const dx: number = event.touches[0].x - this.lastTouchX;
-          const dy: number = event.touches[0].y - this.lastTouchY;
+          let dx = event.touches[0].x - this.lastTouchX;
+          let dy = event.touches[0].y - this.lastTouchY;
           this.lastTouchX = event.touches[0].x;
           this.lastTouchY = event.touches[0].y;
           warpModule.onWheelEvent(dx, dy);
@@ -62,16 +64,16 @@ struct Index {
         warpModule.onTouchEvent(-1, event.touches[0].x, event.touches[0].y);
       }
     })
-    .onKeyEvent((event: KeyEvent): void => {
-      let modState: number = 0;
+    .onKeyEvent((event: KeyEvent) => {
+      let modState = 0;
       if (event.getModifierKeyState!(['ctrl'])) modState |= 0x01;
       if (event.getModifierKeyState!(['shift'])) modState |= 0x02;
       if (event.getModifierKeyState!(['alt'])) modState |= 0x04;
       if (event.isCapsLockOn) modState |= 0x10;
       warpModule.onKeyEvent(event.keyCode, event.type === KeyType.Down ? 0 : 1, modState);
     })
-    .onMouse((event: MouseEvent): void => {
+    .onMouse((event: MouseEvent) => {
       warpModule.onMouseEvent(event.action, event.button, event.x, event.y);
-    });
+    })
   }
 }

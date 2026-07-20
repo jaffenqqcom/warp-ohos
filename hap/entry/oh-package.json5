@@ -6,6 +6,7 @@
   "author": "",
   "license": "",
   "dependencies": {
-    "@ohos-rs/ability": "file:../../depends/openharmony-ability/native_ability"
+    "@ohos-rs/ability": "file:../../depends/openharmony-ability/native_ability",
+    "libwarp.so": "file:./src/main/cpp/types/libwarp"
   }
 }

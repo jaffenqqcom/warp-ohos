@@ -4,10 +4,10 @@
       {
         "name": "default",
         "material": {
-          "storePassword": "00000020BD69AE3ED15C31BC91F4F789A7A3972382EC1F0D7CED9C46F9CB11B2E31C4E20B51209FBB9C51C77F8ABF83A",
+          "storePassword": "000000200935AB24F8D369C7E64E63732311579C2BF0996AD5F08E50AE0CC1EB01C2F9ABDC05E3FA163B56B79DB7D095",
           "certpath": "/storage/Users/currentUser/Documents/ohos/config/default_hapHD-v_0wt3fmlK17SYeXMGJOjh-mUjvGMnRbzqYQPLtU.cer",
           "keyAlias": "debugKey",
-          "keyPassword": "00000020BD69AE3ED15C31BC91F4F789A7A3972382EC1F0D7CED9C46F9CB11B2E31C4E20B51209FBB9C51C77F8ABF83A",
+          "keyPassword": "000000200935AB24F8D369C7E64E63732311579C2BF0996AD5F08E50AE0CC1EB01C2F9ABDC05E3FA163B56B79DB7D095",
           "profile": "/storage/Users/currentUser/Documents/ohos/config/default_hapHD-v_0wt3fmlK17SYeXMGJOjh-mUjvGMnRbzqYQPLtU.p7b",
           "signAlg": "SHA256withECDSA",
           "storeFile": "/storage/Users/currentUser/Documents/ohos/config/default_hapHD-v_0wt3fmlK17SYeXMGJOjh-mUjvGMnRbzqYQPLtU.p12"
@@ -23,6 +23,9 @@
         "compatibleSdkVersion": "6.1.0(23)",
         "runtimeOS": "HarmonyOS",
         "buildOption": {
+          "nativeLib": {
+            "collectAllLibs": true
+          },
           "strictMode": {
             "caseSensitiveCheck": true,
             "useNormalizedOHMUrl": true

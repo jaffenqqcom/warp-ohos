@@ -155,16 +155,20 @@ echo ""
 # cmake+ninja 编译 libentry.so + hvigor 打包 HAP 合一完成。
 # hvigor 自动管理 cmake 配置和 ninja 构建流程。
 echo "--- hvigor assembleHap ---"
-"$NODE_CMD" "$HVIGORW_JS" \
-  --mode module \
-  -p product="$PRODUCT" \
-  -p buildMode="$BUILD_MODE" \
-  assembleHap \
-  --info \
-  --analyze=normal \
-  --parallel \
-  --incremental \
-  --no-daemon
+
+"$NODE_CMD" "$HVIGORW_JS"  --mode module -p product=default -p buildMode=debug assembleHap --info --analyze=normal --parallel --incremental --daemon
+
+#"$NODE_CMD" "$HVIGORW_JS" \
+#  -p ohos-app-environment= \
+# -p requiredDeviceType=2in1 \
+#  -p buildMode="$BUILD_MODE" \
+#  -p product="$PRODUCT" \
+#  assembleHap \
+#  --info \
+#  --analyze=normal \
+#  --parallel \
+#  --incremental \
+#  --no-daemon
 
 echo ""
 echo "=== HAP BUILD SUCCESSFUL ==="

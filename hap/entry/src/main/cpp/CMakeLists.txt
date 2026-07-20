@@ -2,6 +2,7 @@
 #
 # 编译 libentry.so：NAPI 插件库，链接 Rust .so（libwarp.so）。
 # Rust .so 通过 -L + -l 方式引用（DT_NEEDED = libwarp.so）
+
 cmake_minimum_required(VERSION 3.20)
 project(entry)
 
@@ -16,6 +17,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../../../.cmake_staging")
 
 # ── NAPI 源文件 ──────────────────────────────────────────────────────────────
+
 set(SOURCES
     napi_init.cpp
     services/service_shell_bridge.cpp
@@ -31,10 +33,13 @@ set(SOURCES
 )
 
 # ── 共享库目标 ───────────────────────────────────────────────────────────────
+
 add_library(entry SHARED ${SOURCES})
 
 # ── FetchContent：mbedTLS（Apache 2.0 许可证，静态链接）──────────────────
+
 include(FetchContent)
+
 FetchContent_Declare(
     mbedtls
     URL file://${CMAKE_CURRENT_SOURCE_DIR}/../../../../../depends/third_party_mbedtls-OpenHarmony-v3.2-Release.tar.gz
@@ -99,6 +104,7 @@ add_library(mbedtls OBJECT ${MBEDTLS_TLS_SRCS})
 target_include_directories(mbedtls PUBLIC ${mbedtls_SOURCE_DIR}/include)
 
 # ── FetchContent：libssh2（BSD 许可证，静态链接，使用 mbedTLS 后端）───────
+
 FetchContent_Declare(
     libssh2
     URL file://${CMAKE_CURRENT_SOURCE_DIR}/../../../../../depends/libssh2-1.11.0.tar.gz
@@ -126,11 +132,13 @@ target_compile_definitions(libssh2_static PRIVATE
 target_compile_options(libssh2_static PRIVATE -include sys/uio.h)
 
 # ── Native 子进程库（libohos_shell.so）──────────────────────────────────────
+
 add_library(ohos_shell SHARED
     bridge/shell_bridge_process.cpp
 )
 
 # ── 依赖：鸿蒙 NDK ──────────────────────────────────────────────────────────
+
 target_link_libraries(entry
     PUBLIC
     ace_napi.z
@@ -142,6 +150,7 @@ target_link_libraries(entry
     libnative_drawing.so
     -Wl,--whole-archive c++ c++abi -Wl,--no-whole-archive
 )
+
 target_link_libraries(ohos_shell
     PUBLIC
     libchild_process.so
@@ -152,16 +161,19 @@ target_link_libraries(ohos_shell
     libssh2_static
     m
 )
+
 target_include_directories(ohos_shell PRIVATE
     ${mbedtls_SOURCE_DIR}/include
     ${libssh2_SOURCE_DIR}/include
 )
 
 # ── Rust .so：运行时 dlopen 加载 ──────────────────────────────────────
+#
 # libwarp.so 不通过编译期 -lwarp 链接到 libentry.so，避免设备上某些
 # OHOS NDK 符号不可用时整个加载链断裂。改用运行时 dlopen(libwarp.so)
 # 在 napi_init.cpp 的 Init() 中按需加载。
 # XComponent（libraryname: warp）独立加载 libwarp.so，不受此影响。
 
 # ── 头文件搜索路径 ───────────────────────────────────────────────────────────
+
 target_include_directories(entry PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

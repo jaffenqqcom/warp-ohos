@@ -1,1 +1,186 @@
-// §2.2.3 — 剪贴板服务//// NAPI 方法 clipboardWrite(text) / clipboardRead() → string，// 使用 OHOS 原生 Pasteboard C API（OH_Pasteboard + UDMF）读写系统剪贴板。//// UDMF 库（libudmf.so）通过 dlopen 运行时加载，避免编译期链接依赖。#include <cstring>#include <dlfcn.h>#include <napi/native_api.h>#include <database/pasteboard/oh_pasteboard.h>#include "napi_utils.h"#undef LOG_TAG#define LOG_TAG "Clipboard"// ── UDMF 函数指针（dlopen 动态解析）──────────────────────────────────────────struct UdmfFuncs {    void* handle;    void* (*UdsPlainText_Create)();    int   (*UdsPlainText_SetContent)(void*, const char*);    void  (*UdsPlainText_Destroy)(void*);    const char* (*UdsPlainText_GetContent)(void*);    void* (*UdmfRecord_Create)();    int   (*UdmfRecord_AddPlainText)(void*, void*);    void  (*UdmfRecord_Destroy)(void*);    void* (*UdmfData_Create)();    int   (*UdmfData_AddRecord)(void*, void*);    int   (*UdmfData_GetPrimaryPlainText)(void*, void*);    void  (*UdmfData_Destroy)(void*);};static UdmfFuncs* get_udmf() {    static UdmfFuncs f = {nullptr};    if (f.handle) return &f;    f.handle = dlopen("libudmf.z.so", RTLD_NOLOAD | RTLD_LOCAL);    if (!f.handle) f.handle = dlopen("libudmf.so", RTLD_NOW | RTLD_LOCAL);    if (!f.handle) {        OH_LOG_ERROR(LOG_APP, "Clipboard: dlopen libudmf failed");        return nullptr;    }    f.UdsPlainText_Create     = (void* (*)())dlsym(f.handle, "OH_UdsPlainText_Create");    f.UdsPlainText_SetContent = (int (*)(void*,const char*))dlsym(f.handle, "OH_UdsPlainText_SetContent");    f.UdsPlainText_Destroy    = (void (*)(void*))dlsym(f.handle, "OH_UdsPlainText_Destroy");    f.UdsPlainText_GetContent = (const char* (*)(void*))dlsym(f.handle, "OH_UdsPlainText_GetContent");    f.UdmfRecord_Create       = (void* (*)())dlsym(f.handle, "OH_UdmfRecord_Create");    f.UdmfRecord_AddPlainText = (int (*)(void*,void*))dlsym(f.handle, "OH_UdmfRecord_AddPlainText");    f.UdmfRecord_Destroy      = (void (*)(void*))dlsym(f.handle, "OH_UdmfRecord_Destroy");    f.UdmfData_Create         = (void* (*)())dlsym(f.handle, "OH_UdmfData_Create");    f.UdmfData_AddRecord      = (int (*)(void*,void*))dlsym(f.handle, "OH_UdmfData_AddRecord");    f.UdmfData_GetPrimaryPlainText = (int (*)(void*,void*))dlsym(f.handle, "OH_UdmfData_GetPrimaryPlainText");    f.UdmfData_Destroy        = (void (*)(void*))dlsym(f.handle, "OH_UdmfData_Destroy");    return &f;}// ── NAPI 方法 ─────────────────────────────────────────────────────────────────/// 写入文本到系统剪贴板。static napi_value ClipboardWrite(napi_env env, napi_callback_info info) {    size_t argc = 1;    napi_value argv[1] = {nullptr};    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);    size_t str_len = 0;    char text[4096] = {0};    if (argc >= 1 && argv[0] != nullptr) {        napi_get_value_string_utf8(env, argv[0], text, sizeof(text) - 1, &str_len);    }    OH_Pasteboard* pasteboard = OH_Pasteboard_Create();    if (!pasteboard) {        OH_LOG_ERROR(LOG_APP, "ClipboardWrite: OH_Pasteboard_Create failed");        return nullptr;    }    auto* udmf = get_udmf();    if (!udmf) {        OH_Pasteboard_Destroy(pasteboard);        return nullptr;    }    void* plainText = udmf->UdsPlainText_Create ? udmf->UdsPlainText_Create() : nullptr;    if (plainText && udmf->UdsPlainText_SetContent) {        udmf->UdsPlainText_SetContent(plainText, text);    }    void* record = udmf->UdmfRecord_Create ? udmf->UdmfRecord_Create() : nullptr;    if (record && plainText && udmf->UdmfRecord_AddPlainText) {        udmf->UdmfRecord_AddPlainText(record, plainText);    }    void* data = udmf->UdmfData_Create ? udmf->UdmfData_Create() : nullptr;    if (data && record && udmf->UdmfData_AddRecord) {        udmf->UdmfData_AddRecord(data, record);    }    if (data) {        int ret = OH_Pasteboard_SetData(pasteboard, reinterpret_cast<OH_UdmfData*>(data));        if (ret != 0) {            OH_LOG_WARN(LOG_APP, "ClipboardWrite: OH_Pasteboard_SetData returned %{public}d", ret);        } else {            OH_LOG_INFO(LOG_APP, "ClipboardWrite: wrote %{public}zu bytes", str_len);        }    }    if (data && udmf->UdmfData_Destroy) udmf->UdmfData_Destroy(data);    if (record && udmf->UdmfRecord_Destroy) udmf->UdmfRecord_Destroy(record);    if (plainText && udmf->UdsPlainText_Destroy) udmf->UdsPlainText_Destroy(plainText);    OH_Pasteboard_Destroy(pasteboard);    return nullptr;}/// 从系统剪贴板读取文本。static napi_value ClipboardRead(napi_env env, napi_callback_info info) {    OH_Pasteboard* pasteboard = OH_Pasteboard_Create();    if (!pasteboard) {        OH_LOG_ERROR(LOG_APP, "ClipboardRead: OH_Pasteboard_Create failed");        napi_value result;        napi_create_string_utf8(env, "", NAPI_AUTO_LENGTH, &result);        return result;    }    auto* udmf = get_udmf();    if (!udmf) {        OH_Pasteboard_Destroy(pasteboard);        napi_value result;        napi_create_string_utf8(env, "", NAPI_AUTO_LENGTH, &result);        return result;    }    int status = 0;    OH_UdmfData* data = OH_Pasteboard_GetData(pasteboard, &status);    napi_value result;    if (data && status == 0 && udmf->UdsPlainText_Create) {        void* plainText = udmf->UdsPlainText_Create();        if (plainText) {            int ret = udmf->UdmfData_GetPrimaryPlainText(data, plainText);            if (ret == 0 && udmf->UdsPlainText_GetContent) {                const char* content = udmf->UdsPlainText_GetContent(plainText);                OH_LOG_INFO(LOG_APP, "ClipboardRead: read %{public}zu bytes", content ? strlen(content) : 0);                napi_create_string_utf8(env, content ? content : "", NAPI_AUTO_LENGTH, &result);            } else {                napi_create_string_utf8(env, "", NAPI_AUTO_LENGTH, &result);            }            if (udmf->UdsPlainText_Destroy) udmf->UdsPlainText_Destroy(plainText);        } else {            napi_create_string_utf8(env, "", NAPI_AUTO_LENGTH, &result);        }        if (udmf->UdmfData_Destroy) udmf->UdmfData_Destroy(data);    } else {        OH_LOG_WARN(LOG_APP, "ClipboardRead: OH_Pasteboard_GetData status=%{public}d", status);        napi_create_string_utf8(env, "", NAPI_AUTO_LENGTH, &result);    }    OH_Pasteboard_Destroy(pasteboard);    return result;}// ── 模块注册 ───────────────────────────────────────────────────────────────────void RegisterClipboard(napi_env env, napi_value exports) {    OH_LOG_INFO(LOG_APP, "Clipboard::Register called");    napi_property_descriptor desc[] = {        {"clipboardWrite", nullptr, ClipboardWrite, nullptr, nullptr, nullptr, napi_default, nullptr},        {"clipboardRead",  nullptr, ClipboardRead,  nullptr, nullptr, nullptr, napi_default, nullptr},    };    napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc);    OH_LOG_INFO(LOG_APP, "Clipboard::Register done");}// ── C FFI 桥：Rust 侧通过 dlsym 调用（保留现有接口）───────────────────────────extern "C" {extern void ohos_call_napi_ex(const char* method, const char* arg, char* result, size_t max_len);void ohos_clipboard_read(void (*callback)(const char*)) {    OH_LOG_INFO(LOG_APP, "Clipboard::ohos_read called");    char buf[4096] = {0};    ohos_call_napi_ex("clipboardRead", nullptr, buf, sizeof(buf));    callback(buf);}void ohos_clipboard_write(const char* text) {    OH_LOG_INFO(LOG_APP, "Clipboard::ohos_write called");    ohos_call_napi_ex("clipboardWrite", text, nullptr, 0);}} // extern "C"
+// §2.2.3 — 剪贴板服务
+//
+// NAPI 方法 clipboardWrite(text) / clipboardRead() → string，
+// 使用 OHOS 原生 Pasteboard C API（OH_Pasteboard + UDMF）读写系统剪贴板。
+//
+// UDMF 库（libudmf.so）通过 dlopen 运行时加载，避免编译期链接依赖。
+
+#include <cstring>
+#include <dlfcn.h>
+#include <napi/native_api.h>
+#include <database/pasteboard/oh_pasteboard.h>
+#include "napi_utils.h"
+
+#undef LOG_TAG
+#define LOG_TAG "Clipboard"
+
+// ── UDMF 函数指针（dlopen 动态解析）──────────────────────────────────────────
+
+struct UdmfFuncs {
+    void* handle;
+    void* (*UdsPlainText_Create)();
+    int   (*UdsPlainText_SetContent)(void*, const char*);
+    void  (*UdsPlainText_Destroy)(void*);
+    const char* (*UdsPlainText_GetContent)(void*);
+    void* (*UdmfRecord_Create)();
+    int   (*UdmfRecord_AddPlainText)(void*, void*);
+    void  (*UdmfRecord_Destroy)(void*);
+    void* (*UdmfData_Create)();
+    int   (*UdmfData_AddRecord)(void*, void*);
+    int   (*UdmfData_GetPrimaryPlainText)(void*, void*);
+    void  (*UdmfData_Destroy)(void*);
+};
+
+static UdmfFuncs* get_udmf() {
+    static UdmfFuncs f = {nullptr};
+    if (f.handle) return &f;
+    f.handle = dlopen("libudmf.z.so", RTLD_NOLOAD | RTLD_LOCAL);
+    if (!f.handle) f.handle = dlopen("libudmf.so", RTLD_NOW | RTLD_LOCAL);
+    if (!f.handle) {
+        OH_LOG_ERROR(LOG_APP, "Clipboard: dlopen libudmf failed");
+        return nullptr;
+    }
+    f.UdsPlainText_Create     = (void* (*)())dlsym(f.handle, "OH_UdsPlainText_Create");
+    f.UdsPlainText_SetContent = (int (*)(void*,const char*))dlsym(f.handle, "OH_UdsPlainText_SetContent");
+    f.UdsPlainText_Destroy    = (void (*)(void*))dlsym(f.handle, "OH_UdsPlainText_Destroy");
+    f.UdsPlainText_GetContent = (const char* (*)(void*))dlsym(f.handle, "OH_UdsPlainText_GetContent");
+    f.UdmfRecord_Create       = (void* (*)())dlsym(f.handle, "OH_UdmfRecord_Create");
+    f.UdmfRecord_AddPlainText = (int (*)(void*,void*))dlsym(f.handle, "OH_UdmfRecord_AddPlainText");
+    f.UdmfRecord_Destroy      = (void (*)(void*))dlsym(f.handle, "OH_UdmfRecord_Destroy");
+    f.UdmfData_Create         = (void* (*)())dlsym(f.handle, "OH_UdmfData_Create");
+    f.UdmfData_AddRecord      = (int (*)(void*,void*))dlsym(f.handle, "OH_UdmfData_AddRecord");
+    f.UdmfData_GetPrimaryPlainText = (int (*)(void*,void*))dlsym(f.handle, "OH_UdmfData_GetPrimaryPlainText");
+    f.UdmfData_Destroy        = (void (*)(void*))dlsym(f.handle, "OH_UdmfData_Destroy");
+    return &f;
+}
+
+// ── NAPI 方法 ─────────────────────────────────────────────────────────────────
+
+/// 写入文本到系统剪贴板。
+static napi_value ClipboardWrite(napi_env env, napi_callback_info info) {
+    size_t argc = 1;
+    napi_value argv[1] = {nullptr};
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+
+    size_t str_len = 0;
+    char text[4096] = {0};
+    if (argc >= 1 && argv[0] != nullptr) {
+        napi_get_value_string_utf8(env, argv[0], text, sizeof(text) - 1, &str_len);
+    }
+
+    OH_Pasteboard* pasteboard = OH_Pasteboard_Create();
+    if (!pasteboard) {
+        OH_LOG_ERROR(LOG_APP, "ClipboardWrite: OH_Pasteboard_Create failed");
+        return nullptr;
+    }
+
+    auto* udmf = get_udmf();
+    if (!udmf) {
+        OH_Pasteboard_Destroy(pasteboard);
+        return nullptr;
+    }
+
+    void* plainText = udmf->UdsPlainText_Create ? udmf->UdsPlainText_Create() : nullptr;
+    if (plainText && udmf->UdsPlainText_SetContent) {
+        udmf->UdsPlainText_SetContent(plainText, text);
+    }
+    void* record = udmf->UdmfRecord_Create ? udmf->UdmfRecord_Create() : nullptr;
+    if (record && plainText && udmf->UdmfRecord_AddPlainText) {
+        udmf->UdmfRecord_AddPlainText(record, plainText);
+    }
+    void* data = udmf->UdmfData_Create ? udmf->UdmfData_Create() : nullptr;
+    if (data && record && udmf->UdmfData_AddRecord) {
+        udmf->UdmfData_AddRecord(data, record);
+    }
+    if (data) {
+        int ret = OH_Pasteboard_SetData(pasteboard, reinterpret_cast<OH_UdmfData*>(data));
+        if (ret != 0) {
+            OH_LOG_WARN(LOG_APP, "ClipboardWrite: OH_Pasteboard_SetData returned %{public}d", ret);
+        } else {
+            OH_LOG_INFO(LOG_APP, "ClipboardWrite: wrote %{public}zu bytes", str_len);
+        }
+    }
+
+    if (data && udmf->UdmfData_Destroy) udmf->UdmfData_Destroy(data);
+    if (record && udmf->UdmfRecord_Destroy) udmf->UdmfRecord_Destroy(record);
+    if (plainText && udmf->UdsPlainText_Destroy) udmf->UdsPlainText_Destroy(plainText);
+    OH_Pasteboard_Destroy(pasteboard);
+    return nullptr;
+}
+
+/// 从系统剪贴板读取文本。
+static napi_value ClipboardRead(napi_env env, napi_callback_info info) {
+    OH_Pasteboard* pasteboard = OH_Pasteboard_Create();
+    if (!pasteboard) {
+        OH_LOG_ERROR(LOG_APP, "ClipboardRead: OH_Pasteboard_Create failed");
+        napi_value result;
+        napi_create_string_utf8(env, "", NAPI_AUTO_LENGTH, &result);
+        return result;
+    }
+
+    auto* udmf = get_udmf();
+    if (!udmf) {
+        OH_Pasteboard_Destroy(pasteboard);
+        napi_value result;
+        napi_create_string_utf8(env, "", NAPI_AUTO_LENGTH, &result);
+        return result;
+    }
+
+    int status = 0;
+    OH_UdmfData* data = OH_Pasteboard_GetData(pasteboard, &status);
+    napi_value result;
+    if (data && status == 0 && udmf->UdsPlainText_Create) {
+        void* plainText = udmf->UdsPlainText_Create();
+        if (plainText) {
+            int ret = udmf->UdmfData_GetPrimaryPlainText(data, plainText);
+            if (ret == 0 && udmf->UdsPlainText_GetContent) {
+                const char* content = udmf->UdsPlainText_GetContent(plainText);
+                OH_LOG_INFO(LOG_APP, "ClipboardRead: read %{public}zu bytes", content ? strlen(content) : 0);
+                napi_create_string_utf8(env, content ? content : "", NAPI_AUTO_LENGTH, &result);
+            } else {
+                napi_create_string_utf8(env, "", NAPI_AUTO_LENGTH, &result);
+            }
+            if (udmf->UdsPlainText_Destroy) udmf->UdsPlainText_Destroy(plainText);
+        } else {
+            napi_create_string_utf8(env, "", NAPI_AUTO_LENGTH, &result);
+        }
+        if (udmf->UdmfData_Destroy) udmf->UdmfData_Destroy(data);
+    } else {
+        OH_LOG_WARN(LOG_APP, "ClipboardRead: OH_Pasteboard_GetData status=%{public}d", status);
+        napi_create_string_utf8(env, "", NAPI_AUTO_LENGTH, &result);
+    }
+
+    OH_Pasteboard_Destroy(pasteboard);
+    return result;
+}
+
+// ── 模块注册 ───────────────────────────────────────────────────────────────────
+
+void RegisterClipboard(napi_env env, napi_value exports) {
+    OH_LOG_INFO(LOG_APP, "Clipboard::Register called");
+    napi_property_descriptor desc[] = {
+        {"clipboardWrite", nullptr, ClipboardWrite, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"clipboardRead",  nullptr, ClipboardRead,  nullptr, nullptr, nullptr, napi_default, nullptr},
+    };
+    napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc);
+    OH_LOG_INFO(LOG_APP, "Clipboard::Register done");
+}
+
+// ── C FFI 桥：Rust 侧通过 dlsym 调用（保留现有接口）───────────────────────────
+
+extern "C" {
+extern void ohos_call_napi_ex(const char* method, const char* arg, char* result, size_t max_len);
+
+void ohos_clipboard_read(void (*callback)(const char*)) {
+    OH_LOG_INFO(LOG_APP, "Clipboard::ohos_read called");
+    char buf[4096] = {0};
+    ohos_call_napi_ex("clipboardRead", nullptr, buf, sizeof(buf));
+    callback(buf);
+}
+
+void ohos_clipboard_write(const char* text) {
+    OH_LOG_INFO(LOG_APP, "Clipboard::ohos_write called");
+    ohos_call_napi_ex("clipboardWrite", text, nullptr, 0);
+}
+
+} // extern "C"
