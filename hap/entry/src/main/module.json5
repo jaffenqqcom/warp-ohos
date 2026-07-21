@@ -2,7 +2,6 @@
   "module": {
     "name": "entry",
     "type": "entry",
-    "description": "$string:module_desc",
     "mainElement": "EntryAbility",
     "deviceTypes": [
       "tablet",
@@ -10,14 +9,10 @@
     ],
     "deliveryWithInstall": true,
     "installationFree": false,
-    "pages": "$profile:main_pages",
     "abilities": [
       {
         "name": "EntryAbility",
         "srcEntry": "./ets/entryability/EntryAbility.ets",
-        "icon": "$media:layered_image",
-        "icon": "$media:app_icon",
-        "startWindowIcon": "$media:startIcon",
         "startWindowIcon": "$media:app_icon",
         "startWindowBackground": "$color:start_window_background",
         "exported": true,
@@ -42,7 +37,9 @@
         "name": "ohos.permission.MICROPHONE",
         "reason": "$string:perm_microphone_reason",
         "usedScene": {
-          "abilities": ["EntryAbility"],
+          "abilities": [
+            "EntryAbility"
+          ],
           "when": "inuse"
         }
       },
@@ -50,7 +47,9 @@
         "name": "ohos.permission.READ_MEDIA",
         "reason": "$string:perm_files_reason",
         "usedScene": {
-          "abilities": ["EntryAbility"],
+          "abilities": [
+            "EntryAbility"
+          ],
           "when": "inuse"
         }
       }
