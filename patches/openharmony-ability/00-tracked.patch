@@ -271,7 +271,7 @@ index b548eab..e807801
      Ok(root)
  }
 diff --git a/native_ability/BuildProfile.ets b/native_ability/BuildProfile.ets
-index 885a0e0..cf3cef7 100644
+index 885a0e0..679ceba 100644
 --- a/native_ability/BuildProfile.ets
 +++ b/native_ability/BuildProfile.ets
 @@ -1,17 +1,17 @@
@@ -280,7 +280,7 @@ index 885a0e0..cf3cef7 100644
   */
 -export const HAR_VERSION = "0.0.1";
 -export const BUILD_MODE_NAME = "debug";
-+export const HAR_VERSION = '0.0.1';
++export const HAR_VERSION = '0.1.0';
 +export const BUILD_MODE_NAME = 'debug';
  export const DEBUG = true;
 -export const TARGET_NAME = "default";
@@ -303,7 +303,7 @@ index 885a0e0..cf3cef7 100644
 +}
 \ No newline at end of file
 diff --git a/native_ability/build-profile.json5 b/native_ability/build-profile.json5
-index bd0772e..3379deb 100644
+index bd0772e..9ec5886 100644
 --- a/native_ability/build-profile.json5
 +++ b/native_ability/build-profile.json5
 @@ -1,12 +1,5 @@
@@ -319,7 +319,7 @@ index bd0772e..3379deb 100644
    "buildOptionSet": [
      {
        "name": "release",
-@@ -25,18 +18,37 @@
+@@ -25,18 +18,24 @@
        },
        "nativeLib": {
          "debugSymbol": {
@@ -338,22 +338,9 @@ index bd0772e..3379deb 100644
 +        "deviceType": [
 +          "tablet",
 +          "2in1"
-+        ],
-+        "buildOption": {
-+          "arkOptions": {
-+            "obfuscation": {
-+              "ruleOptions": {
-+                "enable": false
-+              }
-+            }
-+          },
-+          "externalNativeOptions": {
-+            "abiFilters": [
-+              "arm64-v8a"
-+            ]
-+          }
-+        }
-+      }
++        ]
++      },
++      "runtimeOS": "HarmonyOS"
      },
      {
        "name": "ohosTest"
@@ -391,10 +378,16 @@ index 67f7c09..52dba36 100644
  }
 \ No newline at end of file
 diff --git a/native_ability/oh-package.json5 b/native_ability/oh-package.json5
-index a9b0864..9b57512 100644
+index a9b0864..cba0b07 100644
 --- a/native_ability/oh-package.json5
 +++ b/native_ability/oh-package.json5
-@@ -6,6 +6,7 @@
+@@ -1,11 +1,12 @@
+ {
+   "name": "@ohos-rs/ability",
+-  "version": "0.0.1",
++  "version": "0.1.0",
+   "description": "Adaptor for OpenHarmony/HarmonyNext native abilities",
+   "main": "index.ets",
    "author": "richerfu",
    "license": "Apache-2.0",
    "dependencies": {

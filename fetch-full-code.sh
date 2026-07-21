@@ -21,18 +21,24 @@ add_complete_to_gitignore() {
     fi
 }
 
-# 计算 patch -pN 的正确层级
-# 从 patch 的第一条 --- 路径中，数出到 crate 根需要去掉的层数
-detect_p_strip() {
-    patch_file="$1"
-    line=$(grep '^--- ' "$patch_file" | head -1 | sed 's/^--- //;s/[[:space:]].*//')
-    # 去掉开头的 /，然后数还剩几个 /
-    rest="${line#/}"
-    slash_count=$(echo "$rest" | tr -cd '/' | wc -c)
-    # 去掉的层数 = 斜杠数（把 crate-version/ 及其前面的路径都去掉）
-    # 例如: home/user/.../nix-0.26.4/src/fcntl.rs
-    #       去掉 home=1 user=2 ...=7 nix-0.26.4=8 → src/fcntl.rs
-    echo "$slash_count"
+# 对所有剩余参数对应的 patch 文件执行 git apply
+apply_patches() {
+    label="$1"
+    shift
+    for patch in "$@"; do
+        if [ ! -s "$PATCH_DIR/$patch" ]; then
+            echo "  → patch $patch（空文件，跳过）"
+            continue
+        fi
+        echo "  → 应用 patch: $patch"
+        if ! git apply --ignore-whitespace --whitespace=nowarn "$PATCH_DIR/$patch"; then
+            echo "  ✗ [$label] patch $patch 应用失败"
+            return 1
+        fi
+        echo "  ✓ patch $patch 应用成功"
+    done
+    # 取消暂存（patch 中新文件可能被 git apply 自动加入 index）
+    git reset HEAD -- . > /dev/null 2>&1 || true
 }
 
 # ── git 仓库任务（从 GitHub 下载源码压缩包，替代 git clone） ──
@@ -101,21 +107,7 @@ do_git_archive() {
     git commit -m "base: $label $ref" --allow-empty > /dev/null 2>&1
     echo "  ✓ git 初始化完成（已创建初始 commit）"
 
-    for patch in "$@"; do
-        if [ ! -s "$PATCH_DIR/$patch" ]; then
-            echo "  → patch $patch（空文件，跳过）"
-            continue
-        fi
-        echo "  → 应用 patch: $patch"
-        if ! git apply --ignore-whitespace --whitespace=nowarn "$PATCH_DIR/$patch"; then
-            echo "  ✗ [$label] patch $patch 应用失败"
-            return 1
-        fi
-        echo "  ✓ patch $patch 应用成功"
-    done
-
-    # 取消暂存（patch 中新文件可能被 git apply 自动加入 index）
-    git reset HEAD -- . > /dev/null 2>&1 || true
+    apply_patches "$label" "$@"
 
     add_complete_to_gitignore "$dir"
     touch "$dir/.complete"
@@ -153,22 +145,7 @@ do_git_repo_tag() {
     fi
     echo "  → 已在 tag $tag"
 
-    for patch in "$@"; do
-        if [ ! -s "$PATCH_DIR/$patch" ]; then
-            echo "  → patch $patch（空文件，跳过）"
-            continue
-        fi
-        echo "  → 应用 patch: $patch"
-        if ! git apply --ignore-whitespace --whitespace=nowarn "$PATCH_DIR/$patch"; then
-            echo "  ✗ [$label] patch $patch 应用失败"
-            return 1
-        fi
-        echo "  ✓ patch $patch 应用成功"
-    done
-
-    # git apply --3way 处理新文件时会自动加入 index，这里取消暂存
-    # 新文件应为 untracked 状态，只由人手动 git add
-    git reset HEAD -- . > /dev/null 2>&1 || true
+    apply_patches "$label" "$@"
 
     add_complete_to_gitignore "$dir"
     touch "$dir/.complete"
@@ -213,21 +190,7 @@ do_git_repo() {
     fi
     echo "  → checkout $commit 成功"
 
-    for patch in "$@"; do
-        if [ ! -s "$PATCH_DIR/$patch" ]; then
-            echo "  → patch $patch（空文件，跳过）"
-            continue
-        fi
-        echo "  → 应用 patch: $patch"
-        if ! git apply --ignore-whitespace --whitespace=nowarn "$PATCH_DIR/$patch"; then
-            echo "  ✗ [$label] patch $patch 应用失败"
-            return 1
-        fi
-        echo "  ✓ patch $patch 应用成功"
-    done
-
-    # git apply --3way 处理新文件时会自动加入 index，这里取消暂存
-    git reset HEAD -- . > /dev/null 2>&1 || true
+    apply_patches "$label" "$@"
 
     add_complete_to_gitignore "$dir"
     touch "$dir/.complete"
@@ -239,6 +202,7 @@ do_git_repo() {
 do_crate() {
     name="$1" ver="$2"
     base_dir="${3:-$BASE_DIR}"
+    shift 3
 
     echo "──────────────────────────────────────────"
     echo "  [$name] 开始"
@@ -276,31 +240,15 @@ do_crate() {
     echo "  ✓ 解压完成"
 
     cd "$dir" || { echo "  ✗ [$name] 无法进入目录"; return 1; }
-    patch_file="$PATCH_DIR/$name-$ver.patch"
-    if [ -f "$patch_file" ] && [ -s "$patch_file" ]; then
-        echo "  → 应用 patch: $name-$ver.patch"
-        # 基于 $name-$ver 在 patch 路径中的位置计算 strip 层数
-        # cargo registry 的 hash 段长度可变，不能简单数斜杠
-        p_strip=1
-        first_line=$(grep '^--- ' "$patch_file" | head -1 | sed 's/^--- //;s/[[:space:]].*//')
-        rest="${first_line#/}"
-        prefix="${rest%%/$name-$ver/*}"
-        if [ "$prefix" != "$rest" ]; then
-            slash_count=$(echo "$prefix" | tr -cd '/' | wc -c)
-            p_strip=$((slash_count + 1))
-        else
-            p_strip=$(detect_p_strip "$patch_file")
-        fi
-        # 使用 git apply 而非 patch（兼容 toybox/GNU 的 -p 差异）
-        # --ignore-whitespace 避免 CRLF/LF 换行符不一致导致 patch 失败
-        if ! git apply --ignore-whitespace -p"$p_strip" "$patch_file"; then
-            echo "  ✗ [$name] patch 应用失败"
-            return 1
-        fi
-        echo "  ✓ patch 应用成功"
-    else
-        echo "  → 无 patch 文件"
-    fi
+
+    # 初始化 git 仓库（后续 git apply 需要）
+    echo "  → 初始化 git 仓库..."
+    git init > /dev/null 2>&1
+    git add -A > /dev/null 2>&1
+    git commit -m "base: $name $ver" --allow-empty > /dev/null 2>&1
+    echo "  ✓ git 初始化完成"
+
+    apply_patches "$name" "$@"
 
     add_complete_to_gitignore "$dir"
     touch "$dir/.complete"
@@ -362,12 +310,12 @@ run "warp"                do_git_archive "$BASE_DIR/warp"                "https:
 run "winit"               do_git_archive "$DEPS_DIR/winit"               "https://github.com/warpdotdev/winit"               "a4e0ecb5f9626ccac9445a73dc28354b52423abc" "winit"               "winit/00-tracked.patch" "winit/01-new-files.patch"
 run "wgpu"                do_git_archive "$DEPS_DIR/wgpu"                "https://github.com/zed-industries/wgpu"             "357a0c56e0070480ad9daea5d2eaa83150b79e88" "wgpu"                "wgpu/00-tracked.patch" "wgpu/01-new-files.patch"
 run "openharmony-ability" do_git_archive "$DEPS_DIR/openharmony-ability" "https://github.com/harmony-contrib/openharmony-ability" "6c52bb44164ea2d6d7f573c090a75142f0dbd2ef" "openharmony-ability" "openharmony-ability/00-tracked.patch" "openharmony-ability/01-new-files.patch"
-run "nix"                 do_crate "nix" "0.26.4" "$DEPS_DIR"
-run "interprocess"        do_crate "interprocess" "1.2.1" "$DEPS_DIR"
-run "gettext-sys"         do_crate "gettext-sys" "0.21.3" "$DEPS_DIR"
+run "nix"                 do_crate "nix" "0.26.4" "$DEPS_DIR" "nix-0.26.4.patch"
+run "interprocess"        do_crate "interprocess" "1.2.1" "$DEPS_DIR" "interprocess-1.2.1.patch"
+run "gettext-sys"         do_crate "gettext-sys" "0.21.3" "$DEPS_DIR" "gettext-sys-0.21.3.patch"
 run "mbedtls"             do_archive "third_party_mbedtls-OpenHarmony-v3.2-Release.tar.gz" "https://github.com/openharmony/third_party_mbedtls/archive/refs/tags/OpenHarmony-v3.2-Release.tar.gz"
 run "libssh2"             do_archive "libssh2-1.11.0.tar.gz" "https://libssh2.org/download/libssh2-1.11.0.tar.gz"
-run "ohos-ime-binding"    do_crate "ohos-ime-binding" "0.1.2" "$DEPS_DIR"
+run "ohos-ime-binding"    do_crate "ohos-ime-binding" "0.2.1" "$DEPS_DIR" "ohos-ime-binding/00-tracked.patch" "ohos-ime-binding/01-new-files.patch"
 
 echo ""
 echo "=========================================="

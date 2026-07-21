@@ -48,9 +48,9 @@ make_newfile_patch() {
     done
 }
 
-# ════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════
 #  warp
-# ════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════
 echo "=========================================="
 echo " warp"
 echo "=========================================="
@@ -110,9 +110,25 @@ echo "  → 01-new-files.patch (新增的文件)..."
 make_newfile_patch "$DEPS_DIR/openharmony-ability" "$PATCH_DIR/openharmony-ability/01-new-files.patch"
 
 # ════════════════════════════════════════════════════════════
+#  ohos-ime-binding
+# ════════════════════════════════════════════════════════════
+echo ""
+echo "=========================================="
+echo " ohos-ime-binding"
+echo "=========================================="
+
+mkdir -p "$PATCH_DIR/ohos-ime-binding"
+
+echo "  → 00-tracked.patch (已有文件的修改)..."
+make_modified_patch "$DEPS_DIR/ohos-ime-binding" "$PATCH_DIR/ohos-ime-binding/00-tracked.patch"
+
+echo "  → 01-new-files.patch (新增的文件)..."
+make_newfile_patch "$DEPS_DIR/ohos-ime-binding" "$PATCH_DIR/ohos-ime-binding/01-new-files.patch"
+
+# ════════════════════════════════════════════════════════════
 echo ""
 echo "=========================================="
 echo " 新patches 制作完成！"
 echo "=========================================="
-ls -lh "$PATCH_DIR/warp/"*.patch "$PATCH_DIR/winit/"*.patch "$PATCH_DIR/wgpu/"*.patch "$PATCH_DIR/openharmony-ability/"*.patch "$PATCH_DIR/"*.patch 2>/dev/null
+ls -lh "$PATCH_DIR/warp/"*.patch "$PATCH_DIR/winit/"*.patch "$PATCH_DIR/wgpu/"*.patch "$PATCH_DIR/openharmony-ability/"*.patch "$PATCH_DIR/ohos-ime-binding/"*.patch "$PATCH_DIR/"*.patch 2>/dev/null
 echo "提交指令：git add fetch-full-code.sh  update-patches.sh patches/ && git commit -m "更新脚本与补丁目录" && git push"

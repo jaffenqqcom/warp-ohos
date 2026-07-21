@@ -15,7 +15,7 @@ index a145971..2b254c7 100644
 diff --git a/Cargo.lock b/Cargo.lock
 old mode 100644
 new mode 100755
-index 76553fb..58f2cd8
+index 76553fb..5897a55
 --- a/Cargo.lock
 +++ b/Cargo.lock
 @@ -4,9 +4,9 @@ version = 4
@@ -72,15 +72,6 @@ index 76553fb..58f2cd8
  ]
  
  [[package]]
-@@ -3009,7 +3009,7 @@ version = "0.13.1"
- source = "registry+https://github.com/rust-lang/crates.io-index"
- checksum = "af491d569909a7e4dee0ad7db7f5341fef5c614d5b8ec8cf765732aba3cff681"
- dependencies = [
-- "unicode-width 0.2.1",
-+ "unicode-width 0.1.14",
- ]
- 
- [[package]]
 @@ -3241,6 +3241,15 @@ version = "0.4.0"
  source = "registry+https://github.com/rust-lang/crates.io-index"
  checksum = "6245d59a3e82a7fc217c5828a6692dbc6dfb63a0c8c90495621f7b9d79704a0e"
@@ -113,15 +104,6 @@ index 76553fb..58f2cd8
  [[package]]
  name = "core-foundation"
  version = "0.9.4"
-@@ -3451,7 +3469,7 @@ dependencies = [
-  "wasm-bindgen",
-  "wasm-bindgen-futures",
-  "web-sys",
-- "windows 0.62.2",
-+ "windows 0.61.3",
- ]
- 
- [[package]]
 @@ -3711,6 +3729,12 @@ dependencies = [
   "syn 1.0.109",
  ]
@@ -161,24 +143,6 @@ index 76553fb..58f2cd8
  dependencies = [
   "cc",
   "temp-dir",
-@@ -5828,7 +5849,7 @@ dependencies = [
-  "log",
-  "presser",
-  "thiserror 2.0.17",
-- "windows 0.62.2",
-+ "windows 0.61.3",
- ]
- 
- [[package]]
-@@ -6420,7 +6441,7 @@ dependencies = [
-  "js-sys",
-  "log",
-  "wasm-bindgen",
-- "windows-core 0.62.2",
-+ "windows-core 0.61.2",
- ]
- 
- [[package]]
 @@ -6856,8 +6877,6 @@ checksum = "71dd52191aae121e8611f1e8dc3e324dd0dd1dee1e6dd91d10ee07a3cfb4d9d8"
  [[package]]
  name = "interprocess"
@@ -311,7 +275,7 @@ index 76553fb..58f2cd8
  [[package]]
  name = "nom"
  version = "7.1.3"
-@@ -9111,6 +9199,140 @@ dependencies = [
+@@ -9111,6 +9199,141 @@ dependencies = [
   "memchr",
  ]
  
@@ -356,30 +320,18 @@ index 76553fb..58f2cd8
 +checksum = "fe9e1bba4d94159d0a65f1b4e748c148d4bce7930912c424522693f1837dad77"
 +
 +[[package]]
-+name = "ohos-enum-derive"
-+version = "0.1.1"
-+source = "registry+https://github.com/rust-lang/crates.io-index"
-+checksum = "dfaa27b9a5519879fcccdb845993e2d2c28df2f84e60f1016bad4557458a4889"
-+dependencies = [
-+ "convert_case 0.6.0",
-+ "proc-macro2",
-+ "quote",
-+ "syn 2.0.117",
-+]
-+
-+[[package]]
 +name = "ohos-ime-binding"
-+version = "0.2.1"
++version = "0.1.2"
 +dependencies = [
-+ "ohos-enum-derive",
 + "ohos-input-method-sys",
++ "ohos_enum_macro 0.1.0",
 +]
 +
 +[[package]]
 +name = "ohos-input-method-sys"
-+version = "0.2.1"
++version = "0.1.1"
 +source = "registry+https://github.com/rust-lang/crates.io-index"
-+checksum = "855c631663b49706aee58d0a446568aefeb85ccf95180a059d020c00b1187ad2"
++checksum = "225be105b169f45a2bca86498988c1877568d82542c013b345d605eb915e48ae"
 +
 +[[package]]
 +name = "ohos-resource-manager-binding"
@@ -449,10 +401,23 @@ index 76553fb..58f2cd8
 + "syn 2.0.117",
 +]
 +
++[[package]]
++name = "ohos_enum_macro"
++version = "0.1.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "2fc1544b50988de3d636f971135e66c40479ef68e30ef09b15fb911763aab077"
++dependencies = [
++ "convert_case 0.6.0",
++ "proc-macro2",
++ "quote",
++ "regex",
++ "syn 2.0.117",
++]
++
  [[package]]
  name = "onboarding"
  version = "0.1.0"
-@@ -9219,6 +9441,29 @@ dependencies = [
+@@ -9219,6 +9442,29 @@ dependencies = [
   "walkdir",
  ]
  
@@ -482,16 +447,7 @@ index 76553fb..58f2cd8
  [[package]]
  name = "openssl"
  version = "0.10.79"
-@@ -10101,7 +10346,7 @@ version = "0.14.3"
- source = "registry+https://github.com/rust-lang/crates.io-index"
- checksum = "343d3bd7056eda839b03204e68deff7d1b13aba7af2b2fd16890697274262ee7"
- dependencies = [
-- "heck 0.5.0",
-+ "heck 0.4.1",
-  "itertools 0.14.0",
-  "log",
-  "multimap",
-@@ -14449,7 +14694,7 @@ dependencies = [
+@@ -14449,7 +14695,7 @@ dependencies = [
   "crash-handler",
   "crc",
   "csv",
@@ -500,7 +456,7 @@ index 76553fb..58f2cd8
   "cvt",
   "cynic",
   "dashmap",
-@@ -14529,6 +14774,8 @@ dependencies = [
+@@ -14529,6 +14775,8 @@ dependencies = [
   "mio",
   "mockall",
   "mockito",
@@ -509,7 +465,7 @@ index 76553fb..58f2cd8
   "natural_language_detection",
   "nix 0.26.4",
   "notify-debouncer-full",
-@@ -14542,6 +14789,8 @@ dependencies = [
+@@ -14542,6 +14790,8 @@ dependencies = [
   "objc2-foundation 0.3.2",
   "onboarding",
   "once_cell",
@@ -518,7 +474,7 @@ index 76553fb..58f2cd8
   "ordered-float 3.9.2",
   "os_info",
   "palette",
-@@ -15298,6 +15547,8 @@ dependencies = [
+@@ -15298,6 +15548,8 @@ dependencies = [
   "objc2-metal 0.3.2",
   "objc2-quartz-core 0.3.2",
   "open",
@@ -527,7 +483,7 @@ index 76553fb..58f2cd8
   "ordered-float 3.9.2",
   "owned_ttf_parser",
   "parking_lot",
-@@ -15351,7 +15602,7 @@ dependencies = [
+@@ -15351,7 +15603,7 @@ dependencies = [
   "chrono",
   "command",
   "concat-idents",
@@ -536,7 +492,7 @@ index 76553fb..58f2cd8
   "ctrlc",
   "dashmap",
   "derivative",
-@@ -15621,11 +15872,11 @@ dependencies = [
+@@ -15621,11 +15873,11 @@ dependencies = [
  
  [[package]]
  name = "wayland-cursor"
@@ -551,7 +507,7 @@ index 76553fb..58f2cd8
   "wayland-client",
   "xcursor",
  ]
-@@ -15808,9 +16059,7 @@ dependencies = [
+@@ -15808,9 +16060,7 @@ dependencies = [
  
  [[package]]
  name = "wgpu"
@@ -562,7 +518,7 @@ index 76553fb..58f2cd8
  dependencies = [
   "arrayvec",
   "bitflags 2.9.4",
-@@ -15837,9 +16086,7 @@ dependencies = [
+@@ -15837,9 +16087,7 @@ dependencies = [
  
  [[package]]
  name = "wgpu-core"
@@ -573,7 +529,7 @@ index 76553fb..58f2cd8
  dependencies = [
   "arrayvec",
   "bit-set 0.9.1",
-@@ -15871,45 +16118,35 @@ dependencies = [
+@@ -15871,45 +16119,35 @@ dependencies = [
  
  [[package]]
  name = "wgpu-core-deps-apple"
@@ -624,7 +580,7 @@ index 76553fb..58f2cd8
  dependencies = [
   "android_system_properties",
   "arrayvec",
-@@ -15928,7 +16165,7 @@ dependencies = [
+@@ -15928,7 +16166,7 @@ dependencies = [
   "js-sys",
   "khronos-egl",
   "libc",
@@ -633,16 +589,7 @@ index 76553fb..58f2cd8
   "log",
   "naga",
   "ndk-sys",
-@@ -15938,7 +16175,7 @@ dependencies = [
-  "objc2-metal 0.3.2",
-  "objc2-quartz-core 0.3.2",
-  "once_cell",
-- "ordered-float 5.3.0",
-+ "ordered-float 3.9.2",
-  "parking_lot",
-  "portable-atomic",
-  "portable-atomic-util",
-@@ -15956,13 +16193,12 @@ dependencies = [
+@@ -15956,13 +16194,12 @@ dependencies = [
   "wgpu-types",
   "windows 0.62.2",
   "windows-core 0.62.2",
@@ -658,7 +605,7 @@ index 76553fb..58f2cd8
  dependencies = [
   "naga",
   "wgpu-types",
-@@ -15970,9 +16206,7 @@ dependencies = [
+@@ -15970,9 +16207,7 @@ dependencies = [
  
  [[package]]
  name = "wgpu-types"
@@ -669,7 +616,7 @@ index 76553fb..58f2cd8
  dependencies = [
   "bitflags 2.9.4",
   "bytemuck",
-@@ -16465,7 +16699,6 @@ checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
+@@ -16465,7 +16700,6 @@ checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
  [[package]]
  name = "winit"
  version = "0.30.13"
@@ -677,7 +624,7 @@ index 76553fb..58f2cd8
  dependencies = [
   "ahash 0.8.11",
   "android-activity",
-@@ -16488,6 +16721,8 @@ dependencies = [
+@@ -16488,6 +16722,8 @@ dependencies = [
   "objc2-app-kit 0.2.2",
   "objc2-foundation 0.2.2",
   "objc2-ui-kit",
@@ -686,7 +633,7 @@ index 76553fb..58f2cd8
   "orbclient",
   "percent-encoding",
   "pin-project",
-@@ -16736,7 +16971,7 @@ dependencies = [
+@@ -16736,7 +16972,7 @@ dependencies = [
   "as-raw-xcb-connection",
   "gethostname",
   "libc",
@@ -695,7 +642,7 @@ index 76553fb..58f2cd8
   "once_cell",
   "rustix 1.1.2",
   "x11rb-protocol",
-@@ -16770,12 +17005,9 @@ dependencies = [
+@@ -16770,12 +17006,9 @@ dependencies = [
  
  [[package]]
  name = "xcursor"
@@ -710,7 +657,7 @@ index 76553fb..58f2cd8
  
  [[package]]
  name = "xdg"
-@@ -17229,3 +17461,7 @@ dependencies = [
+@@ -17229,3 +17462,7 @@ dependencies = [
   "syn 2.0.117",
   "winnow 0.7.12",
  ]
