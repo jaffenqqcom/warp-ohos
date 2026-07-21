@@ -26,12 +26,25 @@ apply_patches() {
     label="$1"
     shift
     for patch in "$@"; do
-        if [ ! -s "$PATCH_DIR/$patch" ]; then
+        patch_file="$PATCH_DIR/$patch"
+        if [ ! -s "$patch_file" ]; then
             echo "  → patch $patch（空文件，跳过）"
             continue
         fi
-        echo "  → 应用 patch: $patch"
-        if ! git apply --ignore-whitespace --whitespace=nowarn "$PATCH_DIR/$patch"; then
+
+        # 自动检测 -p 剥离层数
+        first_line=$(grep '^--- ' "$patch_file" | head -1 | sed 's/^--- //;s/[[:space:]].*//')
+        case "$first_line" in
+            a/*) p_strip=1 ;;              # git diff 格式: "a/src/lib.rs"
+            /*)                             # diff -ruN 绝对路径: 数所有路径分量
+                rest="${first_line#/}"
+                p_strip=$(echo "$rest" | tr -cd '/' | wc -c)
+                ;;
+            *) p_strip=1 ;;                 # 其它情况默认 -p1
+        esac
+
+        echo "  → 应用 patch: $patch（-p$p_strip）"
+        if ! git apply --ignore-whitespace --whitespace=nowarn -p"$p_strip" "$patch_file"; then
             echo "  ✗ [$label] patch $patch 应用失败"
             return 1
         fi
@@ -310,9 +323,9 @@ run "warp"                do_git_archive "$BASE_DIR/warp"                "https:
 run "winit"               do_git_archive "$DEPS_DIR/winit"               "https://github.com/warpdotdev/winit"               "a4e0ecb5f9626ccac9445a73dc28354b52423abc" "winit"               "winit/00-tracked.patch" "winit/01-new-files.patch"
 run "wgpu"                do_git_archive "$DEPS_DIR/wgpu"                "https://github.com/zed-industries/wgpu"             "357a0c56e0070480ad9daea5d2eaa83150b79e88" "wgpu"                "wgpu/00-tracked.patch" "wgpu/01-new-files.patch"
 run "openharmony-ability" do_git_archive "$DEPS_DIR/openharmony-ability" "https://github.com/harmony-contrib/openharmony-ability" "6c52bb44164ea2d6d7f573c090a75142f0dbd2ef" "openharmony-ability" "openharmony-ability/00-tracked.patch" "openharmony-ability/01-new-files.patch"
-run "nix"                 do_crate "nix" "0.26.4" "$DEPS_DIR" "nix-0.26.4.patch"
-run "interprocess"        do_crate "interprocess" "1.2.1" "$DEPS_DIR" "interprocess-1.2.1.patch"
-run "gettext-sys"         do_crate "gettext-sys" "0.21.3" "$DEPS_DIR" "gettext-sys-0.21.3.patch"
+run "nix"                 do_crate "nix" "0.26.4" "$DEPS_DIR" "nix/00-tracked.patch" "nix/01-new-files.patch"
+run "interprocess"        do_crate "interprocess" "1.2.1" "$DEPS_DIR" "interprocess/00-tracked.patch" "interprocess/01-new-files.patch"
+run "gettext-sys"         do_crate "gettext-sys" "0.21.3" "$DEPS_DIR" "gettext-sys/00-tracked.patch" "gettext-sys/01-new-files.patch"
 run "mbedtls"             do_archive "third_party_mbedtls-OpenHarmony-v3.2-Release.tar.gz" "https://github.com/openharmony/third_party_mbedtls/archive/refs/tags/OpenHarmony-v3.2-Release.tar.gz"
 run "libssh2"             do_archive "libssh2-1.11.0.tar.gz" "https://libssh2.org/download/libssh2-1.11.0.tar.gz"
 run "ohos-ime-binding"    do_crate "ohos-ime-binding" "0.2.1" "$DEPS_DIR" "ohos-ime-binding/00-tracked.patch" "ohos-ime-binding/01-new-files.patch"

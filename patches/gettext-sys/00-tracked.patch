@@ -1,7 +1,8 @@
-diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' /home/user/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gettext-sys-0.21.3/build.rs /mnt/linux_share/warp-winit/patches/gettext-sys/build.rs
---- /home/user/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/gettext-sys-0.21.3/build.rs	1973-11-30 05:33:09.000000000 +0800
-+++ /mnt/linux_share/warp-winit/patches/gettext-sys/build.rs	2026-07-17 13:38:44.000000000 +0800
-@@ -84,6 +84,8 @@
+diff --git a/build.rs b/build.rs
+index 60c30d0..6df90f5 100644
+--- a/build.rs
++++ b/build.rs
+@@ -84,6 +84,8 @@ fn check_dependencies(required_programs: Vec<&str>) {
  
  fn main() {
      let target = env::var("TARGET").unwrap();
@@ -10,7 +11,7 @@ diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' /home/user/.car
  
      if cfg!(feature = "gettext-system") || env("GETTEXT_SYSTEM").is_some() {
          if target.contains("linux") && (target.contains("-gnu") || target.contains("-musl")) {
-@@ -160,6 +162,8 @@
+@@ -160,6 +162,8 @@ fn main() {
      check_dependencies(vec!["cmp", "diff", "find", "xz"]);
  
      let host = env::var("HOST").unwrap();
@@ -19,7 +20,7 @@ diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' /home/user/.car
      let src = env::current_dir().unwrap();
      let build_dir = TempDir::new().unwrap();
      let build_dir = build_dir.path();
-@@ -193,10 +197,31 @@
+@@ -193,10 +197,31 @@ fn main() {
      }
      run(&mut cmd, "tar");
  
@@ -52,7 +53,7 @@ diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' /home/user/.car
          .env("VERBOSE", "1")
          .current_dir(&build_dir.join("build"))
          .arg(&posix_path(&build_dir.join("gettext").join("configure")));
-@@ -222,20 +247,20 @@
+@@ -222,20 +247,20 @@ fn main() {
      cmd.arg(format!("--prefix={}", &posix_path(&build_dir)));
      cmd.arg(format!("--libdir={}", &posix_path(&build_dir.join("lib"))));
  
@@ -80,7 +81,7 @@ diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' /home/user/.car
          }
      }
      run(&mut cmd, "sh");
-@@ -308,6 +333,18 @@
+@@ -308,6 +333,18 @@ fn which(cmd: &str) -> Option<PathBuf> {
          .find(|p| fs::metadata(p).is_ok())
  }
  

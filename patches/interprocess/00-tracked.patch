@@ -1,0 +1,13 @@
+diff --git a/build.rs b/build.rs
+index 2ac069a..e94c8eb 100644
+--- a/build.rs
++++ b/build.rs
+@@ -50,7 +50,7 @@ fn is_unix() -> bool {
+ #[rustfmt::skip]
+ fn collect_uds_features(target: &TargetTriplet) {
+     let (mut uds, mut scm_rights) = (false, true);
+-    if (target.os("linux") && target.env_any(&["gnu", "musl", "musleabi", "musleabihf"]))
++    if (target.os("linux") && target.env_any(&["gnu", "musl", "musleabi", "musleabihf", "ohos"]))
+     || target.os_any(&["android", "emscripten", "fuchsia", "redox"]) {
+         // "Linux-like" in libc terminology, plus Fuchsia and Redox
+         uds = true;

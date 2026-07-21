@@ -1,7 +1,8 @@
-diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' '--exclude=Cargo.lock' /home/user/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/nix-0.26.4/src/fcntl.rs /mnt/linux_share/warp-winit/patches/nix/src/fcntl.rs
---- /home/user/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/nix-0.26.4/src/fcntl.rs	2006-07-24 09:21:28.000000000 +0800
-+++ /mnt/linux_share/warp-winit/patches/nix/src/fcntl.rs	2026-06-26 23:00:21.152806719 +0800
-@@ -104,7 +104,7 @@
+diff --git a/src/fcntl.rs b/src/fcntl.rs
+index e227e7c..7556aa1 100644
+--- a/src/fcntl.rs
++++ b/src/fcntl.rs
+@@ -104,7 +104,7 @@ libc_bitflags!(
          #[cfg(any(target_os = "dragonfly",
                    target_os = "freebsd",
                    target_os = "ios",
@@ -10,10 +11,11 @@ diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' '--exclude=Carg
                    target_os = "macos",
                    target_os = "netbsd",
                    target_os = "openbsd",
-diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' '--exclude=Cargo.lock' /home/user/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/nix-0.26.4/src/sys/signal.rs /mnt/linux_share/warp-winit/patches/nix/src/sys/signal.rs
---- /home/user/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/nix-0.26.4/src/sys/signal.rs	2006-07-24 09:21:28.000000000 +0800
-+++ /mnt/linux_share/warp-winit/patches/nix/src/sys/signal.rs	2026-06-26 23:00:21.180802500 +0800
-@@ -1069,6 +1069,8 @@
+diff --git a/src/sys/signal.rs b/src/sys/signal.rs
+index d3746e6..2f8f126 100644
+--- a/src/sys/signal.rs
++++ b/src/sys/signal.rs
+@@ -1069,6 +1069,8 @@ mod sigevent {
                  SigevNotify::SigevThreadId{..} => libc::SIGEV_THREAD_ID,
                  #[cfg(all(target_os = "linux", target_env = "uclibc"))]
                  SigevNotify::SigevThreadId{..} => libc::SIGEV_THREAD_ID,
@@ -22,10 +24,11 @@ diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' '--exclude=Carg
                  #[cfg(any(all(target_os = "linux", target_env = "musl"), target_arch = "mips"))]
                  SigevNotify::SigevThreadId{..} => 4  // No SIGEV_THREAD_ID defined
              };
-diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' '--exclude=Cargo.lock' /home/user/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/nix-0.26.4/src/sys/socket/mod.rs /mnt/linux_share/warp-winit/patches/nix/src/sys/socket/mod.rs
---- /home/user/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/nix-0.26.4/src/sys/socket/mod.rs	2006-07-24 09:21:28.000000000 +0800
-+++ /mnt/linux_share/warp-winit/patches/nix/src/sys/socket/mod.rs	2026-06-26 23:00:21.184798906 +0800
-@@ -1428,7 +1428,7 @@
+diff --git a/src/sys/socket/mod.rs b/src/sys/socket/mod.rs
+index 956c8da..78ac447 100644
+--- a/src/sys/socket/mod.rs
++++ b/src/sys/socket/mod.rs
+@@ -1428,7 +1428,7 @@ impl<'a> ControlMessage<'a> {
      unsafe fn encode_into(&self, cmsg: *mut cmsghdr) {
          (*cmsg).cmsg_level = self.cmsg_level();
          (*cmsg).cmsg_type = self.cmsg_type();
@@ -34,10 +37,11 @@ diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' '--exclude=Carg
          self.copy_to_cmsg_data(CMSG_DATA(cmsg));
      }
  }
-diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' '--exclude=Cargo.lock' /home/user/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/nix-0.26.4/src/sys/socket/sockopt.rs /mnt/linux_share/warp-winit/patches/nix/src/sys/socket/sockopt.rs
---- /home/user/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/nix-0.26.4/src/sys/socket/sockopt.rs	2006-07-24 09:21:28.000000000 +0800
-+++ /mnt/linux_share/warp-winit/patches/nix/src/sys/socket/sockopt.rs	2026-06-26 23:00:21.184798906 +0800
-@@ -1193,7 +1193,11 @@
+diff --git a/src/sys/socket/sockopt.rs b/src/sys/socket/sockopt.rs
+index 2658dea..15c7997 100644
+--- a/src/sys/socket/sockopt.rs
++++ b/src/sys/socket/sockopt.rs
+@@ -1193,7 +1193,11 @@ impl<'a> Set<'a, bool> for SetBool {
  }
  
  /// Getter for an `u8` value.
@@ -50,7 +54,7 @@ diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' '--exclude=Carg
      len: socklen_t,
      val: MaybeUninit<u8>,
  }
-@@ -1225,7 +1229,9 @@
+@@ -1225,7 +1229,9 @@ impl Get<u8> for GetU8 {
  }
  
  /// Setter for an `u8` value.
@@ -61,10 +65,11 @@ diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' '--exclude=Carg
      val: u8,
  }
  
-diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' '--exclude=Cargo.lock' /home/user/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/nix-0.26.4/src/sys/statfs.rs /mnt/linux_share/warp-winit/patches/nix/src/sys/statfs.rs
---- /home/user/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/nix-0.26.4/src/sys/statfs.rs	2006-07-24 09:21:28.000000000 +0800
-+++ /mnt/linux_share/warp-winit/patches/nix/src/sys/statfs.rs	2026-06-26 23:00:21.188803125 +0800
-@@ -64,7 +64,7 @@
+diff --git a/src/sys/statfs.rs b/src/sys/statfs.rs
+index 9be8ca6..50b11e6 100644
+--- a/src/sys/statfs.rs
++++ b/src/sys/statfs.rs
+@@ -64,7 +64,7 @@ type fs_type_t = u32;
  type fs_type_t = libc::c_ulong;
  #[cfg(all(target_os = "linux", target_arch = "s390x"))]
  type fs_type_t = libc::c_uint;
@@ -73,7 +78,7 @@ diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' '--exclude=Carg
  type fs_type_t = libc::c_ulong;
  #[cfg(all(target_os = "linux", target_env = "uclibc"))]
  type fs_type_t = libc::c_int;
-@@ -73,7 +73,8 @@
+@@ -73,7 +73,8 @@ type fs_type_t = libc::c_int;
      not(any(
          target_arch = "s390x",
          target_env = "musl",
@@ -83,7 +88,7 @@ diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' '--exclude=Carg
      ))
  ))]
  type fs_type_t = libc::__fsword_t;
-@@ -292,7 +293,7 @@
+@@ -292,7 +293,7 @@ pub const XENFS_SUPER_MAGIC: FsType =
  pub const NSFS_MAGIC: FsType = FsType(libc::NSFS_MAGIC as fs_type_t);
  #[cfg(all(
      any(target_os = "linux", target_os = "android"),
@@ -92,7 +97,7 @@ diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' '--exclude=Carg
  ))]
  #[allow(missing_docs)]
  pub const XFS_SUPER_MAGIC: FsType = FsType(libc::XFS_SUPER_MAGIC as fs_type_t);
-@@ -342,7 +343,7 @@
+@@ -342,7 +343,7 @@ impl Statfs {
      /// Optimal transfer block size
      #[cfg(any(
          target_os = "android",
@@ -101,7 +106,7 @@ diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' '--exclude=Carg
      ))]
      #[cfg_attr(docsrs, doc(cfg(all())))]
      pub fn optimal_transfer_size(&self) -> libc::c_ulong {
-@@ -355,7 +356,8 @@
+@@ -355,7 +356,8 @@ impl Statfs {
          not(any(
              target_arch = "s390x",
              target_env = "musl",
@@ -111,7 +116,7 @@ diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' '--exclude=Carg
          ))
      ))]
      #[cfg_attr(docsrs, doc(cfg(all())))]
-@@ -401,7 +403,7 @@
+@@ -401,7 +403,7 @@ impl Statfs {
  
      /// Size of a block
      // f_bsize on linux: https://github.com/torvalds/linux/blob/master/fs/nfs/super.c#L471
@@ -120,7 +125,7 @@ diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' '--exclude=Carg
      #[cfg_attr(docsrs, doc(cfg(all())))]
      pub fn block_size(&self) -> libc::c_ulong {
          self.0.f_bsize
-@@ -422,7 +424,8 @@
+@@ -422,7 +424,8 @@ impl Statfs {
          not(any(
              target_arch = "s390x",
              target_env = "musl",
@@ -130,7 +135,7 @@ diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' '--exclude=Carg
          ))
      ))]
      #[cfg_attr(docsrs, doc(cfg(all())))]
-@@ -492,7 +495,7 @@
+@@ -492,7 +495,7 @@ impl Statfs {
      }
  
      /// Maximum length of filenames
@@ -139,7 +144,7 @@ diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' '--exclude=Carg
      #[cfg_attr(docsrs, doc(cfg(all())))]
      pub fn maximum_name_length(&self) -> libc::c_ulong {
          self.0.f_namelen
-@@ -511,7 +514,8 @@
+@@ -511,7 +514,8 @@ impl Statfs {
          not(any(
              target_arch = "s390x",
              target_env = "musl",
@@ -149,10 +154,11 @@ diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' '--exclude=Carg
          ))
      ))]
      #[cfg_attr(docsrs, doc(cfg(all())))]
-diff -ruN '--exclude=.cargo-ok' '--exclude=.cargo_vcs_info.json' '--exclude=Cargo.lock' /home/user/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/nix-0.26.4/src/sys/statvfs.rs /mnt/linux_share/warp-winit/patches/nix/src/sys/statvfs.rs
---- /home/user/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/nix-0.26.4/src/sys/statvfs.rs	2006-07-24 09:21:28.000000000 +0800
-+++ /mnt/linux_share/warp-winit/patches/nix/src/sys/statvfs.rs	2026-06-26 23:00:21.188803125 +0800
-@@ -58,7 +58,7 @@
+diff --git a/src/sys/statvfs.rs b/src/sys/statvfs.rs
+index 8de369f..892937f 100644
+--- a/src/sys/statvfs.rs
++++ b/src/sys/statvfs.rs
+@@ -58,7 +58,7 @@ libc_bitflags!(
          #[cfg_attr(docsrs, doc(cfg(all())))]
          ST_NODIRATIME;
          /// Update access time relative to modify/change time
