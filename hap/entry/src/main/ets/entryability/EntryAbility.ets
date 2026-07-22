@@ -20,7 +20,7 @@ export default class EntryAbility extends NativeAbility {
   defaultPage: boolean = false;
 
   async onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): Promise<void> {
-    super.onCreate(want, launchParam);
+    await super.onCreate(want, launchParam);
     try {
       // 类型断言到 UIAbility 绕过跨 HAR 类型链解析
       (this as UIAbility).context.getApplicationContext()
@@ -32,7 +32,7 @@ export default class EntryAbility extends NativeAbility {
   }
 
   async onWindowStageCreate(windowStage: window.WindowStage): Promise<void> {
-    super.onWindowStageCreate(windowStage);
+    await super.onWindowStageCreate(windowStage);
     try {
       await windowStage.loadContent('pages/Index');
       hilog.info(DOMAIN, TAG, 'Succeeded in loading the content.');

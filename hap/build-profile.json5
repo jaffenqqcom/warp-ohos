@@ -4,13 +4,13 @@
       {
         "name": "default",
         "material": {
-          "storePassword": "000000200935AB24F8D369C7E64E63732311579C2BF0996AD5F08E50AE0CC1EB01C2F9ABDC05E3FA163B56B79DB7D095",
-          "certpath": "/storage/Users/currentUser/Documents/ohos/config/default_hapHD-v_0wt3fmlK17SYeXMGJOjh-mUjvGMnRbzqYQPLtU.cer",
+          "storePassword": "00000020AA27B01FBD754889BB273D9BC4A6ECF8B260D69C77C37B22B84849871B019F77F6744DE3EF7D689189E5098D",
+          "certpath": "/storage/Users/currentUser/Documents/ohos/config/default_hapKrk4yYqx_9r7hq0KAQaCN_rdwtQW-6uG16aN4wI-L-o.cer",
           "keyAlias": "debugKey",
-          "keyPassword": "000000200935AB24F8D369C7E64E63732311579C2BF0996AD5F08E50AE0CC1EB01C2F9ABDC05E3FA163B56B79DB7D095",
-          "profile": "/storage/Users/currentUser/Documents/ohos/config/default_hapHD-v_0wt3fmlK17SYeXMGJOjh-mUjvGMnRbzqYQPLtU.p7b",
+          "keyPassword": "00000020AA27B01FBD754889BB273D9BC4A6ECF8B260D69C77C37B22B84849871B019F77F6744DE3EF7D689189E5098D",
+          "profile": "/storage/Users/currentUser/Documents/ohos/config/default_hapKrk4yYqx_9r7hq0KAQaCN_rdwtQW-6uG16aN4wI-L-o.p7b",
           "signAlg": "SHA256withECDSA",
-          "storeFile": "/storage/Users/currentUser/Documents/ohos/config/default_hapHD-v_0wt3fmlK17SYeXMGJOjh-mUjvGMnRbzqYQPLtU.p12"
+          "storeFile": "/storage/Users/currentUser/Documents/ohos/config/default_hapKrk4yYqx_9r7hq0KAQaCN_rdwtQW-6uG16aN4wI-L-o.p12"
         },
         "type": "HarmonyOS"
       }
