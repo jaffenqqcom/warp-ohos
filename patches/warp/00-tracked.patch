@@ -1321,12 +1321,10 @@ index eebccad..56d6a38 100644
  
  /// Initializes the logger before running tests.
 diff --git a/app/src/platform/mod.rs b/app/src/platform/mod.rs
-old mode 100644
-new mode 100755
-index 87c4037..199262d
+index 87c4037..eda5d34 100644
 --- a/app/src/platform/mod.rs
 +++ b/app/src/platform/mod.rs
-@@ -2,6 +2,8 @@
+@@ -2,8 +2,12 @@
  pub mod wasm;
  #[cfg(windows)]
  pub mod windows;
@@ -1335,6 +1333,10 @@ index 87c4037..199262d
  
  pub fn init() {
      #[cfg(target_family = "wasm")]
+     wasm::init();
++    #[cfg(target_env = "ohos")]
++    ohos::init();
+ }
 diff --git a/app/src/root_view.rs b/app/src/root_view.rs
 index 37db5d1..8a91a71 100644
 --- a/app/src/root_view.rs
@@ -1719,7 +1721,7 @@ index fb8bb71..21aec98 100644
  
  /// If the given `path` is a supported shell binary, returns a tuple containing
 diff --git a/app/src/terminal/local_tty/spawner.rs b/app/src/terminal/local_tty/spawner.rs
-index 16204ad..ec921e4 100644
+index 16204ad..9ba326c 100644
 --- a/app/src/terminal/local_tty/spawner.rs
 +++ b/app/src/terminal/local_tty/spawner.rs
 @@ -1,3 +1,5 @@
@@ -1740,7 +1742,28 @@ index 16204ad..ec921e4 100644
                  })
              } else if #[cfg(target_os = "windows")] {
                  Ok(Self {})
-@@ -224,18 +226,35 @@ impl PtySpawner {
+@@ -178,6 +180,20 @@ impl PtySpawner {
+         >,
+         ctx: &mut AppContext,
+     ) -> Result<(PtySpawnResult, Box<dyn PtyHandle>)> {
++        #[cfg(target_env = "ohos")]
++        {
++            warp_logging::ohos::direct_hilog_info("ohos-diag", "spawn_pty: trying spawn_socket_directly");
++            let env_vars: Vec<(OsString, OsString)> = options.env_vars.clone().into_iter().collect();
++            if let Ok(result) = Self::spawn_socket_directly(env_vars) {
++                send_telemetry_from_app_ctx!(
++                    TelemetryEvent::PtySpawned { mode: PtySpawnMode::Direct },
++                    ctx
++                );
++                return Ok(result);
++            }
++            warp_logging::ohos::direct_hilog_info("ohos-diag", "spawn_pty: spawn_socket_directly FAILED, falling through");
++        }
++
+         #[cfg(not(unix))]
+         let is_fallback = false;
+         #[cfg(unix)]
+@@ -224,18 +240,54 @@ impl PtySpawner {
          >,
          is_crash_reporting_enabled: bool,
      ) -> Result<(PtySpawnResult, Box<dyn PtyHandle>)> {
@@ -1767,6 +1790,8 @@ index 16204ad..ec921e4 100644
 +            let result = PtySpawnResult {
 +                pid: handle.pid(),
 +                leader_fd: master_fd,
++                #[cfg(target_env = "ohos")]
++                control_fd: -1,
 +            };
 +            return Ok((result, Box::new(handle)));
 +        }
@@ -1785,14 +1810,40 @@ index 16204ad..ec921e4 100644
 +            });
 +            Ok((pty_spawn_info.result, direct_pty_handle))
 +        }
++    }
++
++    /// OHOS 专用：用 socketpair 替代 PTY，通过 SSH 桥接启动 shell。
++    /// 不依赖 openpty（OHOS 沙箱禁止），使用 socketpair 做数据通道、
++    /// 另建一个 socketpair 做控制通道（resize 通知）。
++    #[cfg(target_env = "ohos")]
++    fn spawn_socket_directly(
++        env_vars: Vec<(OsString, OsString)>,
++    ) -> Result<(PtySpawnResult, Box<dyn PtyHandle>)> {
++        let (master_fd, control_fd, handle) =
++            crate::platform::ohos::ohos_shell_bridge::OhosPtyBridge::spawn_via_socket(&env_vars)?;
++        let result = PtySpawnResult {
++            pid: handle.pid(),
++            leader_fd: master_fd,
++            control_fd,
++        };
++        Ok((result, Box::new(handle)))
      }
  
      #[cfg(unix)]
 diff --git a/app/src/terminal/local_tty/unix.rs b/app/src/terminal/local_tty/unix.rs
-index 99d1b29..578d603 100644
+index 99d1b29..9311025 100644
 --- a/app/src/terminal/local_tty/unix.rs
 +++ b/app/src/terminal/local_tty/unix.rs
-@@ -116,41 +116,93 @@ pub fn get_pw_shell() -> String {
+@@ -8,6 +8,8 @@ use std::fs::{DirBuilder, File};
+ use std::mem::MaybeUninit;
+ use std::os::unix::fs::DirBuilderExt;
+ use std::os::unix::io::{AsRawFd, FromRawFd, RawFd};
++#[cfg(target_env = "ohos")]
++use std::os::unix::io::OwnedFd;
+ use std::path::{Path, PathBuf};
+ use std::{io, ptr};
+ 
+@@ -116,46 +118,100 @@ pub fn get_pw_shell() -> String {
  ///
  /// If `buf` is changed while `Passwd` is alive, bad things will almost certainly happen.
  fn get_pw_entry(buf: &mut [i8; 1024]) -> Passwd<'_> {
@@ -1912,6 +1963,87 @@ index 99d1b29..578d603 100644
  }
  
  pub struct Pty {
+     pty_handle: Box<dyn PtyHandle>,
+     fd: File,
++    #[cfg(target_env = "ohos")]
++    control_fd: OwnedFd,
+     token: mio::Token,
+     signals: Signals,
+     signals_token: mio::Token,
+@@ -165,6 +221,8 @@ pub struct Pty {
+ pub struct PtySpawnResult {
+     pub pid: u32,
+     pub leader_fd: i32,
++    #[cfg(target_env = "ohos")]
++    pub control_fd: i32,
+ }
+ 
+ pub(super) fn spawn(options: PtyOptions) -> Result<PtySpawnInfo> {
+@@ -500,6 +558,8 @@ fn spawn_command_in_pty(
+         result: PtySpawnResult {
+             pid: spawned.id(),
+             leader_fd: leader,
++            #[cfg(target_env = "ohos")]
++            control_fd: -1,
+         },
+         child: spawned,
+     })
+@@ -519,10 +579,12 @@ impl Pty {
+         let signals = Signals::new([signal_hook::consts::SIGCHLD])
+             .context("error preparing signal handling")?;
+ 
+-        let (PtySpawnResult { pid, leader_fd }, pty_handle) = PtySpawner::handle(ctx)
++        let (spawn_result, pty_handle) = PtySpawner::handle(ctx)
+             .update(ctx, |pty_spawner, ctx| {
+                 pty_spawner.spawn_pty(options, is_crash_reporting_enabled, ctx)
+             })?;
++        let pid = spawn_result.pid;
++        let leader_fd = spawn_result.leader_fd;
+ 
+         log::info!(
+             "Successfully spawned child {} process with pid {}",
+@@ -538,9 +600,14 @@ impl Pty {
+             File::from_raw_fd(leader_fd)
+         };
+ 
++        #[cfg(target_env = "ohos")]
++        let control_fd = unsafe { OwnedFd::from_raw_fd(spawn_result.control_fd) };
++
+         let mut pty = Pty {
+             pty_handle,
+             fd,
++            #[cfg(target_env = "ohos")]
++            control_fd,
+             token: PTY_TOKEN,
+             signals,
+             signals_token: SIGNALS_TOKEN,
+@@ -633,12 +700,20 @@ impl EventedPty for Pty {
+     }
+ 
+     fn on_resize(&mut self, size: &SizeInfo) {
+-        let win = size.to_winsize();
+-
+-        let res = unsafe { libc::ioctl(self.fd.as_raw_fd(), libc::TIOCSWINSZ, &win as *const _) };
+-
+-        if res < 0 {
+-            panic!("ioctl TIOCSWINSZ failed: {}", io::Error::last_os_error());
++        #[cfg(target_env = "ohos")]
++        {
++            let win = size.to_winsize();
++            let buf: [u16; 2] = [win.ws_col, win.ws_row];
++            let _ = unsafe { libc::write(self.control_fd.as_raw_fd(), buf.as_ptr() as *const _, 4) };
++            return;
++        }
++        #[cfg(not(target_env = "ohos"))]
++        {
++            let win = size.to_winsize();
++            let res = unsafe { libc::ioctl(self.fd.as_raw_fd(), libc::TIOCSWINSZ, &win as *const _) };
++            if res < 0 {
++                panic!("ioctl TIOCSWINSZ failed: {}", io::Error::last_os_error());
++            }
+         }
+     }
+ 
 diff --git a/crates/warp_assets/Cargo.toml b/crates/warp_assets/Cargo.toml
 index 2b82f2d..e0bf360 100644
 --- a/crates/warp_assets/Cargo.toml

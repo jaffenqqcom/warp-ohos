@@ -619,4 +619,279 @@ void ExecCmdMain(NativeChildProcess_Args args) {
     OH_LOG_INFO(LOG_APP, "ExecCmdMain: exiting");
 }
 
+// === ShellBridgeMain2：Socket 桥接入口（替代 PTY 方案）=============================
+//
+// 由 OH_Ability_StartNativeChildProcess("libohos_shell.so:ShellBridgeMain2") 创建。
+// 接收 data_fd（数据通道）和 control_fd（控制通道）两个命名 fd。
+// 连接 VM 后发 ready 信号，然后转发 data_fd ↔ SSH 数据，监控 control_fd 的 resize 指令。
+// 不创建本地 PTY，VM 上的 bash PTY 就够了。
+//
+// control_fd 协议：
+//   4 字节: [cols:u16][rows:u16] → libssh2_channel_request_pty_size_ex()
+
+void ShellBridgeMain2(NativeChildProcess_Args args) {
+    OH_LOG_INFO(LOG_APP, "ShellBridgeMain2: started");
+
+    // 提取命名 fd
+    int32_t data_fd = find_named_fd(&args.fdList, "data");
+    int32_t control_fd = find_named_fd(&args.fdList, "control");
+    if (data_fd < 0 || control_fd < 0) {
+        OH_LOG_ERROR(LOG_APP, "ShellBridgeMain2: missing fd (data=%d, control=%d)", data_fd, control_fd);
+        return;
+    }
+    OH_LOG_INFO(LOG_APP, "ShellBridgeMain2: data_fd=%{public}d, control_fd=%{public}d", data_fd, control_fd);
+
+    // 解析 entryParams
+    const char* env_vars = nullptr;
+    int env_vars_len = 0;
+    const char* init_script = nullptr;
+    int init_script_len = 0;
+    parse_entry_params(args.entryParams, &env_vars, &env_vars_len,
+                       &init_script, &init_script_len);
+    OH_LOG_INFO(LOG_APP, "ShellBridgeMain2: env_vars_len=%{public}d, init_script_len=%{public}d",
+                env_vars_len, init_script_len);
+
+    // SSH 连接 VM
+    OH_LOG_INFO(LOG_APP, "ShellBridgeMain2: calling ssh_connect_to_vm...");
+    int sock = -1;
+    LIBSSH2_SESSION* session = ssh_connect_to_vm(&sock);
+    if (!session) {
+        OH_LOG_ERROR(LOG_APP, "ShellBridgeMain2: ssh_connect_to_vm failed");
+        return;
+    }
+    OH_LOG_INFO(LOG_APP, "ShellBridgeMain2: ssh_connect_to_vm OK, sock=%{public}d", sock);
+
+    // 打开 SSH channel
+    OH_LOG_INFO(LOG_APP, "ShellBridgeMain2: opening SSH channel...");
+    LIBSSH2_CHANNEL* channel = libssh2_channel_open_session(session);
+    if (!channel) {
+        OH_LOG_ERROR(LOG_APP, "ShellBridgeMain2: channel_open_session failed");
+        libssh2_session_free(session);
+        close(sock);
+        return;
+    }
+    OH_LOG_INFO(LOG_APP, "ShellBridgeMain2: SSH channel opened");
+
+    // 请求远程 PTY
+    const char* term_type = getenv("TERM");
+    if (!term_type) term_type = "xterm-256color";
+    OH_LOG_INFO(LOG_APP, "ShellBridgeMain2: requesting PTY, term=%{public}s", term_type);
+    if (libssh2_channel_request_pty_ex(channel,
+                                       term_type,
+                                       static_cast<unsigned int>(strlen(term_type)),
+                                       nullptr, 0,
+                                       80, 24, 0, 0) != 0) {
+        OH_LOG_WARN(LOG_APP, "ShellBridgeMain2: request_pty failed, continuing");
+    } else {
+        OH_LOG_INFO(LOG_APP, "ShellBridgeMain2: PTY allocated on VM");
+    }
+
+    // 启动干净 bash
+    OH_LOG_INFO(LOG_APP, "ShellBridgeMain2: starting bash via channel_exec...");
+    if (libssh2_channel_exec(channel, "bash --norc --noprofile -i") != 0) {
+        OH_LOG_ERROR(LOG_APP, "ShellBridgeMain2: channel_exec failed, falling back to channel_shell");
+        if (libssh2_channel_shell(channel) != 0) {
+            OH_LOG_ERROR(LOG_APP, "ShellBridgeMain2: channel_shell also failed");
+            libssh2_channel_close(channel);
+            libssh2_session_free(session);
+            close(sock);
+            return;
+        }
+    }
+    OH_LOG_INFO(LOG_APP, "ShellBridgeMain2: shell started on VM");
+
+    // 配置 SSH keepalive
+    libssh2_keepalive_config(session, 1, 30);
+
+    // 设非阻塞模式（与 ShellBridgeMain 一致：在写 init 脚本前设置）
+    set_nonblocking(data_fd);
+    set_nonblocking(sock);
+    libssh2_session_set_blocking(session, 0);
+
+    // 通过 SSH channel 把 init rcfile 写入 VM 的 /tmp/warp_init.sh 并 source
+    char init_buf[65536];
+    int init_len = build_init_script(init_buf, sizeof(init_buf),
+                                      env_vars, env_vars_len,
+                                      init_script, init_script_len);
+    if (init_len > 0) {
+        char cmd_buf[65536 + 128];
+        int cmd_len = snprintf(cmd_buf, sizeof(cmd_buf),
+            "cat > /tmp/warp_init.sh << 'WARPEOF'\n%.*s\nWARPEOF\nsource /tmp/warp_init.sh\n",
+            init_len, init_buf);
+        if (cmd_len > 0 && cmd_len < static_cast<int>(sizeof(cmd_buf))) {
+            // 非阻塞模式下循环写直到完成
+            const char* p = cmd_buf;
+            int remaining = cmd_len;
+            while (remaining > 0) {
+                ssize_t n = libssh2_channel_write(channel, p, remaining);
+                if (n > 0) {
+                    p += n;
+                    remaining -= n;
+                } else if (n == LIBSSH2_ERROR_EAGAIN) {
+                    fd_set wfds; FD_ZERO(&wfds); FD_SET(sock, &wfds);
+                    struct timeval tv = {.tv_sec = 5, .tv_usec = 0};
+                    select(sock + 1, nullptr, &wfds, nullptr, &tv);
+                } else {
+                    OH_LOG_WARN(LOG_APP, "ShellBridgeMain2: init channel_write error, rc=%{public}zd", n);
+                    break;
+                }
+            }
+            OH_LOG_INFO(LOG_APP, "ShellBridgeMain2: init script written to /tmp/warp_init.sh");
+        }
+    }
+
+    // 给 bash 一点时间处理初始命令
+    usleep(100000);
+
+    // 发 ready 信号给 Rust 侧
+    char ready = 'R';
+    write(control_fd, &ready, 1);
+
+    // 主循环：data_fd ↔ SSH channel 双向转发 + control_fd 控制
+    char buf[BUF_SIZE];
+
+    // 待写缓冲：处理 data_fd 写满 EAGAIN 时暂存数据
+    char pending_buf[BUF_SIZE];
+    size_t pending_len = 0;
+    size_t pending_offset = 0;
+
+    OH_LOG_INFO(LOG_APP, "ShellBridgeMain2: entering forwarding loop (select-based)");
+
+    // 诊断：记录前 20 次转发事件
+    int diag_chunk_count = 0;
+
+    while (true) {
+        fd_set read_fds;
+        fd_set write_fds;
+        FD_ZERO(&read_fds);
+        FD_ZERO(&write_fds);
+        FD_SET(data_fd, &read_fds);
+        FD_SET(sock, &read_fds);
+        FD_SET(control_fd, &read_fds);
+        int max_fd = (data_fd > sock) ? data_fd : sock;
+        if (control_fd > max_fd) max_fd = control_fd;
+        // 有待写数据时监控 data_fd 可写
+        if (pending_len > 0) {
+            FD_SET(data_fd, &write_fds);
+        }
+        struct timeval tv = {.tv_sec = 1, .tv_usec = 0};
+
+        int sel_ret = select(max_fd + 1, &read_fds, pending_len > 0 ? &write_fds : nullptr, nullptr, &tv);
+
+        if (sel_ret < 0) {
+            if (errno == EINTR) continue;
+            OH_LOG_INFO(LOG_APP, "ShellBridgeMain2: select error, errno=%{public}d, exiting", errno);
+            break;
+        }
+
+        // 优先排空待写缓冲（data_fd 可写时）
+        if (pending_len > 0 && FD_ISSET(data_fd, &write_fds)) {
+            ssize_t n = write(data_fd, pending_buf + pending_offset, pending_len);
+            if (n > 0) {
+                pending_len -= n;
+                pending_offset += n;
+                if (pending_len == 0) {
+                    pending_offset = 0;
+                }
+            } else if (n < 0 && errno != EAGAIN && errno != EINTR) {
+                OH_LOG_INFO(LOG_APP, "ShellBridgeMain2: pending write error, errno=%{public}d, exiting", errno);
+                break;
+            }
+        }
+
+        // control_fd → resize 指令
+        if (FD_ISSET(control_fd, &read_fds)) {
+            uint16_t size[2];
+            int n = read(control_fd, size, sizeof(size));
+            if (n == 4) {
+                OH_LOG_INFO(LOG_APP, "ShellBridgeMain2: resize %dx%d", size[0], size[1]);
+                libssh2_channel_request_pty_size_ex(channel, size[0], size[1], 0, 0);
+            } else if (n <= 0) {
+                OH_LOG_INFO(LOG_APP, "ShellBridgeMain2: control_fd closed, exiting");
+                break;
+            }
+        }
+
+        // data_fd → SSH：读取用户输入，转发到远程 shell
+        if (FD_ISSET(data_fd, &read_fds)) {
+            ssize_t n = read(data_fd, buf, sizeof(buf));
+            if (n > 0) {
+                if (diag_chunk_count < 20) {
+                    OH_LOG_INFO(LOG_APP, "BRIDGE_DIAG: data_fd→SSH bytes=%{public}zd", n);
+                    diag_chunk_count++;
+                }
+                libssh2_channel_write(channel, buf, n);
+            } else if (n < 0 && errno != EAGAIN) {
+                OH_LOG_INFO(LOG_APP, "ShellBridgeMain2: data_fd read error, errno=%{public}d, exiting", errno);
+                break;
+            }
+        }
+
+        // SSH → data_fd：读取远程 shell 输出，写入本地
+        // 仅在待写缓冲为空时才读 SSH，避免数据堆积
+        if (pending_len == 0 && FD_ISSET(sock, &read_fds)) {
+            while (true) {
+                ssize_t n = libssh2_channel_read(channel, buf, sizeof(buf));
+                if (n > 0) {
+                    if (diag_chunk_count < 20) {
+                        OH_LOG_INFO(LOG_APP, "BRIDGE_DIAG: SSH→data_fd #%{public}d bytes=%{public}zd",
+                                    diag_chunk_count, n);
+                        diag_chunk_count++;
+                    }
+                    ssize_t written = write_all(data_fd, buf, n);
+                    if (written < n) {
+                        if (written < 0) written = 0;
+                        size_t remaining = static_cast<size_t>(n) - static_cast<size_t>(written);
+                        if (remaining > sizeof(pending_buf)) {
+                            OH_LOG_WARN(LOG_APP, "ShellBridgeMain2: pending buf overflow, dropping %{public}zu bytes",
+                                        remaining - sizeof(pending_buf));
+                            remaining = sizeof(pending_buf);
+                        }
+                        memcpy(pending_buf, buf + written, remaining);
+                        pending_len = remaining;
+                        pending_offset = 0;
+                        break;
+                    }
+                } else if (n == LIBSSH2_ERROR_EAGAIN) {
+                    int dir = libssh2_session_block_directions(session);
+                    if (dir & LIBSSH2_SESSION_BLOCK_OUTBOUND) {
+                        fd_set wfds; FD_ZERO(&wfds); FD_SET(sock, &wfds);
+                        struct timeval wtv = {.tv_sec = 1, .tv_usec = 0};
+                        select(sock + 1, nullptr, &wfds, nullptr, &wtv);
+                        continue;
+                    }
+                    break;
+                } else if (n < 0) {
+                    OH_LOG_INFO(LOG_APP, "ShellBridgeMain2: channel read error, rc=%{public}zd, exiting", n);
+                    break;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        // 发送 SSH keepalive
+        {
+            int keepalive_rc = 0;
+            libssh2_keepalive_send(session, &keepalive_rc);
+        }
+
+        // 检查 SSH 通道关闭
+        if (libssh2_channel_eof(channel)) {
+            OH_LOG_INFO(LOG_APP, "ShellBridgeMain2: channel EOF, exiting");
+            break;
+        }
+    }
+
+    // 清理
+    libssh2_channel_close(channel);
+    libssh2_channel_free(channel);
+    libssh2_session_free(session);
+    close(sock);
+    close(data_fd);
+    close(control_fd);
+
+    OH_LOG_INFO(LOG_APP, "ShellBridgeMain2: exiting");
+}
+
 } // extern "C"

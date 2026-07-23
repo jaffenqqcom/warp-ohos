@@ -31,6 +31,6 @@
     {
       "name": "perm_files_reason",
       "value": "用于读写终端文件和数据"
-    }
+    },
   ]
 }

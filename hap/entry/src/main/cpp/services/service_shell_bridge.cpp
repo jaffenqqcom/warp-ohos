@@ -149,4 +149,68 @@ int32_t ohos_exec_command(const char* command,
     return 0;
 }
 
+// Socket 方案：不创建 PTY，用两个 socketpair（数据 + 控制）启动子进程
+int32_t ohos_start_shell_bridge2(int32_t data_fd,
+                                  int32_t control_fd,
+                                  const char* env_vars,
+                                  const char* init_script,
+                                  int32_t* pid_out) {
+    OH_LOG_INFO(LOG_APP, "ohos_start_shell_bridge2: data_fd=%{public}d, control_fd=%{public}d",
+                data_fd, control_fd);
+    if (data_fd < 0 || control_fd < 0 || env_vars == nullptr || init_script == nullptr || pid_out == nullptr) {
+        OH_LOG_ERROR(LOG_APP, "ohos_start_shell_bridge2: invalid params");
+        return NCP_ERR_INVALID_PARAM;
+    }
+
+    // 拼装 entryParams = env_vars + \n + delimiter + \n + init_script
+    size_t env_len = strlen(env_vars);
+    size_t delim_len = strlen(ENV_INIT_DELIM);
+    size_t init_len = strlen(init_script);
+    char* entry_params = static_cast<char*>(malloc(env_len + 1 + delim_len + 1 + init_len + 1));
+    if (!entry_params) {
+        OH_LOG_ERROR(LOG_APP, "ohos_start_shell_bridge2: malloc failed");
+        return NCP_ERR_INVALID_PARAM;
+    }
+    char* p = entry_params;
+    memcpy(p, env_vars, env_len); p += env_len;
+    *p++ = '\n';
+    memcpy(p, ENV_INIT_DELIM, delim_len); p += delim_len;
+    *p++ = '\n';
+    memcpy(p, init_script, init_len); p += init_len;
+    *p = '\0';
+
+    // 两个命名 fd 传给子进程
+    NativeChildProcess_Fd fd_nodes[2];
+    fd_nodes[0].fdName = const_cast<char*>("data");
+    fd_nodes[0].fd = data_fd;
+    fd_nodes[0].next = &fd_nodes[1];
+    fd_nodes[1].fdName = const_cast<char*>("control");
+    fd_nodes[1].fd = control_fd;
+    fd_nodes[1].next = nullptr;
+
+    NativeChildProcess_Args args;
+    args.entryParams = entry_params;
+    args.fdList.head = fd_nodes;
+
+    NativeChildProcess_Options options;
+    options.isolationMode = NCP_ISOLATION_MODE_NORMAL;
+    options.reserved = 0;
+
+    int32_t pid = -1;
+    Ability_NativeChildProcess_ErrCode ret =
+        OH_Ability_StartNativeChildProcess(
+            "libohos_shell.so:ShellBridgeMain2", args, options, &pid);
+
+    free(entry_params);
+
+    if (ret != NCP_NO_ERROR) {
+        OH_LOG_ERROR(LOG_APP, "ohos_start_shell_bridge2: StartNativeChildProcess failed: %{public}d", ret);
+        return static_cast<int32_t>(ret);
+    }
+
+    *pid_out = pid;
+    OH_LOG_INFO(LOG_APP, "ohos_start_shell_bridge2: child started, pid=%{public}d", pid);
+    return 0;
+}
+
 } // extern "C"
