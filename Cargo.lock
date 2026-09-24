@@ -9856,6 +9856,7 @@ dependencies = [
 [[package]]
 name = "openharmony-ability"
 version = "1.0.0-beta.1"
+source = "git+https://github.com/jaffenqqcom/openharmony-ability-zed?branch=main#d02c7f8684ec5217a5e8f6610db1f1a25bdbe0d0"
 dependencies = [
  "futures-channel",
  "log",
@@ -9871,6 +9872,7 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-derive"
 version = "1.0.0-beta.1"
+source = "git+https://github.com/jaffenqqcom/openharmony-ability-zed?branch=main#d02c7f8684ec5217a5e8f6610db1f1a25bdbe0d0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -9880,6 +9882,7 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-plugin-cursor"
 version = "1.0.0-beta.1"
+source = "git+https://github.com/jaffenqqcom/openharmony-ability-zed?branch=main#d02c7f8684ec5217a5e8f6610db1f1a25bdbe0d0"
 dependencies = [
  "log",
  "napi-derive-ohos",
@@ -9890,6 +9893,7 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-plugin-filedropin"
 version = "1.0.0-beta.1"
+source = "git+https://github.com/jaffenqqcom/openharmony-ability-zed?branch=main#d02c7f8684ec5217a5e8f6610db1f1a25bdbe0d0"
 dependencies = [
  "log",
  "napi-derive-ohos",
@@ -9900,6 +9904,7 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-plugin-filelaunch"
 version = "1.0.0-beta.1"
+source = "git+https://github.com/jaffenqqcom/openharmony-ability-zed?branch=main#d02c7f8684ec5217a5e8f6610db1f1a25bdbe0d0"
 dependencies = [
  "log",
  "napi-derive-ohos",
@@ -9910,6 +9915,7 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-plugin-filepicker"
 version = "1.0.0-beta.1"
+source = "git+https://github.com/jaffenqqcom/openharmony-ability-zed?branch=main#d02c7f8684ec5217a5e8f6610db1f1a25bdbe0d0"
 dependencies = [
  "napi-derive-ohos",
  "napi-ohos",
@@ -9919,6 +9925,7 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-plugin-ime"
 version = "1.0.0-beta.1"
+source = "git+https://github.com/jaffenqqcom/openharmony-ability-zed?branch=main#d02c7f8684ec5217a5e8f6610db1f1a25bdbe0d0"
 dependencies = [
  "log",
  "napi-derive-ohos",
@@ -9929,6 +9936,7 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-plugin-openbysys"
 version = "1.0.0-beta.1"
+source = "git+https://github.com/jaffenqqcom/openharmony-ability-zed?branch=main#d02c7f8684ec5217a5e8f6610db1f1a25bdbe0d0"
 dependencies = [
  "napi-derive-ohos",
  "napi-ohos",
@@ -9938,6 +9946,7 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-plugin-pinch"
 version = "1.0.0-beta.1"
+source = "git+https://github.com/jaffenqqcom/openharmony-ability-zed?branch=main#d02c7f8684ec5217a5e8f6610db1f1a25bdbe0d0"
 dependencies = [
  "log",
  "napi-derive-ohos",
@@ -9948,6 +9957,7 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-plugin-url"
 version = "1.0.0-beta.1"
+source = "git+https://github.com/jaffenqqcom/openharmony-ability-zed?branch=main#d02c7f8684ec5217a5e8f6610db1f1a25bdbe0d0"
 dependencies = [
  "log",
  "napi-derive-ohos",

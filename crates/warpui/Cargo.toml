@@ -192,15 +192,15 @@ fontdb = "0.23.0"
 memmap2 = "0.9.3"
 # Consumed from the HiCodeer fork of openharmony-ability. All crates must
 # resolve to the same git source and the same revision.
-openharmony-ability = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
-openharmony-ability-plugin-cursor = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
-openharmony-ability-plugin-filepicker = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
-openharmony-ability-plugin-openbysys = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
-openharmony-ability-plugin-pinch = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
-openharmony-ability-plugin-filedropin = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
-openharmony-ability-plugin-filelaunch = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
-openharmony-ability-plugin-ime = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
-openharmony-ability-plugin-url = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
+openharmony-ability = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", branch = "main" }
+openharmony-ability-plugin-cursor = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", branch = "main" }
+openharmony-ability-plugin-filepicker = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", branch = "main" }
+openharmony-ability-plugin-openbysys = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", branch = "main" }
+openharmony-ability-plugin-pinch = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", branch = "main" }
+openharmony-ability-plugin-filedropin = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", branch = "main" }
+openharmony-ability-plugin-filelaunch = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", branch = "main" }
+openharmony-ability-plugin-ime = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", branch = "main" }
+openharmony-ability-plugin-url = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", branch = "main" }
 owned_ttf_parser = "0.25.0"
 resvg.workspace = true
 serde.workspace = true

@@ -34,17 +34,17 @@ libc.workspace = true
 # Consumed from the HiCodeer fork of openharmony-ability, matching the source
 # `warpui` uses. A path dependency here would put a second copy of the crate in
 # the graph and its types would no longer match warpui's.
-openharmony-ability = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
-openharmony-ability-derive = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
+openharmony-ability = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", branch = "main" }
+openharmony-ability-derive = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", branch = "main" }
 # The `#[ability]` initializer registers these facades so the ArkTS host installs
 # the matching plugin factories; an unregistered plugin is never installed and
 # its bridge calls fail with "Bridge plugin '<id>' is not installed".
-openharmony-ability-plugin-cursor = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
-openharmony-ability-plugin-filedropin = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
-openharmony-ability-plugin-filepicker = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
-openharmony-ability-plugin-openbysys = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
-openharmony-ability-plugin-ime = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
-openharmony-ability-plugin-url = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
+openharmony-ability-plugin-cursor = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", branch = "main" }
+openharmony-ability-plugin-filedropin = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", branch = "main" }
+openharmony-ability-plugin-filepicker = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", branch = "main" }
+openharmony-ability-plugin-openbysys = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", branch = "main" }
+openharmony-ability-plugin-ime = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", branch = "main" }
+openharmony-ability-plugin-url = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", branch = "main" }
 # Kept in step with `openharmony-ability`'s workspace, which pins the same
 # napi crates at 1.2; a mismatch would put two `napi-ohos` versions in the graph.
 napi-ohos = "1.2"
