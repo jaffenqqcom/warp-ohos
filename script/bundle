@@ -6,6 +6,8 @@ if [[ "$OS_TYPE" = "Darwin" ]]; then
   ./script/macos/bundle "$@"
 elif [[ "$OS_TYPE" = "Linux" ]]; then
   ./script/linux/bundle "$@"
+elif [[ "$OS_TYPE" = "HarmonyOS" ]]; then
+  ./script/ohos/bundle "$@"
 elif [[ "$OS_TYPE" =~ ^[MINGW64_NT|MSYS_NT] ]]; then
   while (( "$#" )); do
     # Turn double hyphens into single hyphens.

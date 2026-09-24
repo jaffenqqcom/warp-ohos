@@ -145,12 +145,12 @@ dispatch2 = { workspace = true }
 [target.'cfg(target_os = "macos")'.dev-dependencies]
 rand.workspace = true
 
-[target.'cfg(not(target_family = "wasm"))'.dependencies]
+[target.'cfg(all(not(target_family = "wasm"), not(target_env = "ohos")))'.dependencies]
 async-io.workspace = true
 ctrlc.workspace = true
 font-kit.workspace = true
 
-[target.'cfg(not(target_os = "macos"))'.dependencies]
+[target.'cfg(all(not(target_os = "macos"), not(target_env = "ohos")))'.dependencies]
 bimap = "0.6.2"
 bytemuck.workspace = true
 command.workspace = true
@@ -165,8 +165,47 @@ version-compare.workspace = true
 winit.workspace = true
 wgpu.workspace = true
 
-[target.'cfg(not(any(target_os = "macos", target_family = "wasm")))'.dependencies]
+[target.'cfg(all(not(any(target_os = "macos", target_family = "wasm")), not(target_env = "ohos")))'.dependencies]
 global-hotkey = "0.7.0"
+
+# HarmonyOS NEXT. OHOS reports `target_os = "linux"`, so it would otherwise match
+# the Linux/Wayland sections above and pull in winit, X11, fontconfig and the
+# desktop notification stack. The set below is the portable subset the OHOS
+# back-end needs, with `font-kit` resolving fontconfig through `dlopen` exactly
+# as on Linux.
+[target.'cfg(target_env = "ohos")'.dependencies]
+async-io.workspace = true
+bimap = "0.6.2"
+bytemuck.workspace = true
+command.workspace = true
+cosmic-text = { git = "https://github.com/warpdotdev/cosmic-text.git", rev = "a7c7b71497542758e08f77390b8efce543b3181f" }
+ctrlc.workspace = true
+derivative.workspace = true
+font-kit = { workspace = true, default-features = false, features = [
+    "source-fontconfig-dlopen",
+] }
+# `font-kit` resolves fontconfig through `dlopen`, keeping it a runtime
+# dependency: nothing links against libfontconfig at build time. OHOS enumerates
+# its fonts by scanning the system font directories instead of through fontconfig.
+fontconfig = { version = "0.8.0", features = ["dlopen"] }
+fontdb = "0.23.0"
+memmap2 = "0.9.3"
+# Consumed from the HiCodeer fork of openharmony-ability. All crates must
+# resolve to the same git source and the same revision.
+openharmony-ability = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
+openharmony-ability-plugin-cursor = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
+openharmony-ability-plugin-filepicker = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
+openharmony-ability-plugin-openbysys = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
+openharmony-ability-plugin-pinch = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
+openharmony-ability-plugin-filedropin = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
+openharmony-ability-plugin-filelaunch = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
+openharmony-ability-plugin-ime = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
+openharmony-ability-plugin-url = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
+owned_ttf_parser = "0.25.0"
+resvg.workspace = true
+serde.workspace = true
+version-compare.workspace = true
+wgpu.workspace = true
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 gloo.workspace = true
@@ -179,7 +218,7 @@ web-sys.workspace = true
 workspace = true
 features = ["fragile-send-sync-non-atomic-wasm", "webgl"]
 
-[target.'cfg(any(target_os = "linux", target_os = "freebsd", target_os = "windows"))'.dependencies]
+[target.'cfg(all(any(target_os = "linux", target_os = "freebsd", target_os = "windows"), not(target_env = "ohos")))'.dependencies]
 arboard = { workspace = true, features = [
     "wayland-data-control",
     "image-data",
@@ -187,7 +226,7 @@ arboard = { workspace = true, features = [
 native-dialog = "0.7.0"
 open = "5.0.0"
 
-[target.'cfg(any(target_os = "linux", target_os = "freebsd"))'.dependencies]
+[target.'cfg(all(any(target_os = "linux", target_os = "freebsd"), not(target_env = "ohos")))'.dependencies]
 blocking.workspace = true
 dirs.workspace = true
 fontconfig = { version = "0.8.0", features = ["dlopen"] }

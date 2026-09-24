@@ -47,6 +47,7 @@ pub(crate) fn run() -> anyhow::Result<()> {
                     windowing_system = Some(system);
                 }
 
+                #[cfg(not(target_env = "ohos"))]
                 if let Some(name) = windowing::winit::get_os_window_manager_name() {
                     println!("Window manager name: {}", name.trim_end());
                 }

@@ -29,6 +29,7 @@ use warpui::{
     TypedActionView, View, ViewContext, ViewHandle, WindowId,
 };
 #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+#[cfg(not(target_env = "ohos"))]
 use {
     crate::settings::ForceX11, crate::settings::LinuxAppConfiguration,
     warpui::platform::linux::windowing_system_is_customizable,
@@ -703,6 +704,7 @@ pub fn init_actions_from_parent_view<T: Action + Clone>(
     }
 
     #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+    #[cfg(not(target_env = "ohos"))]
     {
         if windowing_system_is_customizable(app) {
             toggle_binding_pairs.push(
@@ -822,6 +824,7 @@ pub enum FeaturesPageAction {
     ToggleConfirmCloseSession,
     ToggleShowChangelogAfterUpdate,
     #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+    #[cfg(not(target_env = "ohos"))]
     ToggleForceX11,
     ToggleAutosuggestionKeybindingHint,
     ToggleShowAutosuggestionIgnoreButton,
@@ -1309,6 +1312,7 @@ impl FeaturesPageAction {
                 }
             }
             #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+            #[cfg(not(target_env = "ohos"))]
             Self::ToggleForceX11 => {
                 let setting = *LinuxAppConfiguration::as_ref(ctx).force_x11.value();
                 TelemetryEvent::FeaturesPageAction {
@@ -1456,6 +1460,7 @@ pub struct FeaturesPageView {
     window_id: WindowId,
 
     #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+    #[cfg(not(target_env = "ohos"))]
     force_x11_changed: bool,
     gpu_power_preference_changed: bool,
     graphics_backend_preference_changed: bool,
@@ -2135,6 +2140,7 @@ impl TypedActionView for FeaturesPageView {
                 });
             }
             #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+            #[cfg(not(target_env = "ohos"))]
             ToggleForceX11 => {
                 LinuxAppConfiguration::handle(ctx).update(ctx, |linux_app_configuration, ctx| {
                     report_if_error!(linux_app_configuration.force_x11.toggle_and_save_value(ctx));
@@ -2762,6 +2768,7 @@ impl FeaturesPageView {
             valid_mouse_scroll_multiplier: true,
 
             #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+            #[cfg(not(target_env = "ohos"))]
             force_x11_changed: false,
             gpu_power_preference_changed: false,
             graphics_backend_preference_changed: false,
@@ -3082,6 +3089,7 @@ impl FeaturesPageView {
         }
 
         #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+        #[cfg(not(target_env = "ohos"))]
         {
             if windowing_system_is_customizable(ctx) {
                 system_widgets.push(Box::new(WindowSystemWidget::default()));
@@ -7670,6 +7678,7 @@ impl SettingsWidget for GPUWidget {
 }
 
 #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+#[cfg(not(target_env = "ohos"))]
 #[derive(Default)]
 struct WindowSystemWidget {
     additional_info_link: MouseStateHandle,
@@ -7677,6 +7686,7 @@ struct WindowSystemWidget {
 }
 
 #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+#[cfg(not(target_env = "ohos"))]
 impl SettingsWidget for WindowSystemWidget {
     type View = FeaturesPageView;
 

@@ -18,3 +18,8 @@ warpui_core.workspace = true
 # Make sure we embed the data into the wasm binary even when running in debug
 # mode, as it cannot be read directly from the filesystem.
 rust-embed = { workspace = true, features = ["debug-embed"] }
+
+[target.'cfg(target_env = "ohos")'.dependencies]
+# The debug binary runs on-device, where app/assets is not on the filesystem,
+# so the data must be embedded for debug builds just as it is for release.
+rust-embed = { workspace = true, features = ["debug-embed"] }

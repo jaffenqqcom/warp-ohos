@@ -297,11 +297,19 @@ impl SingletonEntity for CrashRecovery {}
 fn choose_crash_recovery_mechanism(
     user_preferences: &dyn UserPreferences,
 ) -> Option<RecoveryMechanism> {
+    // The recovery child is spawned from `current_exe()`, which reports
+    // `/system/bin/appspawn` on OHOS and cannot be exec'd from the sandbox, so no
+    // mechanism is usable there. Without this the dedicated-GPU fallback below
+    // would be picked on every fresh install, where no GPU preference is stored.
+    #[cfg(target_env = "ohos")]
+    return None;
+
     if ChannelState::channel() == Channel::Integration {
         return None;
     }
 
     #[cfg(target_os = "linux")]
+    #[cfg(not(target_env = "ohos"))]
     {
         let force_x11 = settings::ForceX11::read_from_preferences(user_preferences);
         // Prioritize X11 crash recovery first. If the user has actively
@@ -447,12 +455,17 @@ fn handle_parent_crash(
     match recovery_mechanism {
         #[cfg(target_os = "linux")]
         RecoveryMechanism::X11 => {
-            let force_x11 = settings::ForceX11::read_from_preferences(user_preferences);
-            if force_x11 != Some(true) {
-                report_if_error!(settings::ForceX11::write_to_preferences(
-                    &true,
-                    user_preferences,
-                ));
+            // X11 recovery is never chosen on OHOS, where the chooser above is
+            // compiled out, but the arm must stay so the match remains exhaustive.
+            #[cfg(not(target_env = "ohos"))]
+            {
+                let force_x11 = settings::ForceX11::read_from_preferences(user_preferences);
+                if force_x11 != Some(true) {
+                    report_if_error!(settings::ForceX11::write_to_preferences(
+                        &true,
+                        user_preferences,
+                    ));
+                }
             }
 
             true

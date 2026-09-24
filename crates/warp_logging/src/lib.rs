@@ -44,6 +44,8 @@ mod imp;
 mod rotation;
 
 pub use imp::init;
+#[cfg(target_env = "ohos")]
+pub use imp::ohos::direct_hilog;
 #[cfg(not(target_family = "wasm"))]
 pub use imp::{create_log_bundle_zip, log_directory, log_file_path, rotate_log_files};
 #[cfg(not(target_family = "wasm"))]

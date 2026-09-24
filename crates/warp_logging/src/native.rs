@@ -15,6 +15,12 @@ use zip::{CompressionMethod, ZipWriter};
 
 use crate::{LogConfig, LogDestination, LogFrontend};
 
+/// Mirrors the same records into hilog, which is the only log sink reachable on
+/// an OHOS device.
+#[cfg(target_env = "ohos")]
+#[path = "ohos.rs"]
+pub(crate) mod ohos;
+
 const MAX_FILES_IN_GUI_ROTATION: usize = 5;
 const MAX_FILES_IN_CLI_ROTATION: usize = 10;
 const CLI_LOG_SUBDIRECTORY: &str = "oz";
@@ -677,7 +683,12 @@ fn init_internal(
     }
 
     #[cfg(not(feature = "crash_reporting"))]
+    #[cfg(not(target_env = "ohos"))]
     base_logger.init();
+
+    #[cfg(not(feature = "crash_reporting"))]
+    #[cfg(target_env = "ohos")]
+    ohos::init_hilog_logger(base_logger.build());
 
     // If we're logging to a file, initialize the `log_panics` crate, which
     // will install a panic hook that writes out panics using `log::error`.

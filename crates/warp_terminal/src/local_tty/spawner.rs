@@ -131,7 +131,14 @@ impl PtySpawner {
     /// that could leak into forked subprocesses (e.g.: file descriptors).
     pub fn new() -> Result<Self> {
         cfg_if::cfg_if! {
-            if #[cfg(unix)] {
+            // The OHOS app process is forked by /system/bin/appspawn and never
+            // re-execs itself, so current_exe() reports that service and the self
+            // re-exec TerminalServer::new performs is rejected with EACCES. OHOS
+            // hosts ptys in-process instead and skips the terminal server.
+            if #[cfg(target_env = "ohos")] {
+                log::info!("PtySpawner::new: OHOS hosts ptys in-process, no terminal server");
+                Ok(Self { server: None })
+            } else if #[cfg(unix)] {
                 let server = super::server::TerminalServer::new()?;
                 Ok(Self {
                     server: Some(server),

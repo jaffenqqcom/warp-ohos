@@ -578,6 +578,39 @@ tink-hybrid = { git = "https://github.com/warpdotdev/tink-rust", rev = "54b9ac9a
 tikv-jemallocator = { git = "https://github.com/warpdotdev/jemallocator.git", rev = "2ee30bfdf7059223b54810e4ea6c666f0a379e0b" }
 tikv-jemalloc-sys = { git = "https://github.com/warpdotdev/jemallocator.git", rev = "2ee30bfdf7059223b54810e4ea6c666f0a379e0b" }
 
+# HarmonyOS port: local copies of upstream crates carrying the OHOS fixes.
+# `target_os = "linux"` with `target_env = "ohos"` does not match what the
+# upstream Linux code paths assume, so these three fail to compile on OHOS
+# without the changes. Path patches rather than git patches because the fixes
+# are local and not upstreamed.
+gettext-sys = { path = "patches/gettext-sys" }
+interprocess = { path = "patches/interprocess" }
+nix = { path = "patches/nix" }
+
+# HarmonyOS port: the `ohos-*` native bindings come from the HiCodeer fork of
+# ohos-native-bindings, on the tag HiCodeer pins, so both projects resolve to one
+# copy of every crate.
+#
+# The fork's workspace declares its internal dependencies as `{ workspace =
+# true }`, which cargo resolves from the git source instead of crates.io. Any
+# crate reachable from both sources would then exist twice in the graph, and the
+# FFI types it defines (`OH_NativeXComponent`, `ArkUI_Node`) would become
+# distinct types, which fails type-checking in downstream crates such as
+# `ohos-arkui-binding`. Patching the whole reachable set onto the same repository
+# and revision keeps exactly one copy of each.
+ohos-xcomponent-binding = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-zed.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
+ohos-xcomponent-sys = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-zed.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
+ohos-arkui-input-binding = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-zed.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
+ohos-arkui-input-sys = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-zed.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
+ohos-arkui-sys = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-zed.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
+ohos-enum-derive = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-zed.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
+ohos-native-buffer-sys = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-zed.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
+ohos-resource-manager-sys = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-zed.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
+ohos-image-native-sys = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-zed.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
+ohos-image-sys = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-zed.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
+ohos-native-drawing-sys = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-zed.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
+ohos-udmf-sys = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-zed.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
+
 [patch."https://github.com/warpdotdev/warp-proto-apis.git"]
 # Uncomment for local development of warp-proto-apis
 # warp_multi_agent_api = { path = "../warp-proto-apis/apis/multi_agent/v1/gen/rust" }
@@ -585,3 +618,23 @@ tikv-jemalloc-sys = { git = "https://github.com/warpdotdev/jemallocator.git", re
 [patch."https://github.com/warpdotdev/session-sharing-protocol.git"]
 # Uncomment for local development of session-sharing-protocol
 # session-sharing-protocol = { path = "../session-sharing-protocol" }
+
+[patch."https://github.com/jaffenqqcom/openharmony-ability-zed"]
+# Local development override for the HiCodeer `openharmony-ability` fork: resolve
+# the crates from the checkout in `../openharmony-ability-zed` instead of the
+# pinned tag, so edits there are compiled without pushing a new tag. Every crate
+# `warpui` and `warp_ohos` declare must be overridden together — leaving one on
+# the git source would put a second copy of it in the graph and make its types
+# distinct from the path-sourced copy, which fails type-checking. The path only
+# exists on this machine, so do not commit this section; delete it to go back to
+# `tag = "v1.0.0-beta.1-zed.1"`.
+openharmony-ability = { path = "../openharmony-ability-zed/crates/ability" }
+openharmony-ability-derive = { path = "../openharmony-ability-zed/crates/derive" }
+openharmony-ability-plugin-cursor = { path = "../openharmony-ability-zed/crates/plugin-cursor" }
+openharmony-ability-plugin-filedropin = { path = "../openharmony-ability-zed/crates/plugin-filedropin" }
+openharmony-ability-plugin-filelaunch = { path = "../openharmony-ability-zed/crates/plugin-filelaunch" }
+openharmony-ability-plugin-filepicker = { path = "../openharmony-ability-zed/crates/plugin-filepicker" }
+openharmony-ability-plugin-ime = { path = "../openharmony-ability-zed/crates/plugin-ime" }
+openharmony-ability-plugin-openbysys = { path = "../openharmony-ability-zed/crates/plugin-openbysys" }
+openharmony-ability-plugin-pinch = { path = "../openharmony-ability-zed/crates/plugin-pinch" }
+openharmony-ability-plugin-url = { path = "../openharmony-ability-zed/crates/plugin-url" }

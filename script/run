@@ -18,6 +18,15 @@ cd "${REPO_ROOT}"
 
 OS_TYPE="$(uname -s)"
 
+# HarmonyOS has no `cargo run` equivalent: the application is a HAP that the
+# system launches. The closest match is building the installable package, which
+# script/ohos/bundle handles end to end (entry cdylib, HAP assembly, HNP
+# injection and re-signing). Intercepted before the desktop argument parsing so
+# its own flags pass through untouched.
+if [[ "$OS_TYPE" = "HarmonyOS" ]]; then
+  exec ./script/ohos/bundle "$@"
+fi
+
 FEATURES="gui"
 INSTALL_COMMON_SKILLS=1
 FORCE_COMMON_SKILLS=0

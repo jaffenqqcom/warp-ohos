@@ -1,8 +1,11 @@
-#[cfg(winit)]
+// OHOS reuses the cosmic-text font stack that lives under this module, so it is
+// compiled there too; every winit-specific item inside it stays `cfg(winit)`.
+#[cfg(any(winit, ohos))]
 pub mod winit;
 
 pub use warpui_core::windowing::*;
 #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+#[cfg(not(target_env = "ohos"))]
 pub use winit::WindowingSystem;
 
 /// The minimum width a window can be resized to.

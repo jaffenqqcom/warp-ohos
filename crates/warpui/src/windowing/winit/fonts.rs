@@ -4,7 +4,7 @@ mod str_index_map;
 mod swash_rasterizer;
 mod text_layout;
 
-#[cfg(any(target_os = "linux", target_os = "freebsd"))]
+#[cfg(all(any(target_os = "linux", target_os = "freebsd"), not(ohos)))]
 mod linux;
 
 #[cfg(target_os = "windows")]
@@ -246,7 +246,7 @@ struct FontFamily {
     fonts: Vec<FontHandle>,
 }
 
-#[cfg(any(target_os = "linux", target_os = "freebsd"))]
+#[cfg(all(any(target_os = "linux", target_os = "freebsd"), not(ohos)))]
 mod loader {
     use anyhow::Result;
     use warp_errors::report_error;
@@ -303,6 +303,91 @@ mod loader {
     }
 }
 
+/// OHOS has neither fontconfig nor a complete enumeration API, so the system font
+/// directories are scanned directly instead. The scan itself lives in
+/// [`crate::platform::ohos::fonts`]; this module only adapts its result to the types the
+/// rest of the text stack consumes.
+#[cfg(ohos)]
+mod loader {
+    use anyhow::{Result, anyhow};
+
+    use super::*;
+    use crate::fonts::FontInfo;
+    use crate::platform::ohos::fonts::{
+        ScannedFontFamily, fallback_font_faces, system_font_families,
+    };
+
+    /// Loads a family, dropping the faces whose file cannot be parsed.
+    ///
+    /// Fonts are validated here for the same reason the fontconfig loader validates
+    /// them: the rest of the text stack assumes every loaded face parses and carries
+    /// the `m` glyph.
+    fn load_family(family: &ScannedFontFamily) -> Option<(FontInfo, FontFamily)> {
+        let mut fonts = Vec::with_capacity(family.faces.len());
+        let mut is_monospace = false;
+        for face in &family.faces {
+            let handle = FontHandle::new(face.path.clone(), face.index, face.is_monospace);
+            match handle.validate_font_data() {
+                Ok(()) => {
+                    is_monospace |= handle.is_monospace();
+                    fonts.push(handle);
+                }
+                Err(error) => log::debug!(
+                    "ohos fonts: skipping {} face {} of family {}: {error:?}",
+                    face.path.display(),
+                    face.index,
+                    family.family_name,
+                ),
+            }
+        }
+
+        if fonts.is_empty() {
+            log::warn!(
+                "ohos fonts: family {} has no loadable faces",
+                family.family_name
+            );
+            return None;
+        }
+
+        let info = FontInfo {
+            family_name: family.family_name.clone(),
+            is_monospace,
+        };
+        Some((
+            info,
+            FontFamily {
+                name: family.family_name.clone(),
+                fonts,
+            },
+        ))
+    }
+
+    pub fn load_all_system_fonts() -> LoadedSystemFonts {
+        LoadedSystemFonts(
+            system_font_families()
+                .iter()
+                .filter_map(load_family)
+                .collect(),
+        )
+    }
+
+    pub fn load_system_font(font_family: &str) -> Result<FontFamily> {
+        system_font_families()
+            .iter()
+            .find(|family| family.family_name == font_family)
+            .and_then(load_family)
+            .map(|(_, family)| family)
+            .ok_or_else(|| anyhow!("No loadable system font family named {font_family}"))
+    }
+
+    pub fn fallback_fonts(family_name: &str, _properties: Properties) -> Result<Vec<FontHandle>> {
+        Ok(fallback_font_faces(family_name)
+            .into_iter()
+            .map(|face| FontHandle::new(face.path.clone(), face.index, face.is_monospace))
+            .collect())
+    }
+}
+
 #[cfg(not(any(target_os = "linux", target_os = "freebsd", target_os = "windows")))]
 mod loader {
     use super::*;
@@ -347,7 +432,10 @@ fn load_font_family_from_bytes(name: &str, font_bytes: Vec<Vec<u8>>) -> Result<F
 }
 
 /// Enum indicating whether font validation should enforce that the font supports the english language.
-#[cfg(any(target_os = "linux", target_os = "freebsd", target_os = "windows"))]
+#[cfg(any(
+    all(any(target_os = "linux", target_os = "freebsd"), not(ohos)),
+    target_os = "windows"
+))]
 #[derive(Copy, Clone)]
 enum ValidateFontSupportsEn {
     Yes,

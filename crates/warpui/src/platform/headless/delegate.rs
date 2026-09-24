@@ -89,9 +89,16 @@ impl platform::Delegate for AppDelegate {
             crate::platform::mac::Window::open_url(url)
         }
         #[cfg(not(target_os = "macos"))]
+        #[cfg(not(target_env = "ohos"))]
         {
             // Reuse the winit implementation for non-mac platforms
             crate::windowing::winit::delegate::open_url_in_system(url)
+        }
+        #[cfg(all(not(target_os = "macos"), target_env = "ohos"))]
+        {
+            // OHOS has no winit back-end to delegate to; the OHOS platform layer
+            // owns the URL bridge there.
+            crate::platform::ohos::open_url_in_system(url)
         }
     }
 

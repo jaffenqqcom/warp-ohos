@@ -1203,7 +1203,7 @@ version = "0.38.0+1.3.281"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0bb44936d800fea8f016d7f2311c6a4f97aebd5dc86f09906139ec848cf3a46f"
 dependencies = [
- "libloading",
+ "libloading 0.8.9",
 ]
 
 [[package]]
@@ -2890,7 +2890,7 @@ checksum = "0b023947811758c97c59bf9d1c188fd619ad4718dcaa767947df1cadb14f39f4"
 dependencies = [
  "glob",
  "libc",
- "libloading",
+ "libloading 0.8.9",
 ]
 
 [[package]]
@@ -3372,9 +3372,27 @@ checksum = "6245d59a3e82a7fc217c5828a6692dbc6dfb63a0c8c90495621f7b9d79704a0e"
 
 [[package]]
 name = "convert_case"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ec182b0ca2f35d8fc196cf3404988fd8b8c739a4d270ff118a398feb0cbec1ca"
+dependencies = [
+ "unicode-segmentation",
+]
+
+[[package]]
+name = "convert_case"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bb402b8d4c85569410425650ce3eddc7d698ed96d39a73f941b08fb63082f1e7"
+dependencies = [
+ "unicode-segmentation",
+]
+
+[[package]]
+name = "convert_case"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "affbf0190ed2caf063e3def54ff444b449371d55c58e513a95ab98eca50adb49"
 dependencies = [
  "unicode-segmentation",
 ]
@@ -3855,6 +3873,12 @@ dependencies = [
  "quote",
  "syn 1.0.109",
 ]
+
+[[package]]
+name = "ctor"
+version = "1.0.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "914a755b7c2d4af2bdcff7ce1739e2db9a1b81a9b07123d8015786ae03c0980d"
 
 [[package]]
 name = "ctr"
@@ -4507,7 +4531,7 @@ version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "330c60081dcc4c72131f8eb70510f1ac07223e5d4163db481a04a0befcffa412"
 dependencies = [
- "libloading",
+ "libloading 0.8.9",
 ]
 
 [[package]]
@@ -5754,8 +5778,6 @@ dependencies = [
 [[package]]
 name = "gettext-sys"
 version = "0.21.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c63ce2e00f56a206778276704bbe38564c8695249fdc8f354b4ef71c57c3839d"
 dependencies = [
  "cc",
  "temp-dir",
@@ -7053,8 +7075,6 @@ checksum = "71dd52191aae121e8611f1e8dc3e324dd0dd1dee1e6dd91d10ee07a3cfb4d9d8"
 [[package]]
 name = "interprocess"
 version = "1.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "81f2533f3be42fffe3b5e63b71aeca416c1c3bc33e4e27be018521e76b1f38fb"
 dependencies = [
  "blocking",
  "cfg-if",
@@ -7519,7 +7539,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6aae1df220ece3c0ada96b8153459b67eebe9ae9212258bb0134ae60416fdf76"
 dependencies = [
  "libc",
- "libloading",
+ "libloading 0.8.9",
  "pkg-config",
 ]
 
@@ -7678,6 +7698,16 @@ name = "libloading"
 version = "0.8.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d7c4b02199fee7c5d21a5ae7d8cfa79a6ef5bb2fc834d6e9058e89c825efdc55"
+dependencies = [
+ "cfg-if",
+ "windows-link 0.2.1",
+]
+
+[[package]]
+name = "libloading"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "754ca22de805bb5744484a5b151a9e1a8e837d5dc232c2d7d8c2e3492edc8b60"
 dependencies = [
  "cfg-if",
  "windows-link 0.2.1",
@@ -8626,6 +8656,63 @@ dependencies = [
 ]
 
 [[package]]
+name = "napi-build-ohos"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "617bcd176a3dc3d96c0acad112a482f592242d6fba6773a9eb8d90e042a35260"
+
+[[package]]
+name = "napi-derive-backend-ohos"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5b06bf282ab442eed04c89f8a833bd06d4cf22f18654f50d848449db9e94438a"
+dependencies = [
+ "convert_case 0.11.0",
+ "proc-macro2",
+ "quote",
+ "semver",
+ "syn 2.0.117",
+]
+
+[[package]]
+name = "napi-derive-ohos"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "419b1721d9f21d76c1a5cb38e2628211cb786b5efb9e1dd2fc049ba1cb938e47"
+dependencies = [
+ "convert_case 0.11.0",
+ "ctor 1.0.13",
+ "napi-derive-backend-ohos",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
+]
+
+[[package]]
+name = "napi-ohos"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fe1a014105134b7889e85f5ab6f8ec5240db43ed37e6c4a38bd7b4a164b345e0"
+dependencies = [
+ "bitflags 2.13.0",
+ "ctor 1.0.13",
+ "futures",
+ "napi-build-ohos",
+ "napi-sys-ohos",
+ "nohash-hasher",
+ "rustc-hash 2.1.1",
+]
+
+[[package]]
+name = "napi-sys-ohos"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "266964b97e57f3ca023ed13e7c78d4c8f3900aa00466bbeb8cb7746653cabc5f"
+dependencies = [
+ "libloading 0.9.0",
+]
+
+[[package]]
 name = "nasm-rs"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8737,8 +8824,6 @@ checksum = "e4a24736216ec316047a1fc4252e27dabb04218aa4a3f37c6e7ddbf1f9782b54"
 [[package]]
 name = "nix"
 version = "0.26.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "598beaf3cc6fdd9a5dfb1630c2800c7acd31df7aaf0f565796fba2b53ca1af1b"
 dependencies = [
  "bitflags 1.3.2",
  "cfg-if",
@@ -8817,6 +8902,12 @@ dependencies = [
  "warp_core",
  "zip 2.4.2",
 ]
+
+[[package]]
+name = "nohash-hasher"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2bf50223579dc7cdcfb3bfcacf7069ff68243f8c363f62ffa99cf000a6b9c451"
 
 [[package]]
 name = "nom"
@@ -9488,6 +9579,172 @@ dependencies = [
 ]
 
 [[package]]
+name = "ohos-accessibility-sys"
+version = "0.0.3"
+source = "git+https://github.com/jaffenqqcom/ohos-native-bindings-zed.git?tag=ohos-xcomponent-binding-v0.3.2-zed.1#c7c7df9a07f58357784d30deb64b785b775bb005"
+dependencies = [
+ "ohos-arkui-input-sys",
+]
+
+[[package]]
+name = "ohos-arkui-binding"
+version = "0.2.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "97c3e8aef542bff511eac2faa06c3d7c0c37fe18e19e866fca337c2e351867e2"
+dependencies = [
+ "bitflags 2.13.0",
+ "napi-ohos",
+ "napi-sys-ohos",
+ "ohos-arkui-input-binding",
+ "ohos-arkui-sys",
+ "ohos-enum-derive",
+ "ohos-xcomponent-binding",
+ "ohos-xcomponent-sys",
+]
+
+[[package]]
+name = "ohos-arkui-input-binding"
+version = "0.1.2"
+source = "git+https://github.com/jaffenqqcom/ohos-native-bindings-zed.git?tag=ohos-xcomponent-binding-v0.3.2-zed.1#c7c7df9a07f58357784d30deb64b785b775bb005"
+dependencies = [
+ "ohos-arkui-input-sys",
+ "ohos-enum-derive",
+]
+
+[[package]]
+name = "ohos-arkui-input-sys"
+version = "0.1.2"
+source = "git+https://github.com/jaffenqqcom/ohos-native-bindings-zed.git?tag=ohos-xcomponent-binding-v0.3.2-zed.1#c7c7df9a07f58357784d30deb64b785b775bb005"
+
+[[package]]
+name = "ohos-arkui-sys"
+version = "0.1.2"
+source = "git+https://github.com/jaffenqqcom/ohos-native-bindings-zed.git?tag=ohos-xcomponent-binding-v0.3.2-zed.1#c7c7df9a07f58357784d30deb64b785b775bb005"
+dependencies = [
+ "napi-sys-ohos",
+ "ohos-arkui-input-sys",
+ "ohos-image-native-sys",
+ "ohos-native-drawing-sys",
+ "ohos-udmf-sys",
+]
+
+[[package]]
+name = "ohos-display-binding"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9deac94b3c79d95bb000544a7a254df77d519a139fb1f1b255cb6177ab8234d4"
+dependencies = [
+ "ohos-display-sys",
+ "ohos-enum-derive",
+]
+
+[[package]]
+name = "ohos-display-sys"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "65ddb93bf0499a9bd15a445100e82e9a82a54dc493e07f2228b09b6b63fb920e"
+
+[[package]]
+name = "ohos-enum-derive"
+version = "0.1.1"
+source = "git+https://github.com/jaffenqqcom/ohos-native-bindings-zed.git?tag=ohos-xcomponent-binding-v0.3.2-zed.1#c7c7df9a07f58357784d30deb64b785b775bb005"
+dependencies = [
+ "convert_case 0.6.0",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
+]
+
+[[package]]
+name = "ohos-image-native-sys"
+version = "0.0.3"
+source = "git+https://github.com/jaffenqqcom/ohos-native-bindings-zed.git?tag=ohos-xcomponent-binding-v0.3.2-zed.1#c7c7df9a07f58357784d30deb64b785b775bb005"
+dependencies = [
+ "napi-sys-ohos",
+ "ohos-native-buffer-sys",
+ "ohos-resource-manager-sys",
+]
+
+[[package]]
+name = "ohos-image-sys"
+version = "0.0.3"
+source = "git+https://github.com/jaffenqqcom/ohos-native-bindings-zed.git?tag=ohos-xcomponent-binding-v0.3.2-zed.1#c7c7df9a07f58357784d30deb64b785b775bb005"
+dependencies = [
+ "napi-sys-ohos",
+ "ohos-resource-manager-sys",
+]
+
+[[package]]
+name = "ohos-ime-binding"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a09e0a0b3844744535309aaf246df1e8c52fb1107631b3f7ddbfc275a0314bd3"
+dependencies = [
+ "ohos-enum-derive",
+ "ohos-input-method-sys",
+]
+
+[[package]]
+name = "ohos-input-method-sys"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "97c6c1bbab01c0d6ba34d865568342808f12f187f2aa9c906ccb1dc72aeba69f"
+
+[[package]]
+name = "ohos-native-buffer-sys"
+version = "0.1.2"
+source = "git+https://github.com/jaffenqqcom/ohos-native-bindings-zed.git?tag=ohos-xcomponent-binding-v0.3.2-zed.1#c7c7df9a07f58357784d30deb64b785b775bb005"
+
+[[package]]
+name = "ohos-native-drawing-sys"
+version = "0.2.2"
+source = "git+https://github.com/jaffenqqcom/ohos-native-bindings-zed.git?tag=ohos-xcomponent-binding-v0.3.2-zed.1#c7c7df9a07f58357784d30deb64b785b775bb005"
+dependencies = [
+ "ohos-image-native-sys",
+ "ohos-image-sys",
+]
+
+[[package]]
+name = "ohos-resource-manager-sys"
+version = "0.3.2"
+source = "git+https://github.com/jaffenqqcom/ohos-native-bindings-zed.git?tag=ohos-xcomponent-binding-v0.3.2-zed.1#c7c7df9a07f58357784d30deb64b785b775bb005"
+dependencies = [
+ "napi-sys-ohos",
+]
+
+[[package]]
+name = "ohos-udmf-sys"
+version = "0.0.3"
+source = "git+https://github.com/jaffenqqcom/ohos-native-bindings-zed.git?tag=ohos-xcomponent-binding-v0.3.2-zed.1#c7c7df9a07f58357784d30deb64b785b775bb005"
+dependencies = [
+ "ohos-image-native-sys",
+]
+
+[[package]]
+name = "ohos-xcomponent-binding"
+version = "0.3.2"
+source = "git+https://github.com/jaffenqqcom/ohos-native-bindings-zed.git?tag=ohos-xcomponent-binding-v0.3.2-zed.1#c7c7df9a07f58357784d30deb64b785b775bb005"
+dependencies = [
+ "napi-derive-ohos",
+ "napi-ohos",
+ "napi-sys-ohos",
+ "ohos-arkui-input-binding",
+ "ohos-enum-derive",
+ "ohos-xcomponent-sys",
+ "raw-window-handle 0.6.2",
+]
+
+[[package]]
+name = "ohos-xcomponent-sys"
+version = "0.1.2"
+source = "git+https://github.com/jaffenqqcom/ohos-native-bindings-zed.git?tag=ohos-xcomponent-binding-v0.3.2-zed.1#c7c7df9a07f58357784d30deb64b785b775bb005"
+dependencies = [
+ "ohos-accessibility-sys",
+ "ohos-arkui-input-sys",
+ "ohos-arkui-sys",
+]
+
+[[package]]
 name = "onboarding"
 version = "0.1.0"
 dependencies = [
@@ -9594,6 +9851,108 @@ dependencies = [
  "cc",
  "nasm-rs",
  "walkdir",
+]
+
+[[package]]
+name = "openharmony-ability"
+version = "1.0.0-beta.1"
+dependencies = [
+ "futures-channel",
+ "log",
+ "napi-derive-ohos",
+ "napi-ohos",
+ "ohos-arkui-binding",
+ "ohos-arkui-input-binding",
+ "ohos-display-binding",
+ "ohos-ime-binding",
+ "ohos-xcomponent-binding",
+]
+
+[[package]]
+name = "openharmony-ability-derive"
+version = "1.0.0-beta.1"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
+]
+
+[[package]]
+name = "openharmony-ability-plugin-cursor"
+version = "1.0.0-beta.1"
+dependencies = [
+ "log",
+ "napi-derive-ohos",
+ "napi-ohos",
+ "openharmony-ability",
+]
+
+[[package]]
+name = "openharmony-ability-plugin-filedropin"
+version = "1.0.0-beta.1"
+dependencies = [
+ "log",
+ "napi-derive-ohos",
+ "napi-ohos",
+ "openharmony-ability",
+]
+
+[[package]]
+name = "openharmony-ability-plugin-filelaunch"
+version = "1.0.0-beta.1"
+dependencies = [
+ "log",
+ "napi-derive-ohos",
+ "napi-ohos",
+ "openharmony-ability",
+]
+
+[[package]]
+name = "openharmony-ability-plugin-filepicker"
+version = "1.0.0-beta.1"
+dependencies = [
+ "napi-derive-ohos",
+ "napi-ohos",
+ "openharmony-ability",
+]
+
+[[package]]
+name = "openharmony-ability-plugin-ime"
+version = "1.0.0-beta.1"
+dependencies = [
+ "log",
+ "napi-derive-ohos",
+ "napi-ohos",
+ "openharmony-ability",
+]
+
+[[package]]
+name = "openharmony-ability-plugin-openbysys"
+version = "1.0.0-beta.1"
+dependencies = [
+ "napi-derive-ohos",
+ "napi-ohos",
+ "openharmony-ability",
+]
+
+[[package]]
+name = "openharmony-ability-plugin-pinch"
+version = "1.0.0-beta.1"
+dependencies = [
+ "log",
+ "napi-derive-ohos",
+ "napi-ohos",
+ "openharmony-ability",
+]
+
+[[package]]
+name = "openharmony-ability-plugin-url"
+version = "1.0.0-beta.1"
+dependencies = [
+ "log",
+ "napi-derive-ohos",
+ "napi-ohos",
+ "openharmony-ability",
 ]
 
 [[package]]
@@ -15238,7 +15597,7 @@ dependencies = [
  "crash-handler",
  "crc",
  "csv",
- "ctor",
+ "ctor 0.1.26",
  "cynic",
  "dashmap",
  "deltae",
@@ -15893,6 +16252,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "warp_ohos"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "log",
+ "napi-build-ohos",
+ "napi-derive-ohos",
+ "napi-ohos",
+ "openharmony-ability",
+ "openharmony-ability-derive",
+ "openharmony-ability-plugin-cursor",
+ "openharmony-ability-plugin-filedropin",
+ "openharmony-ability-plugin-filepicker",
+ "openharmony-ability-plugin-ime",
+ "openharmony-ability-plugin-openbysys",
+ "openharmony-ability-plugin-url",
+ "warp",
+ "warp_core",
+ "warp_logging",
+ "warpui",
+]
+
+[[package]]
 name = "warp_ripgrep"
 version = "0.1.0"
 dependencies = [
@@ -16276,6 +16658,15 @@ dependencies = [
  "objc2-metal 0.3.2",
  "objc2-quartz-core 0.3.2",
  "open",
+ "openharmony-ability",
+ "openharmony-ability-plugin-cursor",
+ "openharmony-ability-plugin-filedropin",
+ "openharmony-ability-plugin-filelaunch",
+ "openharmony-ability-plugin-filepicker",
+ "openharmony-ability-plugin-ime",
+ "openharmony-ability-plugin-openbysys",
+ "openharmony-ability-plugin-pinch",
+ "openharmony-ability-plugin-url",
  "ordered-float 3.9.2",
  "owned_ttf_parser",
  "parking_lot",
@@ -16331,7 +16722,7 @@ dependencies = [
  "chrono",
  "command",
  "concat-idents",
- "ctor",
+ "ctor 0.1.26",
  "ctrlc",
  "dashmap",
  "derivative",
@@ -16986,7 +17377,7 @@ dependencies = [
  "js-sys",
  "khronos-egl",
  "libc",
- "libloading",
+ "libloading 0.8.9",
  "log",
  "naga",
  "naga-types",
@@ -17734,7 +18125,7 @@ dependencies = [
  "as-raw-xcb-connection",
  "gethostname",
  "libc",
- "libloading",
+ "libloading 0.8.9",
  "once_cell",
  "rustix 1.1.2",
  "x11rb-protocol",

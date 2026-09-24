@@ -70,3 +70,10 @@ __pycache__/
 # Project notes
 .note/
 .claude/scheduled_tasks.lock
+
+# hap
+hap/entry/libs/
+hap/entry/build/
+hap/entry/.cxx/
+hap/entry/oh_modules/
+hap/entry/src/main/cpp/types/libcore/

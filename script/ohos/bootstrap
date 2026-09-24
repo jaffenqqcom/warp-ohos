@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+#
+# Verifies this machine can build Warp for HarmonyOS NEXT.
+#
+# Unlike the macOS and Linux bootstraps, nothing is installed here: the OHOS
+# toolchain (harmonybrew's ohos-sdk and rustup) and the command-line build tools
+# (node, hvigor, ohpm) are provisioned by the device image rather than by this
+# repository. Reporting what is missing means a build fails here, with a clear
+# message, instead of deep inside cargo or hvigor.
+
+set -e
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+
+BREW_PREFIX="${HARMONYBREW_PREFIX:-$HOME/.harmonybrew}"
+OHOS_SDK_ROOT="$("$BREW_PREFIX/bin/brew" --prefix ohos-sdk 2>/dev/null || echo "$BREW_PREFIX/opt/ohos-sdk")"
+TOOLCHAIN="${OHOS_COMMANDLINE_TOOLS:-$HOME/workspace/commandline-ohos}"
+
+# rustup's cargo/rustc live under the prefix's rustup opt dir, while `brew/bin`
+# only carries the rustup binary itself.
+export PATH="$BREW_PREFIX/opt/rustup/bin:$BREW_PREFIX/bin:$PATH"
+
+OHOS_TARGET="aarch64-unknown-linux-ohos"
+MISSING=()
+
+check_path() {
+  local label="$1" path="$2"
+  if [ -e "$path" ]; then
+    echo "  ok       $label: $path"
+  else
+    echo "  MISSING  $label: $path" >&2
+    MISSING+=("$label")
+  fi
+}
+
+echo "Checking the HarmonyOS build environment."
+echo
+
+echo "Toolchain:"
+check_path "ohos-sdk clang" "$OHOS_SDK_ROOT/native/llvm/bin/clang"
+check_path "ohos-sdk clang++" "$OHOS_SDK_ROOT/native/llvm/bin/clang++"
+check_path "ohos-sdk llvm-ar" "$OHOS_SDK_ROOT/native/llvm/bin/llvm-ar"
+check_path "cmake toolchain file" "$OHOS_SDK_ROOT/native/build/cmake/ohos.toolchain.cmake"
+check_path "node" "$TOOLCHAIN/node.org/node_22.7.0/bin/node"
+check_path "hvigorw.js" "$TOOLCHAIN/hvigor.org/hvigor_1.0.0/bin/hvigorw.js"
+check_path "ohpm" "$TOOLCHAIN/ohpm.org/ohpm_1.1/bin/ohpm"
+check_path "command-line SDK" "$TOOLCHAIN/sdk.org/sdk_1.0.0"
+check_path "hap-sign-tool.jar" "$TOOLCHAIN/sdk.org/sdk_1.0.0/default/openharmony/toolchains/lib/hap-sign-tool.jar"
+
+echo
+echo "Rust:"
+# The repository pins a toolchain that is not installed on this machine; the
+# installed 1.97.1 stands in for it (see the porting analysis, section 10.3).
+# Without this the `rustc -vV` probe below fails on the missing pin instead of
+# reporting the real host triple.
+export RUSTUP_TOOLCHAIN="${RUSTUP_TOOLCHAIN:-1.97.1}"
+if command -v rustc >/dev/null 2>&1; then
+  # The build is self-hosted: rustc's host triple must equal the target, or the
+  # produced objects cannot be linked on this machine.
+  RS_HOST="$(rustc -vV | sed -n 's/^host: //p')"
+  if [ "$RS_HOST" = "$OHOS_TARGET" ]; then
+    echo "  ok       rustc $(rustc -V) (host $RS_HOST)"
+  else
+    echo "  MISSING  rustc host is '$RS_HOST', expected '$OHOS_TARGET'" >&2
+    MISSING+=("rustc host")
+  fi
+else
+  echo "  MISSING  rustc (the rustup shims live under $BREW_PREFIX/opt/rustup/bin)" >&2
+  MISSING+=("rustc")
+fi
+
+if [ "${#MISSING[@]}" -gt 0 ]; then
+  echo
+  echo "Bootstrap incomplete; missing: ${MISSING[*]}" >&2
+  exit 1
+fi
+
+echo
+echo "Your machine is bootstrapped and ready to go. :)"

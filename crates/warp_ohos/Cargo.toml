@@ -1,0 +1,54 @@
+[package]
+name = "warp_ohos"
+version = "0.1.0"
+edition = "2024"
+description = "NAPI entry that launches Warp on HarmonyOS NEXT"
+publish.workspace = true
+license.workspace = true
+
+# The cdylib is what the ArkTS side loads, so its output name (`libcore.so`) is
+# the module name the HAP imports. It must stay identical to `OHOS_LIB_NAME` in
+# `script/ohos/bundle` and to the `moduleName` the ArkTS `EntryAbility` declares.
+[lib]
+name = "core"
+path = "src/lib.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+warp.workspace = true
+warp_core.workspace = true
+# The launch path needs a hilog handle before `warp::run()` installs the
+# logger, and it reuses the redirect the logging crate owns instead of opening
+# a second FFI path to the same NDK symbol.
+warp_logging.workspace = true
+# The platform back-end owns the process-global app slot this crate hands the
+# ability app to, and it is also the crate that depends on `openharmony-ability`
+# for the window/surface types. `warp` re-exports neither, so it is a direct
+# dependency.
+warpui.workspace = true
+log.workspace = true
+# `ohos_libc_shim` binds the real libc entry points behind the build script's
+# `--wrap` redirection and reads `errno`, `AT_FDCWD` and the `SYS_*` numbers from
+# here.
+libc.workspace = true
+# Consumed from the HiCodeer fork of openharmony-ability, matching the source
+# `warpui` uses. A path dependency here would put a second copy of the crate in
+# the graph and its types would no longer match warpui's.
+openharmony-ability = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
+openharmony-ability-derive = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
+# The `#[ability]` initializer registers these facades so the ArkTS host installs
+# the matching plugin factories; an unregistered plugin is never installed and
+# its bridge calls fail with "Bridge plugin '<id>' is not installed".
+openharmony-ability-plugin-cursor = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
+openharmony-ability-plugin-filedropin = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
+openharmony-ability-plugin-filepicker = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
+openharmony-ability-plugin-openbysys = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
+openharmony-ability-plugin-ime = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
+openharmony-ability-plugin-url = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", tag = "v1.0.0-beta.1-zed.1" }
+# Kept in step with `openharmony-ability`'s workspace, which pins the same
+# napi crates at 1.2; a mismatch would put two `napi-ohos` versions in the graph.
+napi-ohos = "1.2"
+napi-derive-ohos = "1.2"
+
+[build-dependencies]
+napi-build-ohos = "1.2"

@@ -19,6 +19,7 @@ pub mod initializer;
 mod input;
 mod input_mode;
 #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+#[cfg(not(target_env = "ohos"))]
 mod linux;
 mod local_control;
 pub mod macros;
@@ -61,6 +62,7 @@ pub use init::*;
 pub use input::*;
 pub use input_mode::*;
 #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+#[cfg(not(target_env = "ohos"))]
 pub use linux::*;
 pub use local_control::*;
 pub use native_preference::*;

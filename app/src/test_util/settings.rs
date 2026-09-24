@@ -94,6 +94,7 @@ pub fn initialize_settings_for_tests_with_mode(
     }
 
     #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+    #[cfg(not(target_env = "ohos"))]
     {
         use crate::settings::LinuxAppConfiguration;
         LinuxAppConfiguration::register(app);

@@ -78,6 +78,7 @@ pub fn init_wgpu_instance(display_handle: Box<dyn WgpuHasDisplayHandle>) {
 
         instance_lock_guard.get_or_insert_with(|| {
             #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+            #[cfg(not(target_env = "ohos"))]
             {
                 use crate::windowing::WindowingSystem;
                 use crate::windowing::winit::app::WINDOWING_SYSTEM;

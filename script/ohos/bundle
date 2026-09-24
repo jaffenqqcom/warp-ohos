@@ -1,0 +1,536 @@
+#!/usr/bin/env bash
+#
+# Builds Warp for HarmonyOS NEXT.
+#
+# The Warp GUI is a cdylib NAPI module here: this script compiles the
+# `crates/warp_ohos` entry crate on the device's native `aarch64-unknown-linux-ohos`
+# target, stages the resulting `libcore.so` into the HAP, and then drives
+# hvigor to assemble, inject the pre-provisioned HNP payloads and re-sign.
+#
+# Run it from the repository root (`./script/ohos/bundle`) or through the
+# cross-platform dispatcher (`./script/bundle`).
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+HAP_DIR="$PROJECT_ROOT/hap"
+
+OHOS_TARGET="aarch64-unknown-linux-ohos"
+CRATE="warp_ohos"
+# The three names below must stay identical: the cdylib file name, the NAPI
+# module registration name and the ArkTS `import` in EntryAbility.
+OHOS_LIB_NAME="libcore.so"
+NAPI_MODULE_NAME="core"
+
+CHECK_ONLY=false
+SKIP_BUILD=false
+SKIP_HAP=false
+CHECK_TLS=false
+IS_RELEASE=false
+
+while (( "$#" )); do
+  case "$1" in
+    --check-only)
+      # Compile-check only: same feature set and profile as a real build, but
+      # produce no bundle.
+      CHECK_ONLY=true
+      shift
+      ;;
+    --skip-build)
+      SKIP_BUILD=true
+      shift
+      ;;
+    --skip-hap)
+      SKIP_HAP=true
+      shift
+      ;;
+    --check-tls)
+      CHECK_TLS=true
+      shift
+      ;;
+    --release)
+      IS_RELEASE=true
+      shift
+      ;;
+    *)
+      echo "Error: unknown argument '$1'" >&2
+      exit 1
+      ;;
+  esac
+done
+
+# Temporary files must stay inside the project: the device's /tmp is a
+# read-only erofs, and clang fails outright when it cannot create temp files
+# ("unable to make temporary file: Read-only file system"). Pinning TMPDIR also
+# keeps cargo's fingerprint stable across terminals.
+export TMPDIR="$PROJECT_ROOT/target/tmp"
+mkdir -p "$TMPDIR"
+
+# ==================== Toolchain ====================
+# Every compiler, packer, SDK and signing path is resolved here; the rest of
+# the script only refers to these variables.
+BREW_PREFIX="${HARMONYBREW_PREFIX:-$HOME/.harmonybrew}"
+OHOS_SDK_ROOT="$("$BREW_PREFIX/bin/brew" --prefix ohos-sdk 2>/dev/null || echo "$BREW_PREFIX/opt/ohos-sdk")"
+TOOLCHAIN="${OHOS_COMMANDLINE_TOOLS:-$HOME/workspace/commandline-ohos}"
+
+SDK_LLVM_BIN="$OHOS_SDK_ROOT/native/llvm/bin"
+SDK_NATIVE="$OHOS_SDK_ROOT/native"
+
+NODE_CMD="$TOOLCHAIN/node.org/node_22.7.0/bin/node"
+NODE_BIN_DIR="$TOOLCHAIN/node.org/node_22.7.0/bin"
+HVIGORW_JS="$TOOLCHAIN/hvigor.org/hvigor_1.0.0/bin/hvigorw.js"
+OHPM_CMD="$TOOLCHAIN/ohpm.org/ohpm_1.1/bin/ohpm"
+OHPM_BIN_DIR="$TOOLCHAIN/ohpm.org/ohpm_1.1/bin"
+export DEVECO_SDK_HOME="$TOOLCHAIN/sdk.org/sdk_1.0.0"
+SIGN_TOOL_JAR="$TOOLCHAIN/sdk.org/sdk_1.0.0/default/openharmony/toolchains/lib/hap-sign-tool.jar"
+
+# The TLS shim only serves the compiler processes. hvigor, ohpm and the signer
+# are node/java programs that must not inherit it, so those calls run through
+# this prefix.
+NO_SHIM="env -u LD_PRELOAD"
+
+for required in "$SDK_LLVM_BIN/clang" "$NODE_CMD" "$HVIGORW_JS" "$OHPM_CMD"; do
+  if [ ! -e "$required" ]; then
+    echo "Error: required tool not found: $required" >&2
+    exit 1
+  fi
+done
+
+# ==================== hvigor module resolution ====================
+# Loading the project's hvigorfile.ts requires '@ohos/hvigor-ohos-plugin', and
+# node walks up from that file through the node_modules directories. The
+# toolchain ships the plugin next to the hvigor install instead, on no lookup
+# path, so the load fails with "Cannot find module '@ohos/hvigor-ohos-plugin'".
+# Point NODE_PATH at an @ohos link farm built under target/ rather than dropping
+# a node_modules into the project; hvigor only prepends its own computed paths
+# to NODE_PATH, so this entry survives. The plugin sits beside hvigor, so the
+# install root is derived from hvigorw.js.
+HVIGOR_HOME_DIR="$(cd "$(dirname "$HVIGORW_JS")/.." && pwd)"
+HVIGOR_MOD_DIR="$PROJECT_ROOT/target/hvigor-node-modules"
+mkdir -p "$HVIGOR_MOD_DIR/@ohos"
+ln -sfn "$HVIGOR_HOME_DIR/hvigor" "$HVIGOR_MOD_DIR/@ohos/hvigor"
+ln -sfn "$HVIGOR_HOME_DIR/hvigor-ohos-plugin" "$HVIGOR_MOD_DIR/@ohos/hvigor-ohos-plugin"
+export NODE_PATH="$HVIGOR_MOD_DIR${NODE_PATH:+:$NODE_PATH}"
+
+# rustup's cargo/rustc live under the prefix's rustup opt dir, while `brew/bin`
+# only carries the rustup binary itself.
+export PATH="$BREW_PREFIX/opt/rustup/bin:$BREW_PREFIX/bin:$PATH"
+
+# The repository pins a toolchain that is not installed on this machine; the
+# installed 1.97.1 is used instead (see the porting analysis, section 10.3).
+export RUSTUP_TOOLCHAIN="${RUSTUP_TOOLCHAIN:-1.97.1}"
+
+RS_HOST="$(rustc -vV | sed -n 's/^host: //p')"
+if [ "$RS_HOST" != "$OHOS_TARGET" ]; then
+  echo "Error: rustc host is '$RS_HOST', expected '$OHOS_TARGET'." >&2
+  echo "       This script builds natively on the device; a cross toolchain will not work." >&2
+  exit 1
+fi
+echo "[ohos-bundle] rustc $(rustc -V) (host $RS_HOST)"
+
+export CC_aarch64_unknown_linux_ohos="$SDK_LLVM_BIN/clang"
+export CXX_aarch64_unknown_linux_ohos="$SDK_LLVM_BIN/clang++"
+export AR_aarch64_unknown_linux_ohos="$SDK_LLVM_BIN/llvm-ar"
+export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_OHOS_LINKER="$SDK_LLVM_BIN/clang"
+export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_OHOS_CXX="$SDK_LLVM_BIN/clang++"
+export RANLIB_aarch64_unknown_linux_ohos="$SDK_LLVM_BIN/llvm-ranlib"
+export OHOS_NDK_HOME="$SDK_NATIVE"
+export CMAKE_TOOLCHAIN_FILE_aarch64_unknown_linux_ohos="$SDK_NATIVE/build/cmake/ohos.toolchain.cmake"
+# Some C crates need these macros; clang 17 promotes the pointer-type mismatch
+# to an error and must be told otherwise.
+export CFLAGS_aarch64_unknown_linux_ohos="-DZSTD_NOVMS -D__ANDROID__ -Wno-incompatible-function-pointer-types"
+
+if [ "$IS_RELEASE" = true ]; then
+  PROFILE_DIR="release"
+  CARGO_PROFILE_ARG=(--release)
+  CARGO_PROFILE_ENV_RELEASE=1
+else
+  PROFILE_DIR="debug"
+  CARGO_PROFILE_ARG=()
+  CARGO_PROFILE_ENV_RELEASE=0
+fi
+
+# Build artifacts stay inside the project tree, so nothing lands in $HOME.
+CARGO_TARGET_DIR_OHOS="$PROJECT_ROOT/target/ohos/target"
+
+# ==================== Compile-time TLS shim (LD_PRELOAD) ====================
+# OHOS libc caps pthread keys at 128 and std implements `thread_local!` on top
+# of them for this target, so a large workspace aborts with "out of TLS keys".
+# The shim interposes the pthread TLS entry points with a virtual key space.
+SHIM_C="$SCRIPT_DIR/ohos-tls-shim.c"
+SHIM_SO="$PROJECT_ROOT/target/ohos/rust-tls-shim.so"
+mkdir -p "$(dirname "$SHIM_SO")"
+if [ ! -f "$SHIM_SO" ] || [ "$SHIM_C" -nt "$SHIM_SO" ]; then
+  echo "[ohos-bundle] compiling TLS shim -> $SHIM_SO"
+  "$SDK_LLVM_BIN/clang" -shared -fPIC -O2 -o "$SHIM_SO" "$SHIM_C" -ldl
+fi
+# Assigned, not appended: the shim serves this script's compiler processes only.
+export LD_PRELOAD="$SHIM_SO"
+
+# ==================== TLS shim self-check (--check-tls) ====================
+# Compiles a probe with far more thread-locals than the platform allows: without
+# the shim it must abort, with it must compute the right sum. Run this before a
+# long build to tell a broken shim apart from broken code.
+TLS_PROBE_THREAD_LOCALS=200
+TLS_PROBE_EXPECTED_SUM=$(( TLS_PROBE_THREAD_LOCALS * (TLS_PROBE_THREAD_LOCALS - 1) / 2 ))
+TLS_PROBE_RS="$TMPDIR/tls_probe.rs"
+TLS_PROBE_BIN="$TMPDIR/tls_probe"
+
+run_tls_check() {
+  echo "[ohos-bundle] TLS self-check: generating a probe with $TLS_PROBE_THREAD_LOCALS thread-locals"
+  python3 - "$TLS_PROBE_RS" "$TLS_PROBE_THREAD_LOCALS" <<'PY'
+import sys
+
+path, count = sys.argv[1], int(sys.argv[2])
+lines = ["use std::cell::Cell;"]
+for i in range(count):
+    lines.append("thread_local!(static TL_%d: Cell<u32> = const { Cell::new(%d) });" % (i, i))
+lines.append("fn main() {")
+lines.append("    let mut sum: u32 = 0;")
+for i in range(count):
+    lines.append("    TL_%d.with(|c| { sum = sum.wrapping_add(c.get()); });" % i)
+lines.append('    println!("sum={sum}");')
+lines.append("}")
+with open(path, "w") as handle:
+    handle.write("\n".join(lines) + "\n")
+PY
+  rustc "$TLS_PROBE_RS" -o "$TLS_PROBE_BIN"
+
+  NO_SHIM_RESULT="$(LD_PRELOAD="" "$TLS_PROBE_BIN" 2>&1 || true)"
+  SHIM_RESULT="$(LD_PRELOAD="$SHIM_SO" "$TLS_PROBE_BIN" 2>&1 || true)"
+  echo "[ohos-bundle] without shim -> ${NO_SHIM_RESULT:-<no output>}"
+  echo "[ohos-bundle] with shim    -> ${SHIM_RESULT:-<no output>}"
+
+  if [ "$SHIM_RESULT" != "sum=$TLS_PROBE_EXPECTED_SUM" ]; then
+    echo "Error: TLS self-check failed, expected 'sum=$TLS_PROBE_EXPECTED_SUM', got '${SHIM_RESULT:-<no output>}'" >&2
+    exit 1
+  fi
+  echo "[ohos-bundle] TLS self-check passed"
+}
+
+if [ "$CHECK_TLS" = true ]; then
+  run_tls_check
+  exit 0
+fi
+
+cd "$PROJECT_ROOT"
+
+# The NAPI module registration name must match the cdylib file name and the
+# ArkTS import; napi-derive-ohos otherwise falls back to the package name.
+export NAPI_BUILD_TARGET_NAME="$NAPI_MODULE_NAME"
+
+# Existing warnings must not block the build.
+export RUSTFLAGS="${RUSTFLAGS:-} -A warnings"
+
+# No `--cfg rustix_use_libc` here, deliberately.
+#
+# It is not needed: every path in warp that opens a user-public file goes through
+# libc, so `--wrap` already covers it - `std::fs`, `walkdir`, `ignore` and the
+# `notify` watcher all bottom out in libc. rustix only reaches this build as a
+# leaf of `async-io`/`tempfile`/`fs4`/`xattr`, which work on file descriptors or
+# on sandbox paths rather than on user-public ones.
+#
+# It would not compile either: the flag selects rustix's libc backend, and rustix
+# 1.x has no OHOS support there. `target_env = "ohos"` is neither `musl` nor
+# `gnu`, so rustix takes its glibc branch and fails against the OHOS libc with 19
+# errors (`__fsword_t`, `O_FSYNC`, `STATX__RESERVED`, `tcflag_t` mismatches).
+# Reproduced both here and in HiCodeer, which pins the same rustix 1.1.2.
+# HiCodeer's own shim reads directories through rustix and so wants this flag,
+# but cannot compile with it.
+
+if [ "$CARGO_PROFILE_ENV_RELEASE" = 1 ]; then
+  export CARGO_PROFILE_RELEASE_CODEGEN_UNITS=2
+else
+  export CARGO_PROFILE_DEV_CODEGEN_UNITS=16
+fi
+
+# ==================== Rust build ====================
+HAP_LIBS_DIR="$HAP_DIR/entry/libs/arm64-v8a"
+
+if [ "$SKIP_BUILD" != true ]; then
+  if [ "$CHECK_ONLY" = true ]; then
+    echo "[ohos-bundle] cargo check ($CRATE, $PROFILE_DIR)"
+    CARGO_TARGET_DIR="$CARGO_TARGET_DIR_OHOS" \
+      cargo check -p "$CRATE" --target "$OHOS_TARGET" "${CARGO_PROFILE_ARG[@]}"
+    exit 0
+  fi
+
+  NPROC="$(nproc 2>/dev/null || echo 4)"
+  echo "[ohos-bundle] cargo build ($CRATE, $PROFILE_DIR, $NPROC CPUs)"
+  CARGO_TARGET_DIR="$CARGO_TARGET_DIR_OHOS" \
+    cargo build -p "$CRATE" --lib --target "$OHOS_TARGET" "${CARGO_PROFILE_ARG[@]}" -j "$NPROC"
+
+  BUILT_LIB="$CARGO_TARGET_DIR_OHOS/$OHOS_TARGET/$PROFILE_DIR/$OHOS_LIB_NAME"
+  if [ ! -f "$BUILT_LIB" ]; then
+    echo "Error: expected library not produced: $BUILT_LIB" >&2
+    exit 1
+  fi
+  mkdir -p "$HAP_LIBS_DIR"
+  # Keep an unstripped copy so device crashes can still be symbolized; the HAP
+  # copy is stripped because the full symbol table plus DWARF made hvigor's
+  # zip/sign step exceed the machine's memory on every change.
+  SYMBOL_DIR="$PROJECT_ROOT/target/ohos/$NAPI_MODULE_NAME-symbols"
+  mkdir -p "$SYMBOL_DIR"
+  cp "$BUILT_LIB" "$SYMBOL_DIR/$OHOS_LIB_NAME"
+  cp "$BUILT_LIB" "$HAP_LIBS_DIR/$OHOS_LIB_NAME"
+  if command -v strip >/dev/null 2>&1; then
+    strip "$HAP_LIBS_DIR/$OHOS_LIB_NAME" \
+      && echo "[ohos-bundle] $OHOS_LIB_NAME staged and stripped; unstripped copy at $SYMBOL_DIR" \
+      || echo "[ohos-bundle] WARNING: strip failed, staging an unstripped library" >&2
+  else
+    echo "[ohos-bundle] WARNING: no strip tool, staging an unstripped library" >&2
+  fi
+fi
+
+if [ "$SKIP_HAP" = true ]; then
+  echo "[ohos-bundle] --skip-hap: skipping HAP assembly"
+  exit 0
+fi
+
+# ==================== ArkTS sources ====================
+# hvigor accepts only project-relative paths and cannot consume a git
+# repository, so the ArkTS modules `hap/` references are served from a fixed
+# directory under target/. The copy comes from the same cargo git checkout the
+# openharmony-ability Rust dependency already uses, so both sides always sit on
+# one revision (read from Cargo.lock).
+ARKTS_SUBDIRS=(native_ability plugins)
+ARKTS_SYNC_DIR="$PROJECT_ROOT/target/ohos-arkts/openharmony-ability"
+ARKTS_SYNC_STAMP="$ARKTS_SYNC_DIR/.synced-rev"
+CARGO_GIT_CHECKOUTS="${CARGO_HOME:-$HOME/.cargo}/git/checkouts"
+ARKTS_RESYNCED=false
+
+arkts_revision_from_lock() {
+  grep -A2 '^name = "openharmony-ability"$' "$PROJECT_ROOT/Cargo.lock" \
+    | grep -o '#[0-9a-f]\{40\}' | head -n 1 | cut -c2-
+}
+
+arkts_checkout_dir() {
+  local short="${1:0:7}" dir
+  for dir in "$CARGO_GIT_CHECKOUTS"/openharmony-ability-zed-*/"$short"; do
+    if [ -d "$dir/native_ability" ]; then
+      printf '%s\n' "$dir"
+      return 0
+    fi
+  done
+  return 1
+}
+
+# Local development override: when the root Cargo.toml patches
+# openharmony-ability onto a checkout on this machine, Cargo.lock carries no git
+# revision (path sources write no `source`), and the ArkTS modules have to come
+# from that same directory -- otherwise edits to the local plugins would be
+# compiled on the Rust side while the bundle still shipped the git copy.
+# Prints the checkout root when the override is in effect.
+arkts_local_override_dir() {
+  local crate_path root
+  crate_path=$(grep '^openharmony-ability = ' "$PROJECT_ROOT/Cargo.toml" 2>/dev/null \
+      | grep 'path' | head -n 1 | sed -n 's/.*path *= *"\([^"]*\)".*/\1/p')
+  [ -n "$crate_path" ] || return 1
+  root=$(cd "$PROJECT_ROOT" && cd "$crate_path/../.." 2>/dev/null && pwd) || return 1
+  [ -d "$root/native_ability" ] || return 1
+  printf '%s\n' "$root"
+}
+
+# Digest of the ArkTS subtrees that get copied, taken from the bytes on disk.
+# `tar` is reused as the reader so the hash covers exactly the files the copy will
+# carry; a tree nobody touched re-tars to the same bytes, mtimes included.
+arkts_content_hash() {
+  local root="$1"
+  (cd "$root" && tar cf - \
+      --exclude=build --exclude=oh_modules --exclude=.cxx --exclude=node_modules \
+      "${ARKTS_SUBDIRS[@]}") \
+    | python3 -c 'import hashlib, sys; print(hashlib.sha256(sys.stdin.buffer.read()).hexdigest())'
+}
+
+sync_arkts_sources() {
+  local revision short checkout
+  if checkout="$(arkts_local_override_dir)"; then
+    # The marker has to follow the ArkTS sources themselves, not just git: the local
+    # checkout is consumed while it is still being edited, and neither HEAD nor a
+    # dirty/clean flag says *which* files changed. A rename or a new plugin would
+    # otherwise keep being served from the stale copy, and hvigor fails on the
+    # missing module ("Path not found") instead of resyncing.
+    revision="$(git -C "$checkout" rev-parse HEAD 2>/dev/null || printf 'local')"
+    revision="$revision+$(arkts_content_hash "$checkout")"
+  else
+    checkout=""
+    revision="$(arkts_revision_from_lock || true)"
+    if [ -z "$revision" ]; then
+      echo "Error: no git revision for openharmony-ability in Cargo.lock;" >&2
+      echo "       run a cargo build once so the dependency is resolved." >&2
+      return 1
+    fi
+  fi
+  short="${revision:0:7}"
+
+  if [ -f "$ARKTS_SYNC_STAMP" ] && [ "$(cat "$ARKTS_SYNC_STAMP")" = "$revision" ] \
+     && [ -d "$ARKTS_SYNC_DIR/native_ability" ] && [ -d "$ARKTS_SYNC_DIR/plugins" ]; then
+    echo "[ohos-bundle] ArkTS sources already at $short"
+    return 0
+  fi
+
+  if [ -z "$checkout" ] && ! checkout="$(arkts_checkout_dir "$revision")"; then
+    echo "[ohos-bundle] cargo checkout missing, materialising it (offline)"
+    (cd "$PROJECT_ROOT" && CARGO_NET_OFFLINE=true cargo metadata --format-version 1 >/dev/null)
+    if ! checkout="$(arkts_checkout_dir "$revision")"; then
+      echo "Error: cargo checkout for openharmony-ability not found (revision $short)" >&2
+      echo "  expected: $CARGO_GIT_CHECKOUTS/openharmony-ability-zed-*/$short" >&2
+      return 1
+    fi
+  fi
+
+  echo "[ohos-bundle] syncing ArkTS sources from cargo checkout ($short)"
+  ARKTS_RESYNCED=true
+  rm -rf "$ARKTS_SYNC_DIR"
+  mkdir -p "$ARKTS_SYNC_DIR"
+  (cd "$checkout" && tar cf - \
+      --exclude=build --exclude=oh_modules --exclude=.cxx --exclude=node_modules \
+      "${ARKTS_SUBDIRS[@]}") | (cd "$ARKTS_SYNC_DIR" && tar xf -)
+  printf '%s\n' "$revision" > "$ARKTS_SYNC_STAMP"
+  echo "[ohos-bundle] ArkTS sources ready: $ARKTS_SYNC_DIR"
+}
+sync_arkts_sources
+
+# ==================== ohpm install ====================
+# DevEco Studio triggers ohpm install on its own; the command-line assembleHap
+# may not. Missing module links make the ArkTS compile fail with "Cannot find
+# module 'libcore.so'", so install whenever the links are absent or stale.
+ohpm_links_missing() {
+  local dep dir link
+  for dep in "$OHOS_LIB_NAME"; do
+    [ -L "$HAP_DIR/oh_modules/$dep" ] || return 0
+    [ -L "$HAP_DIR/entry/oh_modules/$dep" ] || return 0
+  done
+  for dir in "$HAP_DIR/oh_modules" "$HAP_DIR/entry/oh_modules"; do
+    if [ ! -d "$dir" ] || [ -z "$(ls -A "$dir" 2>/dev/null)" ]; then
+      return 0
+    fi
+    while IFS= read -r -d '' link; do
+      if [ -L "$link" ] && [ ! -e "$link" ]; then
+        return 0
+      fi
+    done < <(find "$dir" -type l -print0 2>/dev/null)
+  done
+  return 1
+}
+if [ "$ARKTS_RESYNCED" = true ] || ohpm_links_missing; then
+  echo "[ohos-bundle] ohpm install (top-level)"
+  PATH="$NODE_BIN_DIR:$OHPM_BIN_DIR:$PATH" \
+    bash -c "cd '$HAP_DIR' && '$OHPM_CMD' install --all"
+  echo "[ohos-bundle] ohpm install (entry)"
+  PATH="$NODE_BIN_DIR:$OHPM_BIN_DIR:$PATH" \
+    bash -c "cd '$HAP_DIR/entry' && '$OHPM_CMD' install"
+fi
+
+# ==================== hvigor assembleHap ====================
+cd "$HAP_DIR"  # hvigor looks for hvigor-config.json5 / build-profile.json5 here
+# The hvigor daemon caches the environment it started with (DEVECO_SDK_HOME and
+# friends), so stop any running instance before building.
+$NO_SHIM "$NODE_CMD" "$HVIGORW_JS" --stop-daemon 2>/dev/null || true
+
+echo "[ohos-bundle] hvigor assembleHap (mode=$PROFILE_DIR)"
+$NO_SHIM "$NODE_CMD" "$HVIGORW_JS" \
+  --mode module \
+  -p product=default \
+  -p buildMode="$PROFILE_DIR" \
+  assembleHap \
+  --info --analyze=normal --parallel --incremental --no-daemon
+
+# ==================== HNP injection and re-signing ====================
+# hvigor writes the declared hnpPackages into the manifest but never embeds the
+# .hnp payloads, so they are appended here and the package is re-signed as a
+# whole. The payloads are prebuilt and checked in under hap/entry/hnp/arm64-v8a.
+HNP_SRC_DIR="$HAP_DIR/entry/hnp/arm64-v8a"
+if [ ! -d "$HNP_SRC_DIR" ] || ! ls "$HNP_SRC_DIR"/*.hnp >/dev/null 2>&1; then
+  echo "Error: no .hnp payloads under $HNP_SRC_DIR; the HAP would ship without git and zsh." >&2
+  exit 1
+fi
+
+# Only the bare hvigor output is a valid injection source: the derived -packed
+# and -signed copies already carry hnp entries, and injecting into them again
+# appends duplicate entries.
+UNSIGNED_HAP="$HAP_DIR/entry/build/default/outputs/default/entry-default-unsigned.hap"
+if [ ! -f "$UNSIGNED_HAP" ]; then
+  echo "Error: $UNSIGNED_HAP not found; refusing to inject into an already-injected package." >&2
+  exit 1
+fi
+PACKED_HAP="${UNSIGNED_HAP%.hap}-packed.hap"
+echo "[ohos-bundle] injecting HNP payloads: $UNSIGNED_HAP -> $PACKED_HAP"
+# Copy the HAP verbatim and append each payload as a new zip entry: rewriting
+# every entry would pull the largest STORED payload wholly into memory.
+cp -f "$UNSIGNED_HAP" "$PACKED_HAP"
+python3 - "$PACKED_HAP" "$HNP_SRC_DIR" <<'PY'
+import json, os, sys, zipfile
+
+hap, tools = sys.argv[1], sys.argv[2]
+with zipfile.ZipFile(hap, "a", allowZip64=True) as zout:
+    module_json = json.loads(zout.read("module.json"))
+    declared = [h["package"] for h in module_json.get("module", {}).get("hnpPackages", [])]
+    injected = 0
+    for pkg in declared:
+        payload = os.path.join(tools, pkg)
+        if not os.path.isfile(payload):
+            raise SystemExit("declared hnpPackages entry missing payload: " + payload)
+        entry = zipfile.ZipInfo("hnp/arm64-v8a/" + pkg)
+        # Preserve the source permissions (bin/* must keep the execute bit),
+        # otherwise the installed ELF is not runnable.
+        entry.external_attr = (os.stat(payload).st_mode & 0xFFFF) << 16
+        entry.compress_type = zipfile.ZIP_DEFLATED
+        with open(payload, "rb") as payload_file:
+            zout.writestr(entry, payload_file.read())
+        injected += 1
+print("injected %d hnp payload(s): %s" % (injected, ", ".join(declared)))
+PY
+
+# Signing material: the three files are named in build-profile.json5, and the
+# password is recovered from the encrypted value kept there (the per-keystore
+# randomness lives in the keystore's sibling material/ directory).
+profile_field() {
+  grep -o "\"$1\": *\"[^\"]*\"" "$HAP_DIR/build-profile.json5" | head -n 1 | sed 's/.*: *"//; s/"$//'
+}
+: "${OHOS_SIGN_CER:="$(profile_field certpath)"}"
+: "${OHOS_SIGN_P7B:="$(profile_field profile)"}"
+: "${OHOS_SIGN_P12:="$(profile_field storeFile)"}"
+: "${OHOS_SIGN_ALIAS:="debugKey"}"
+if [ -z "${OHOS_SIGN_PWD:-}" ]; then
+  OHOS_SIGN_PWD="$("$NODE_CMD" "$SCRIPT_DIR/read-sign-pwd.js" "$HAP_DIR")" || {
+    echo "Error: cannot recover the signing password; pass OHOS_SIGN_PWD explicitly." >&2
+    exit 1
+  }
+fi
+if [ -z "$OHOS_SIGN_CER" ] || [ ! -f "$OHOS_SIGN_CER" ] \
+   || [ -z "$OHOS_SIGN_P7B" ] || [ ! -f "$OHOS_SIGN_P7B" ] \
+   || [ -z "$OHOS_SIGN_P12" ] || [ ! -f "$OHOS_SIGN_P12" ] \
+   || [ -z "$OHOS_SIGN_PWD" ]; then
+  echo "Error: signing material incomplete; set OHOS_SIGN_CER / OHOS_SIGN_P7B / OHOS_SIGN_P12 / OHOS_SIGN_PWD." >&2
+  echo "       unsigned artefact kept at $PACKED_HAP" >&2
+  exit 1
+fi
+
+SIGNED_HAP="$HAP_DIR/entry/build/default/outputs/default/entry-default-signed.hap"
+rm -f "$SIGNED_HAP"
+echo "[ohos-bundle] sign-app -> $SIGNED_HAP"
+$NO_SHIM java -jar "$SIGN_TOOL_JAR" sign-app \
+  -keyAlias "$OHOS_SIGN_ALIAS" -signAlg SHA256withECDSA -mode localSign \
+  -appCertFile "$OHOS_SIGN_CER" -profileFile "$OHOS_SIGN_P7B" -keystoreFile "$OHOS_SIGN_P12" \
+  -inFile "$PACKED_HAP" -outFile "$SIGNED_HAP" \
+  -keyPwd "$OHOS_SIGN_PWD" -keystorePwd "$OHOS_SIGN_PWD" -signCode 1 -profileSigned 1
+
+VERIFY_CHAIN="$(mktemp -t ohos-certchain.XXXXXX.cer)"
+VERIFY_PROFILE="$(mktemp -t ohos-profile.XXXXXX.p7b)"
+if ! $NO_SHIM java -jar "$SIGN_TOOL_JAR" verify-app -inFile "$SIGNED_HAP" \
+      -outCertChain "$VERIFY_CHAIN" -outProfile "$VERIFY_PROFILE"; then
+  rm -f "$VERIFY_CHAIN" "$VERIFY_PROFILE"
+  echo "Error: signature verification failed: $SIGNED_HAP" >&2
+  exit 1
+fi
+rm -f "$VERIFY_CHAIN" "$VERIFY_PROFILE"
+
+# Drop the un-injected hvigor output: it is not installable, and hvigor
+# regenerates it on the next assembleHap run.
+rm -f "$UNSIGNED_HAP"
+
+echo ""
+echo "[ohos-bundle] INSTALLABLE (with HNP): $SIGNED_HAP"
+echo "[ohos-bundle] install with: hdc install -r $SIGNED_HAP"

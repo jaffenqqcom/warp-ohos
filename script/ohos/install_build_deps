@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+#
+# Reports the build-time dependencies for HarmonyOS NEXT.
+#
+# The Linux script installs packages through apt, but on OHOS there is nothing
+# to install: the SDK, the Rust toolchain and the command-line build tools all
+# come from the device image (harmonybrew plus the command-line tools), so this
+# only verifies they resolve. Anything genuinely absent must be supplied by the
+# image, not by a package manager this repository can drive.
+
+set -e
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+
+exec "$REPO_ROOT/script/ohos/bootstrap" "$@"

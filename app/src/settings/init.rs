@@ -109,6 +109,7 @@ pub fn register_all_settings(ctx: &mut AppContext) {
     }
 
     #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+    #[cfg(not(target_env = "ohos"))]
     super::LinuxAppConfiguration::register(ctx);
 
     #[cfg(feature = "local_fs")]

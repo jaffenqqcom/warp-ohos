@@ -1150,6 +1150,21 @@ where
                             log::warn!("Warp OSC marker did not contain payload");
                             return;
                         };
+                        // 9278 is Warp's private marker, not a reserved number: on OHOS the
+                        // device's own `/etc/zshrc` sources a shell integration that emits the
+                        // same marker with its own JSON shape. Warp's unencoded hook payloads
+                        // always carry a top-level `hook` key, so a payload without one was not
+                        // addressed to Warp and must not be reported as malformed.
+                        #[cfg(target_env = "ohos")]
+                        {
+                            let is_warp_hook_payload =
+                                serde_json::from_str::<serde_json::Value>(&data_str)
+                                    .is_ok_and(|value| value.get("hook").is_some());
+                            if !is_warp_hook_payload {
+                                log::debug!("Ignoring OSC 9278 payload that carries no `hook` key");
+                                return;
+                            }
+                        }
                         safe_debug!(
                             safe: ("Received Warp OSC string for shell hook"),
                             full: ("Received Warp OSC string for shell hook with JSON payload: {:?}", data_str)

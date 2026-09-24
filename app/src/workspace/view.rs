@@ -23477,6 +23477,7 @@ impl Workspace {
         }
 
         #[cfg(target_os = "linux")]
+        #[cfg(not(target_env = "ohos"))]
         {
             let force_x11 = *crate::settings::LinuxAppConfiguration::as_ref(app)
                 .force_x11

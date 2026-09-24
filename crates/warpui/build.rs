@@ -12,12 +12,16 @@ use cfg_aliases::cfg_aliases;
 fn main() {
     cfg_aliases! {
         macos: { target_os = "macos" },
+        // HarmonyOS NEXT reports `target_os = "linux"` together with
+        // `target_env = "ohos"`, but has no winit backend; it runs the custom
+        // `platform/ohos` back-end.
+        ohos: { target_env = "ohos" },
         // We use winit on all platforms other than mac, where we have a custom
         // AppKit-based platform implementation.
-        winit: { not(macos) },
+        winit: { not(any(macos, ohos)) },
         // We use wgpu for rendering on all platforms where we use winit, but
         // we can also use it on macOS, if enabled.
-        wgpu: { any(winit, feature = "experimental-wgpu-renderer") },
+        wgpu: { any(winit, ohos, feature = "experimental-wgpu-renderer") },
         native: { not(target_family = "wasm") },
     }
 

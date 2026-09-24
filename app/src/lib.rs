@@ -1251,7 +1251,10 @@ fn run_internal(mut launch_mode: LaunchMode) -> Result<()> {
         app_builder.set_dock_menu_builder(|_| app_menus::dock_menu());
     }
 
-    #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+    #[cfg(all(
+        any(target_os = "linux", target_os = "freebsd"),
+        not(target_env = "ohos")
+    ))]
     {
         use warpui::platform::linux::{self, AppBuilderExt};
 

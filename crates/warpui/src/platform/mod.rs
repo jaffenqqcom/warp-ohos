@@ -1,8 +1,11 @@
 pub mod app;
 #[cfg(any(target_os = "linux", target_os = "freebsd"))]
+#[cfg(not(target_env = "ohos"))]
 pub mod linux;
 #[cfg(target_os = "macos")]
 pub mod mac;
+#[cfg(target_env = "ohos")]
+pub mod ohos;
 #[cfg(target_family = "wasm")]
 pub mod wasm;
 #[cfg(target_os = "windows")]
@@ -14,6 +17,8 @@ pub mod current {
     cfg_if::cfg_if! {
         if #[cfg(target_family = "wasm")] {
             pub use super::wasm::*;
+        } else if #[cfg(target_env = "ohos")] {
+            pub use super::ohos::*;
         } else if #[cfg(any(target_os = "linux", target_os = "freebsd"))] {
             pub use super::linux::*;
         } else if #[cfg(target_os = "macos")] {
@@ -36,6 +41,8 @@ pub fn create_system_clipboard() -> anyhow::Result<Box<dyn crate::Clipboard + Se
     cfg_if::cfg_if! {
         if #[cfg(target_os = "macos")] {
             Ok(Box::new(mac::clipboard::Clipboard::new()?))
+        } else if #[cfg(target_env = "ohos")] {
+            Ok(Box::new(ohos::clipboard::Clipboard::new()?))
         } else if #[cfg(any(target_os = "linux", target_os = "freebsd"))] {
             Ok(Box::new(crate::windowing::winit::linux::LinuxClipboard::new()?))
         } else if #[cfg(target_os = "windows")] {
