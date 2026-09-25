@@ -6,6 +6,7 @@
 
 ### 修订记录
 
+- **2026-09-25**：新增 11.11 节（`hitshell` + `hitdaemon`：沙箱内终端的权限桥），并同步 11.9、12.2、12.3 三处与之冲突的旧表述；入口 crate 由 `crates/warp_ohos` 改名为 `crates/entry_ohos`（crate 名同步），全文路径引用与 `script/ohos/bundle` 的 `CRATE` 一并更新。
 - **2026-09-24**：同步平台能力补齐的最终裁决与实现——第十二章 12.4 记有**全局快捷键**、**剪贴板图片 / HTML**、**app 级窗口最小化 / 唤起**三项已落地（per-window 的最小化 / 最大化 / 全屏仍不做，与 app 级不是同一层）；同步 `openharmony-ability` 的插件改名（`plugin-files` → `plugin-filepicker`、`plugin-openwith` → `plugin-openbysys`、`plugin-filedrop` → `plugin-filedropin`，新增 `plugin-filelaunch`）；修正第十一章中「全局快捷键判降级」「最小化 / 最大化 / 全屏判降级」两处与实现冲突的旧结论。
 
 ### 编写依据
@@ -541,8 +542,8 @@ pub mod current {
 1. **窗口后端**（已落地，但落点与原计划不同）：原计划新增 `crates/warpui/src/windowing/ohos/`；实际**未新增该目录**——OHOS 的窗口后端与平台后端同处 `crates/warpui/src/platform/ohos/`，由 `windowing.rs` 实现 `platform::WindowManager` 与 `platform::Window`，窗口句柄直接取 `openharmony-ability` 的 `RawWindow`，不需要直接对接 OH_NativeWindow 的 NDK 调用。`crates/warpui/build.rs` 的门控已按计划调整：新增 `ohos: { target_env = "ohos" }`，`winit` 改为 `not(any(macos, ohos))`，`wgpu` 改为 `any(winit, ohos, feature = "experimental-wgpu-renderer")`。
 2. **平台后端**（已落地）：`crates/warpui/src/platform/ohos/` 已实现 `Delegate`、`Window`、`WindowManager`、`WindowContext`、`FontDB`（复用 cosmic-text 实现）与剪贴板；事件模型与按键映射在 `event_loop.rs`、`keycodes.rs`。IME 与鼠标/触摸仍为未接通道（运行时打 `warn` 留痕，见 11.10.6）。
 3. **框架分发**（已落地）：`crates/warpui/src/platform/mod.rs` 的 `current` 与 `create_system_clipboard()` 已新增 OHOS 分支；`crates/warpui/src/windowing/mod.rs` 把 `windowing::winit` 的编译门控放宽为 `any(winit, ohos)`（其中字体子系统 `fonts` 对 OHOS 开放，其余项仍守 `cfg(winit)`），`windowing/winit/mod.rs` 内逐项补 `#[cfg(winit)]` 以保持其它平台不变。
-4. **应用层**（未落地，遗留）：`app/src/platform/` 尚未新增 `ohos.rs`，`app/src/lib.rs` 的 `run_internal` 也尚无 `#[cfg(target_env = "ohos")]` 定制分支。当前 OHOS 入口完全走 `crates/warp_ohos` 的 `#[ability] launch_app`，未经过 `run_internal`，故编译虽通过但该分支仍待补。
-5. **入口 crate**（已落地）：`crates/warp_ohos/`，以 `cdylib` 形式产出 `libcore.so`（由 `Cargo.toml` 的 `[lib] name = "core"` 决定，必须与 `script/ohos/bundle` 的 `OHOS_LIB_NAME`、ArkTS 侧 `moduleName` 三方一致），内部用 `#[ability]` 宏定义 Rust 入口并转调 warp 的 `run()`；另经 `warpui::platform::ohos::spawn` 把阻塞的事件循环移到独立 `warp-main` 线程（见 11.10.6）。
+4. **应用层**（未落地，遗留）：`app/src/platform/` 尚未新增 `ohos.rs`，`app/src/lib.rs` 的 `run_internal` 也尚无 `#[cfg(target_env = "ohos")]` 定制分支。当前 OHOS 入口完全走 `crates/entry_ohos` 的 `#[ability] launch_app`，未经过 `run_internal`，故编译虽通过但该分支仍待补。
+5. **入口 crate**（已落地）：`crates/entry_ohos/`，以 `cdylib` 形式产出 `libcore.so`（由 `Cargo.toml` 的 `[lib] name = "core"` 决定，必须与 `script/ohos/bundle` 的 `OHOS_LIB_NAME`、ArkTS 侧 `moduleName` 三方一致），内部用 `#[ability]` 宏定义 Rust 入口并转调 warp 的 `run()`；另经 `warpui::platform::ohos::spawn` 把阻塞的事件循环移到独立 `warp-main` 线程（见 11.10.6）。
 
 ## 6.6 窗口后端选型专论：winit 路线与仿 macOS 路线
 
@@ -730,7 +731,7 @@ OHOS libc 缺少 robust mutex（`pthread_mutexattr_setrobust` / `pthread_mutex_c
 
 ## 7.3 main 融合方案的落地步骤（建议）
 
-1. 新增入口 crate（如 `crates/warp_ohos/`，路径含 `ohos`），`crate-type = ["cdylib"]`，依赖 warp 主 crate 与 `openharmony-ability`。
+1. 新增入口 crate（如 `crates/entry_ohos/`，路径含 `ohos`），`crate-type = ["cdylib"]`，依赖 warp 主 crate 与 `openharmony-ability`。
 2. 在入口 crate 中用 `#[ability]` 宏定义入口函数，内部转调 warp 的启动逻辑。
 3. 编译产出 `libwarp.so`，由构建脚本拷入 `hap/entry/libs/arm64-v8a/`。
 4. HAP 侧 `EntryAbility.ets` 的 `moduleName` 设为 `'warp'`，`import 'libwarp.so'`。
@@ -825,7 +826,7 @@ warp 的终端要跑 shell（bash/zsh/fish）与工具（git 等），OHOS 上�
 - **只调用少数几个程序** → 打成 HNP 内置进 HAP。
 - **会调用大量程序** → 走 cmd-agent 桥（本地守护进程或 guest）。
 
-warp 依赖的外部程序较多（shell、git、语言服务器、AI CLI 等），且已有 SSH 客户端能力（第 25 章记载 warp-oh 用 libssh2 + mbedTLS 桥接）。因此建议**混合方案**：少量核心工具（如 zsh、git）打 HNP 本地 fork，其余经 cmd-agent 桥。
+warp 依赖的外部程序较多（shell、git、语言服务器、AI CLI 等），且已有 SSH 客户端能力（第 25 章记载 warp-oh 用 libssh2 + mbedTLS 桥接）。因此建议**混合方案**：少量核心工具（如 zsh、git）打 HNP 本地 fork，其余经 cmd-agent 桥。**（2026-09-25 落地：本地 HNP 为 `zsh.hnp` / `git.hnp`，桥为 `hitshell` + `hitdaemon`，见 11.11。）**
 
 ## 9.3 与 OHOS 系统约束的冲突点清单
 
@@ -950,7 +951,7 @@ pub fn launch_app(app: openharmony_ability::OpenHarmonyApp) {
 6. 从 cargo checkout 同步 `native_ability` 与 `plugins` 到 `target/ohos-arkts/openharmony-ability/`。
 7. `ohpm install`（顶层与 entry 各一次，并检查关键符号链接齐全）。
 8. `hvigorw assembleHap` 产出未签名 HAP。
-9. HNP 载荷装配与注入：由 `script/ohos/bundle` 编排 `hnpcli pack`（stage 布局 `<pkg>/bin` + `<pkg>/conf` + `<pkg>/shim` + `hnp.json`），首批载荷含 private `git.hnp`（从 HiCodeer 复制）与 private `zsh.hnp`（仅 zsh 二进制，依赖走系统库，见 11.9），二者均为预制件、已就位，产物落 `hap/entry/hnp/arm64-v8a/`；再注入未签名 HAP（用 python `zipfile`，注意 `allowZip64=True`）。注意 hmdfs 只保留 owner 权限位，hnpcli 依 `stat` 记录权限，需重写 zip 中央目录的权限位，否则可执行文件落地为 0744 不可执行。
+9. HNP 载荷装配与注入：由 `script/ohos/bundle` 编排 `hnpcli pack`（stage 布局 `<pkg>/bin` + `<pkg>/conf` + `<pkg>/shim` + `hnp.json`），首批载荷含 private `git.hnp`（从 HiCodeer 复制）与 private `zsh.hnp`（仅 zsh 二进制，依赖走系统库，见 11.9），二者均为预制件、已就位，产物落 `hap/entry/hnp/arm64-v8a/`；再注入未签名 HAP（用 python `zipfile`，注意 `allowZip64=True`）。注意 hmdfs 只保留 owner 权限位，hnpcli 依 `stat` 记录权限，需重写 zip 中央目录的权限位，否则可执行文件落地为 0744 不可执行。**2026-09-25 起另有 `script/ohos/cmdbridge` 负责构建并打包 `hitdaemon.hnp`（public）与 `hitshell.hnp`（private），见 11.11——载荷不再全是预制件。**
 10. 用 `hap-sign-tool.jar` 的 `sign-app` 整体重签名（**必须用 jar 版，不能用同目录的 ELF 版**，否则签出 merkle-tree 格式导致设备安装报 `code:9568407`）。
 11. 安装：`hdc install -r <signed.hap>`。
 
@@ -1287,7 +1288,9 @@ ability 提供的是一套**多 crate 的能力体系**，不是单个 API。实
 
 11.4.3 原表述为「需自研，参照 mac + hicodeer」，**现予修正**为「基座是 warp 自带的 winit cosmic-text 实现，hicodeer 仅提供 OHOS 字体枚举配方」。落地工作量的性质由「从零自研」下调为「移植 warp 自有实现 + 新写一个字体加载器」。
 
-### 11.9 终端 shell 的 OHOS 落地方案：预制 private `zsh.hnp` 直 exec
+### 11.9 终端 shell 的 OHOS 落地方案：预制 private `zsh.hnp`
+
+> **2026-09-25 更新**：终端的**启动 shell 已改为 `hitshell`**——连上 hitdaemon 就得到系统权限的会话，连不上则 `exec` 本节这个 zsh 兜底。本节描述的 zsh 与 HNP 机制仍是兜底路径的基础，桥的完整设计见 11.11。
 
 **目标**：预制一个 private `zsh.hnp` 随 HAP 分发，让 terminal 模块直接 `fork` + `exec` 本地 zsh——不经 SSH 桥，也不依赖系统预装。
 
@@ -1317,16 +1320,16 @@ ability 提供的是一套**多 crate 的能力体系**，不是单个 API。实
 - **不要指望 `chmod`**：staging 若在 hmdfs（`/storage`）上，权限位会被改写（other 位恒为 0），而设备端安装器只看 other 执行位决定 0755/0744。
 - **声明改动必须重新打包**：`module.json5` 的 `hnpPackages` 改动需重跑 `hvigorw assembleHap`，手工改旧 HAP 无效。
 
-#### 11.9.4 terminal 侧调用链（warp 原生支持，无需改受保护文件）
+#### 11.9.4 terminal 侧调用链（原生机制足够，2026-09-25 起归类表加 `hitshell` 一项）
 
-warp 的 shell 解析在 `crates/warp_terminal/src/local_tty/shell.rs`（**受保护文件，不改**），其既有机制已足够：
+warp 的 shell 解析在 `crates/warp_terminal/src/local_tty/shell.rs`（**受保护文件，不改**）；名字归类表所在的 `crates/warp_terminal/src/shell/mod.rs` 同属受保护文件，2026-09-25 因新增 `hitshell` 归类获授权改过一处（见 11.11）。其既有机制已足够：
 
 - 优先读环境变量 `$WARP_SHELL_PATH`（实现见 `crates/warp_util/src/path.rs`，即 `env::var("WARP_SHELL_PATH")`）；设置后即用之，**但无效会 panic**（`shell.rs`）。
 - 否则回退：passwd 的 shell → `ZSH_SHELL_PATH`（`/bin/zsh`）→ `BASH_SHELL_PATH`（`/bin/bash`）→ `FISH_SHELL_PATH`（`/bin/fish`）。注意这三者是**写死的绝对路径常量**，不走 `PATH` 查找。
 - `supported_shell_path_and_type` = `resolve_executable` + `parse_shell_type_from_path`（按**文件名**匹配 `ShellType::from_name`）。
 - `resolve_executable` 对含分隔符的绝对路径直接做 `file_exists_and_is_executable` 判定——**要求执行位**。
 
-**落地方案**：OHOS 入口在 `run()` 早期设置 `WARP_SHELL_PATH=/data/app/bin/zsh`。terminal 侧即解析为 `ShellType::Zsh` 并直接 exec，全程不触碰 `shell.rs`。
+**落地方案**：OHOS 入口在 `run()` 早期设置 `WARP_SHELL_PATH`。原方案指向 `/data/app/bin/zsh`，terminal 侧解析为 `ShellType::Zsh` 后直接 exec；**2026-09-25 起改为指向 `/data/app/bin/hitshell`**（见 11.11），由 hitshell 决定这次会话的实际执行者。
 
 **注意**：因该变量无效即 panic，赋值前须确认 HNP 已就位；若无法保证，应改走「不设置该变量 + 自有可降级分支」，不可盲目设值。
 
@@ -1338,9 +1341,12 @@ warp 的 shell 解析在 `crates/warp_terminal/src/local_tty/shell.rs`（**受�
 #### 11.9.6 与 SSH 桥的关系
 
 - 本地 zsh HNP 与 cmd-agent/SSH 桥是**分工而非替代**：shell 会话本地化直 exec；需要 exec 系统程序的场景（node、语言服务器、chmod 等）仍走桥。
+- **2026-09-25 落地后**这条关系有了实体：桥即 `hitshell` + `hitdaemon`（见 11.11），且 terminal 的启动 shell 就是 `hitshell`——连得上走桥、连不上落回本地 zsh，「分工」变成同一次启动内的自动择路。
 - 12.2 第 6 步与 12.3 的相关条目据此收敛。
 
 #### 11.9.7 待实测
+
+> **2026-09-25 状态**：第 1 条已随终端落地跑通（设备上 zsh 会话可起、`TERMINFO` 已锚定、钩子链路正常）；第 2 条按「系统库可用」处理且未再复现问题；第 3 条已达成；第 4 条已被 11.11 取代——不再考虑省掉 HNP。
 
 - private `zsh.hnp` 装入后 `/data/app/bin/zsh` 的执行位与 exec 实测。
 - 应用沙箱内能否读到 `/usr/lib` 下的 `libncursesw.so.6` / `libtinfo.so.6`（当前按「系统库可用」处理、不随包；若读不到则按 11.9.3 的回退方案随包 + `LD_LIBRARY_PATH`）。
@@ -1355,10 +1361,10 @@ warp 的 shell 解析在 `crates/warp_terminal/src/local_tty/shell.rs`（**受�
 
 ### 11.10.1 已落地物（均为新增，未触碰受保护文件）
 
-- `crates/warp_ohos/Cargo.toml`：OHOS 入口 crate，`[lib] name = "warp"` + `crate-type = ["cdylib"]`，产物即 `libwarp.so`。
-- `crates/warp_ohos/build.rs`：`napi_build_ohos::setup()`（仅 `target_env = "ohos"` 时执行）。
-- `crates/warp_ohos/src/lib.rs`：crate 级 `#![cfg(target_env = "ohos")]` + 两个 no-op 符号（`pthread_mutexattr_setrobust` / `pthread_mutex_consistent`，OHOS libc 缺而 std 引用）。
-- `crates/warp_ohos/src/launch_app.rs`：`#[ability] launch_app` → `set_global_app` → 环境准备（`WARP_SHELL_PATH=/data/app/bin/zsh`、`HOME`、`PATH`）→ `ChannelState::set`（复刻 `app/src/bin/oss.rs`）→ `warp::run()`。
+- `crates/entry_ohos/Cargo.toml`：OHOS 入口 crate，`[lib] name = "warp"` + `crate-type = ["cdylib"]`，产物即 `libwarp.so`。
+- `crates/entry_ohos/build.rs`：`napi_build_ohos::setup()`（仅 `target_env = "ohos"` 时执行）。
+- `crates/entry_ohos/src/lib.rs`：crate 级 `#![cfg(target_env = "ohos")]` + 两个 no-op 符号（`pthread_mutexattr_setrobust` / `pthread_mutex_consistent`，OHOS libc 缺而 std 引用）。
+- `crates/entry_ohos/src/launch_app.rs`：`#[ability] launch_app` → `set_global_app` → 环境准备（`WARP_SHELL_PATH`、`HOME`、`PATH`；该变量 2026-09-25 起为 `/data/app/bin/hitshell`，见 11.11）→ `ChannelState::set`（复刻 `app/src/bin/oss.rs`）→ `warp::run()`。
 - `script/ohos/bundle`：OHOS 构建入口，TLS 垫片 → cargo build → 拷 so → ArkTS 同步 → ohpm → hvigor → HNP 注入 → 重签。
 - `script/ohos/ohos-tls-shim.c`：TLS 垫片源码，与 `HiCodeer/script/ohos-tls-shim.c` 逐字一致（md5 `2ff6c83a96733e76c8b24b5dccae7000`）。
 - `script/ohos/bootstrap`：工具链存在性检查（不安装任何东西：OHOS 工具链由设备镜像提供）。
@@ -1377,7 +1383,7 @@ HNP 载荷为**预制**（`hap/entry/hnp/arm64-v8a/` 下的 `git.hnp` + `zsh.hnp
 
 ### 11.10.3 首次编译实测（2026-09-23）
 
-命令：`./script/ohos/bundle --check-only`（等价于 `LD_PRELOAD=<TLS 垫片> RUSTUP_TOOLCHAIN=1.97.1 cargo check -p warp_ohos --target aarch64-unknown-linux-ohos`）
+命令：`./script/ohos/bundle --check-only`（等价于 `LD_PRELOAD=<TLS 垫片> RUSTUP_TOOLCHAIN=1.97.1 cargo check -p entry_ohos --target aarch64-unknown-linux-ohos`）
 
 - 结果：**EXIT=101，耗时 5m47s**。
 - 前置链路全部通过：工具链断言（`rustc host == aarch64-unknown-linux-ohos`，实测 `rustc 1.97.1`）、TLS 垫片编译、`openharmony-ability` git 依赖解析。
@@ -1418,8 +1424,8 @@ HNP 载荷为**预制**（`hap/entry/hnp/arm64-v8a/` 下的 `git.hnp` + `zsh.hnp
 
 **实测命令与结果**
 
-- 命令：`./script/ohos/bundle --check-only`（等价于 `RUSTUP_TOOLCHAIN=1.97.1 cargo check -p warp_ohos --target aarch64-unknown-linux-ohos`，含 TLS 垫片预载）。
-- 首次全量：`Finished dev profile ... in 6m 20s`，**零错误**，覆盖 `warpui`（本次新写的平台后端）→ `warp`（app crate）→ `warp_ohos`（入口 crate）。
+- 命令：`./script/ohos/bundle --check-only`（等价于 `RUSTUP_TOOLCHAIN=1.97.1 cargo check -p entry_ohos --target aarch64-unknown-linux-ohos`，含 TLS 垫片预载）。
+- 首次全量：`Finished dev profile ... in 6m 20s`，**零错误**，覆盖 `warpui`（本次新写的平台后端）→ `warp`（app crate）→ `entry_ohos`（入口 crate）。
 - 格式化后增量复跑：`Finished dev profile ... in 53.07s`，同样零错误。
 - 续接改动（TLS 垫片改名 `rust-tls-shim.so`、`bundleName` 统一、hilog 重定向）后增量复跑：`Finished dev profile ... in 1m 10s`，仍零错误。
 - 至此 12.2 第 1、2 步的**编译面**达成：最小可运行基线的构建链路 + warpui OHOS 平台后端均通过编译。
@@ -1443,7 +1449,7 @@ HNP 载荷为**预制**（`hap/entry/hnp/arm64-v8a/` 下的 `git.hnp` + `zsh.hnp
 
 - 新增 `crates/warp_logging/src/ohos.rs`：`HilogLogger`（`impl log::Log`）包住 `env_logger::Logger`，把同一批记录镜像到 hilog，级别过滤与文件 sink 原样留用；FFI 直调 `OH_LOG_Print`（`#[link(name = "hilog_ndk.z")]`），tag `diag`、domain `0x0001`、级别映射 DEBUG/INFO/WARN/ERROR = 3/4/5/6。另导出 `direct_hilog(&str)` 供启动早期直投。
 - 接线落在 `crates/warp_logging/src/native.rs`（受保护文件，只加独立行）：新增 `#[cfg(target_env = "ohos")] #[path = "ohos.rs"] pub(crate) mod ohos;`；`init_internal` 末尾用 two-line cfg 把 `base_logger.init()` 换成 `ohos::init_hilog_logger(base_logger.build())`。`crash_reporting` 构建不参与——`sentry_log::SentryLogger` 已占用唯一的全局 logger 槽，且该 feature 不在 app 默认集内，OHOS 构建不会启用。
-- 其余接线：`crates/warp_logging/src/lib.rs` 加一行 `pub use imp::ohos::direct_hilog;`；`crates/warp_ohos/Cargo.toml` 加 `warp_logging` 依赖；`crates/warp_ohos/src/launch_app.rs` 在 `launch_app` 入口与 `prepare_process_environment` 收尾各加一条 `direct_hilog`（这两处早于 `warp::run()` 安装 logger，`log::` 宏此刻必然被丢弃）。
+- 其余接线：`crates/warp_logging/src/lib.rs` 加一行 `pub use imp::ohos::direct_hilog;`；`crates/entry_ohos/Cargo.toml` 加 `warp_logging` 依赖；`crates/entry_ohos/src/launch_app.rs` 在 `launch_app` 入口与 `prepare_process_environment` 收尾各加一条 `direct_hilog`（这两处早于 `warp::run()` 安装 logger，`log::` 宏此刻必然被丢弃）。
 - 抓取命令：`timeout 5 hdc hilog 2>&1 | grep "diag"`。**设备侧尚未实测，「hilog 能出日志」这一条仍待设备确认。**
 
 **同时改动（非 OHOS 路径文件，均为「只加一行 cfg」）**
@@ -1471,6 +1477,50 @@ HNP 载荷为**预制**（`hap/entry/hnp/arm64-v8a/` 下的 `git.hnp` + `zsh.hnp
 
 > **2026-09-24 补记**：本节「仍未完成（承接 12.2）」列的前三项均已达成——设备侧已跑通（进事件循环、出帧、hilog 可观测，抓取命令见 3.3），输入与 IME 已接，终端本地 zsh 会话可跑（见 11.9）。平台能力补齐的最终裁决与实现见 12.4。
 
+## 11.11 `hitshell` 与 `hitdaemon`：沙箱内终端的权限桥（2026-09-25 落地）
+
+**要解决的问题**：private HNP 让终端能在沙箱内 exec zsh（11.9），但会话身份仍是应用沙箱（实测 uid `20020231`）。系统命令行那套环境——`/data/service/hnp` 下别的 public 包、系统命令行装上去的工具——沙箱进程既看不到也够不着。而应用无权拉起沙箱外的进程，所以「让终端拿到系统权限」只能靠一个**由用户在系统命令行手动启动**的守护进程。
+
+**两个组件**（`cmdbridge/` 下的两个独立 crate，均不属于仓库 workspace，也不依赖任何 warp crate，因此改动它们不会触发主程序重编）：
+
+- `hitdaemon`：**public** HNP。跑在沙箱外，监听回环端口，是一个只认编译进去的管理密钥的 SSH 服务端；收到会话请求后以它自己的账号 `exec` 一个 shell。它必须由用户从系统命令行启动，这正是高权限的来源。
+- `hitshell`：**private** HNP，装到 `/data/app/bin/hitshell`，是 terminal 的**启动 shell**。它连上 hitdaemon、请求一个远端 pty，然后双向中继字节与窗口尺寸；连不上时不再退出，而是**把自己替换成沙箱内的 zsh**。
+
+**为什么启动 shell 是 hitshell 而不是 zsh**：两条路都由「用户开一个终端」触发，不需要用户先判断 daemon 在不在。
+
+- hitdaemon 在跑 → 用户开一个终端就自动拿到系统权限的会话，无需额外操作。
+- hitdaemon 没跑 → hitshell 打印原因后 `exec` 掉自己，换成 private `zsh.hnp` 的 zsh，终端照常可用。
+
+**参数来源：不写死，全部转发**（用户明确要求）：
+
+- terminal 对 `ShellType::Zsh` 会启动 `<shell_path> -c "exec -a -zsh '<shell_path>' <参数...>"`（见 11.9.4），故 hitshell 收到的是 `-c` 加该命令串。
+- hitshell 用 `split_shell_words` 把命令串拆回词表，取出 `-a` 的 argv0 与 `<shell_path>` 之后的**全部**参数，两条路都用这一份：经 hitdaemon 起 zsh 时原样转发，本地兜底时原样交给 zsh。参数集本身不硬编码。
+- 只有手工执行（无 `-c`）时才回落到默认 `-g --no-rcs`。默认值存在的理由同 11.9：`--no-rcs` 避开设备 `/etc/zshrc` 里会劫持 ZLE 的系统 shell 插件。
+- argv0 只有本地兜底能真正生效（走 `CommandExt::arg0`，实测终端里 zsh 的 argv[0] 就是 `-zsh`）；hitdaemon 那条路经 `sh -c` 起 shell，设不了 argv0——这与 hitshell 改造前的既有行为一致。
+
+**「连不上」的判据与兜底行为**：
+
+- 判据就是 `wait_ready` 失败（回环端口拒绝连接，或握手超时），与旧版打印 `hitdaemon is not ready, start hitdaemon from the system command line first. 请先在系统终端工具启动hitdaemon程序。` 的条件完全相同。
+- 兜底时**先原样打印那条消息**（用户要求保留：它是唯一的补救指引），再 `exec /data/app/bin/zsh` 并带上转发的参数。`exec` 是进程替换，pid 与 pty 都不变，所以这条路径与「终端直 exec zsh」完全等价。
+
+**terminal 侧的接线**：
+
+- `crates/entry_ohos/src/launch_app.rs`：`TERMINAL_SHELL_PATH` 由 `/data/app/bin/zsh` 改为 `/data/app/bin/hitshell`，`WARP_SHELL_PATH` 随之指向它。
+- **`TERMINFO` 的推导必须继续锚定 zsh**：`point_shell_at_bundled_terminfo()` 原用 `canonicalize(TERMINAL_SHELL_PATH)` 反推 HNP 根再取 `share/terminfo`，而 hitshell 包里没有 terminfo，沿用会把 `TERMINFO` 丢掉、zsh 重绘与回显再次出问题。故新增 `ZSH_SHELL_PATH = /data/app/bin/zsh` 专供该推导。
+- `crates/warp_terminal/src/shell/mod.rs`（**非 OHOS 路径、属受保护文件，2026-09-25 已获授权**）：`ShellType::from_name` 只认 bash/zsh/fish/pwsh 的文件名，hitshell 会落到 `None`，而 `WARP_SHELL_PATH` 无效即 panic。故新增一个匹配分支，判据常量按 `#[cfg]` 分派——`target_env = "ohos"` 时为 `["hitshell"]`，其它平台为空切片，对非 OHOS 平台零影响（CODEBUDDY.md 第 10 条要求非 OHOS 文件的改动必须用 `target_env = "ohos"` 包裹）。
+
+**打包与注入**：
+
+- 新脚本 `script/ohos/cmdbridge`：分别构建两个 crate（各自独立 `CARGO_TARGET_DIR`，避免互相驱逐指纹）、stage（`<pkg>/bin` + `hnp.json`）、`hnpcli pack`，并重写 zip 中央目录的权限位（同样的 hmdfs 权限坑，见 11.9.3 与 10.4 第 9 步）。
+- `module.json5` 的 `hnpPackages` 增加 `hitdaemon.hnp`（public）与 `hitshell.hnp`（private）；载荷落 `hap/entry/hnp/arm64-v8a/`，由 `script/ohos/bundle` 一并注入。**HNP 至此不再全是预制件**：`zsh.hnp` / `git.hnp` 仍是，这两个由本仓构建。
+- 管理密钥两侧各自编译进二进制，故 `script/ohos/cmdbridge` 在构建前做四份密钥文件的配对校验——不配对只会在设备上表现为认证失败，很难定位。
+
+**实测（2026-09-25）**：
+
+- **兜底路径已在真机验证**：设备上没有 hitdaemon 进程时，终端里的 shell 表现为 `-zsh -g --no-rcs`、其父进程就是 `com.hiwarp.terminal`，且 `ps` 里没有 hitshell 残留——旧版 hitshell 连不上只会 `exit(1)`，只有新的 `exec` 兜底能留下这个结果。同时 hilog 有 `Parsed shell version string: Some([Number(5), Number(9)])` 与 `No history file found for shell zsh`，说明 warp 侧确实按 zsh 完成了 bootstrap，`$WARP_SHELL_PATH` 校验未 panic。
+- **覆盖安装会刷新 private HNP 载荷**：`install-local.sh`（`hdc install -r`，无 `--reinstall`）装完后 hitshell 的新逻辑立刻生效，`script/ohos/bundle` 末尾「不保证刷新」的提示属保守说法。不要因此动用 `--reinstall`（它卸载应用、清空沙箱，CODEBUDDY.md 第 21 条禁止）。
+- **待实测**：hitdaemon 启动时的远端会话路径。代码只把参数来源从常量换成转发，其余沿用已跑通的实现，但设备侧尚未实测。
+
 ---
 
 # 第十二章 结论与后续步骤
@@ -1490,7 +1540,7 @@ HNP 载荷为**预制**（`hap/entry/hnp/arm64-v8a/` 下的 `git.hnp` + `zsh.hnp
 3. **渲染打通**：补 OHOS surface，先 GLES 保底，再尝试 Vulkan。
 4. **字体系统**：把 warp 自带的 cosmic-text 实现（`windowing/winit/fonts.rs`）迁成 `platform/ohos/` 版本，只重写 OHOS 字体目录枚举与加载器；**不采用** FontParser + `libnative_drawing` 路线（论证见 11.8）。
 5. **输入与 IME**：三路事件流消重 + 修饰键 + IME attach。
-6. **终端与进程**：预制 private `zsh.hnp`，由 terminal 经 `WARP_SHELL_PATH=/data/app/bin/zsh` 直接 exec 本地 zsh（见 11.9）；其余命令仍走 cmd-agent 桥。
+6. **终端与进程**：预制 private `zsh.hnp`，terminal 经 `WARP_SHELL_PATH=/data/app/bin/hitshell` 启动桥 `hitshell`；连上 hitdaemon 得到系统权限会话，连不上则 `exec` 本地 zsh 兜底（见 11.9、11.11）。
 7. **路径与设置持久化**：沙箱路径三态映射 + 授权持久化。
 8. **每步验证**：OHOS 交叉编译可安装 + 设备运行观测 + 其他平台 `cargo check` 回归 + 日志清理，并留痕（命令、输出、结论）。
 
@@ -1499,7 +1549,7 @@ HNP 载荷为**预制**（`hap/entry/hnp/arm64-v8a/` 下的 `git.hnp` + `zsh.hnp
 以下事项需与相关人员确认后方可推进，本文档不擅自决策：
 
 - 目标设备形态的最终范围（仅 2in1、还是含手机/平板；这直接决定进程与 pty 方案）。
-- 除 zsh（已定走 private HNP 本地直 exec，见 11.9）之外，是否还需复刻 HiCodeer 的 cmd-agent（本地守护进程 + SSH 桥）与 QEMU guest 方案，还是其余命令一律本地 fork。
+- **（2026-09-25 已落地）** HiCodeer 的 cmd-agent 是否要复刻：已按「本地守护进程 + SSH 桥」实现，即 `hitdaemon` + `hitshell`（见 11.11）；QEMU guest 仍不做。剩余待定的是「除 zsh 之外，其余命令是否一律本地 fork」。
 - 签名材料（`.cer` / `.p7b` / `.p12` + `material/`）的提供方与路径。
 - warp 的渠道与打包形态（stable / preview / local 中哪一个作为 OHOS 首发渠道）。
 - 是否引入 `openharmony-ability` 的第三方 fork（license 与长期维护的评估）。

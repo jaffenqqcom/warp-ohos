@@ -76,7 +76,7 @@ strings <binary> | grep -E '/tmp/|/opt/|/home/|/Users/'
 
 在 OHOS 专属的启动路径里，把子进程的 `TERMINFO` 显式指向 shell **自己旁边**的那份 terminfo 数据库。
 
-修改点在 `crates/warp_ohos/src/launch_app.rs`，新增常量与函数：
+修改点在 `crates/entry_ohos/src/launch_app.rs`，新增常量与函数：
 
 ```rust
 const TERMINFO_ENV: &str = "TERMINFO";
@@ -122,7 +122,7 @@ fn point_shell_at_bundled_terminfo() {
 
 为什么选这个方案：
 
-- 改动完全落在 OHOS 专属 crate（`crates/warp_ohos/`）里，不碰 `crates/warp_terminal/src/local_tty/unix.rs` 这个各平台共用的文件，其它平台行为零变化。
+- 改动完全落在 OHOS 专属 crate（`crates/entry_ohos/`）里，不碰 `crates/warp_terminal/src/local_tty/unix.rs` 这个各平台共用的文件，其它平台行为零变化。
 - 不需要重新打包或重建 `zsh.hnp`，也不需要往包外拷文件。
 - 幂等：每次启动按当前安装位置重算，hnp 升级换了版本目录也能自动跟上。
 
@@ -160,6 +160,6 @@ fn point_shell_at_bundled_terminfo() {
 
 ## 修改文件
 
-- `crates/warp_ohos/src/launch_app.rs` — 新增 `TERMINFO_ENV`、`TERMINFO_SUBDIR` 两个常量与 `point_shell_at_bundled_terminfo()` 函数，并在 `prepare_process_environment` 中调用；解决 zsh 找不到 terminfo 导致的命令行回显重复。
+- `crates/entry_ohos/src/launch_app.rs` — 新增 `TERMINFO_ENV`、`TERMINFO_SUBDIR` 两个常量与 `point_shell_at_bundled_terminfo()` 函数，并在 `prepare_process_environment` 中调用；解决 zsh 找不到 terminfo 导致的命令行回显重复。
 
 未改动其它任何文件：本修复不涉及 `zsh_body.sh`、`zsh.hnp` 内容、`crates/warp_terminal/**` 或任何非 OHOS 平台代码。

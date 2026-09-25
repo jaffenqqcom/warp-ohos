@@ -114,7 +114,7 @@ OSC 各自独占 `%{...%}` 段、可见文本裸露在外。**注意：PS1 模�
 
 **根因修复**：在 OHOS 专属启动路径里，把 shell 的 `$TERMINFO` 指向它自己旁边的那份数据库。
 
-- `crates/warp_ohos/src/launch_app.rs` 新增 `point_shell_at_bundled_terminfo()`：用 `canonicalize` 解出 hnp 真实安装根（实测 `/data/app/zsh.org/zsh_5.9/`），取其 `share/terminfo`，`is_dir()` 通过才设 `$TERMINFO`；由 `prepare_process_environment` 调用。完整实现与理由见 `2026-09-24-zsh-command-echo-duplicated.md`。
+- `crates/entry_ohos/src/launch_app.rs` 新增 `point_shell_at_bundled_terminfo()`：用 `canonicalize` 解出 hnp 真实安装根（实测 `/data/app/zsh.org/zsh_5.9/`），取其 `share/terminfo`，`is_dir()` 通过才设 `$TERMINFO`；由 `prepare_process_environment` 调用。完整实现与理由见 `2026-09-24-zsh-command-echo-duplicated.md`。
 
 **`zsh_body.sh` 已还原为上游**：初版的分块改动只是规避，根因修复后不再需要，`app/assets/bundled/bootstrap/zsh_body.sh` 已回退到上游 HEAD（`git diff` 为空）。
 
@@ -136,13 +136,13 @@ OSC 各自独占 `%{...%}` 段、可见文本裸露在外。**注意：PS1 模�
 
 ## 修改文件
 
-- `crates/warp_ohos/src/launch_app.rs` — 新增 `TERMINFO_ENV` / `TERMINFO_SUBDIR` 常量与 `point_shell_at_bundled_terminfo()`，并在 `prepare_process_environment` 中调用。**这是本问题的真正修复。**
+- `crates/entry_ohos/src/launch_app.rs` — 新增 `TERMINFO_ENV` / `TERMINFO_SUBDIR` 常量与 `point_shell_at_bundled_terminfo()`，并在 `prepare_process_environment` 中调用。**这是本问题的真正修复。**
 - `app/assets/bundled/bootstrap/zsh_body.sh` — 由初版的分块改动**还原为上游 HEAD**，净改动为零。
 
 调试探针（初版加、均已回滚，仅记录不属修复）：
 
 - `app/src/terminal/` 下 7 个文件的 28 处 `[OHOS-PROBE]` 探针 — 已回滚，`git status` 对该目录为空。
-- `crates/warp_ohos/src/launch_app.rs` 的临时 `RUST_LOG` 诊断块 — 已回滚。
+- `crates/entry_ohos/src/launch_app.rs` 的临时 `RUST_LOG` 诊断块 — 已回滚。
 
 ## 附：初版对照脚本
 
