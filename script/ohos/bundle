@@ -4,8 +4,9 @@
 #
 # The Warp GUI is a cdylib NAPI module here: this script compiles the
 # `crates/entry_ohos` entry crate on the device's native `aarch64-unknown-linux-ohos`
-# target, stages the resulting `libcore.so` into the HAP, and then drives
-# hvigor to assemble, inject the pre-provisioned HNP payloads and re-sign.
+# target, stages the resulting `libcore.so` into the HAP, builds and stages the
+# command bridge packages, and then drives hvigor to assemble, inject those
+# payloads and re-sign.
 #
 # Run it from the repository root (`./script/ohos/bundle`) or through the
 # cross-platform dispatcher (`./script/bundle`).
@@ -153,6 +154,23 @@ fi
 
 # Build artifacts stay inside the project tree, so nothing lands in $HOME.
 CARGO_TARGET_DIR_OHOS="$PROJECT_ROOT/target/ohos/target"
+
+# ==================== Command bridge payloads ====================
+# The HAP ships the hitshell and hitdaemon packages as prebuilt .hnp payloads,
+# injected into the package further down. Nothing else in this repository builds
+# them: their crates are not workspace members, and `script/ohos/cmdbridge` is the
+# only thing that compiles and stages them. Calling it here is what makes this
+# script alone produce a complete program. Without it the package would carry
+# whatever payloads happened to be staged last, with nothing checking that they
+# match their sources.
+#
+# Skipped when no package is being produced (`--skip-hap`), when the build was
+# waived (`--skip-build`) or when only a compile check was asked for
+# (`--check-only`). It runs before the release codegen tuning below so that the
+# bridges keep the profile settings their own script gives them.
+if [ "$SKIP_BUILD" != true ] && [ "$CHECK_ONLY" != true ] && [ "$SKIP_HAP" != true ]; then
+  "$SCRIPT_DIR/cmdbridge" "${CARGO_PROFILE_ARG[@]}"
+fi
 
 # ==================== Compile-time TLS shim (LD_PRELOAD) ====================
 # OHOS libc caps pthread keys at 128 and std implements `thread_local!` on top

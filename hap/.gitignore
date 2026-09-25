@@ -8,3 +8,5 @@
 **/.test
 /.appanalyzer
 /.bitfun
+/entry/hnp/arm64-v8a/hitdaemon.hnp
+/entry/hnp/arm64-v8a/hitshell.hnp

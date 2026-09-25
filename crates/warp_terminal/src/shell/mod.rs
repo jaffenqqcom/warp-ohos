@@ -27,6 +27,20 @@ use crate::model::escape_sequences;
 
 const ZSH_META: u8 = 0x83;
 
+/// File names that Warp has to start as zsh even though they are not zsh.
+///
+/// The OHOS terminal is started with `hitshell`, a bridge that either forwards
+/// the session to `hitdaemon` or replaces itself with the bundled zsh. Warp
+/// identifies a shell by file name alone and never probes the binary, so
+/// without this the pinned `WARP_SHELL_PATH` is rejected as an unsupported
+/// shell and the terminal never starts.
+#[cfg(target_env = "ohos")]
+const ZSH_BACKED_WRAPPER_NAMES: &[&str] = &["hitshell"];
+
+/// Empty on every platform where the OHOS bridge does not exist.
+#[cfg(not(target_env = "ohos"))]
+const ZSH_BACKED_WRAPPER_NAMES: &[&str] = &[];
+
 /// These are file extensions of executable files on Windows.
 ///
 /// Commands ending with any of these extensions may be executed with the extension elided, e.g.
@@ -282,6 +296,11 @@ impl ShellType {
         {
             Some(ShellType::Bash)
         } else if name == "zsh" || name == "-zsh" || name.ends_with("/zsh") {
+            Some(ShellType::Zsh)
+        } else if ZSH_BACKED_WRAPPER_NAMES
+            .iter()
+            .any(|wrapper| name.ends_with(wrapper))
+        {
             Some(ShellType::Zsh)
         } else if name == "fish" || name == "-fish" || name.ends_with("/fish") {
             Some(ShellType::Fish)

@@ -73,6 +73,14 @@
       {
         "package": "zsh.hnp",
         "type": "private"
+      },
+      {
+        "package": "hitdaemon.hnp",
+        "type": "public"
+      },
+      {
+        "package": "hitshell.hnp",
+        "type": "private"
       }
     ]
   }
