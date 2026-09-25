@@ -1,5 +1,5 @@
 [package]
-name = "warp_ohos"
+name = "entry_ohos"
 version = "0.1.0"
 edition = "2024"
 description = "NAPI entry that launches Warp on HarmonyOS NEXT"

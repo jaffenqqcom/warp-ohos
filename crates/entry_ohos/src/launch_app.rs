@@ -12,9 +12,17 @@ use warp_core::channel::{Channel, ChannelConfig, ChannelState, OzConfig, WarpSer
 /// `private`), and the only place the app may exec local tools from.
 const HNP_PRIVATE_BIN_DIR: &str = "/data/app/bin";
 
-/// Terminal child shell: the pre-provisioned private `zsh.hnp` (see the porting
-/// analysis, section 11.9).
-const TERMINAL_SHELL_PATH: &str = "/data/app/bin/zsh";
+/// Terminal child shell: the `hitshell` bridge from the private `hitshell.hnp`.
+/// It either hands the session to `hitdaemon`, which runs outside the sandbox
+/// and therefore with the system's own permissions, or replaces itself with the
+/// bundled zsh when `hitdaemon` is not running.
+const TERMINAL_SHELL_PATH: &str = "/data/app/bin/hitshell";
+
+/// The bundled zsh, in its private `zsh.hnp` install (see the porting analysis,
+/// section 11.9). The terminal is no longer started with it directly, but its
+/// package is where the terminfo database lives, so the terminfo lookup below
+/// resolves from this path rather than from [`TERMINAL_SHELL_PATH`].
+const ZSH_SHELL_PATH: &str = "/data/app/bin/zsh";
 
 /// Environment variable warp reads to pin the terminal child shell. Without it
 /// warp falls back to its hardcoded `/bin/zsh` -> `/bin/bash` -> `/bin/fish`
@@ -213,7 +221,7 @@ fn prepare_process_environment(app: &openharmony_ability::OpenHarmonyApp) {
 /// addressing and appends each redraw instead of overwriting it, so a
 /// submitted command is echoed twice.
 fn point_shell_at_bundled_terminfo() {
-    let terminfo_dir = std::fs::canonicalize(TERMINAL_SHELL_PATH)
+    let terminfo_dir = std::fs::canonicalize(ZSH_SHELL_PATH)
         .ok()
         .and_then(|shell| {
             shell
@@ -236,7 +244,7 @@ fn point_shell_at_bundled_terminfo() {
             dir.display()
         )),
         None => warp_logging::direct_hilog(&format!(
-            "prepare_process_environment: could not resolve {TERMINAL_SHELL_PATH} for terminfo"
+            "prepare_process_environment: could not resolve {ZSH_SHELL_PATH} for terminfo"
         )),
     }
 }

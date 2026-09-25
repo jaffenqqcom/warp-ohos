@@ -13,7 +13,7 @@ import hilog from '@ohos.hilog';
 
 // EntryAbility：鸿蒙 Ability 生命周期入口。
 // moduleName 与 native 库名一致（libcore.so），NativeAbility 基类负责把窗口/surface/IME/
-// 生命周期事件经 NAPI 路由到 Rust 侧（crates/warp_ohos 的 #[ability] launch_app 入口）。
+// 生命周期事件经 NAPI 路由到 Rust 侧（crates/entry_ohos 的 #[ability] launch_app 入口）。
 // loadMode='sync'：同步加载 native 模块，避免默认页动态 import 导致黑屏（无错误日志）。
 // bridgePlugins：注册 ArkTS 侧能力插件，与 Rust 侧 app.register_plugin 声明一一对应。
 // 单一共享的 fileLaunch 实例：onCreate/onNewWant 触发后需引用它，且插件安装前可能先收到 want。
