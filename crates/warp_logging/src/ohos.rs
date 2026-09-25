@@ -90,7 +90,7 @@ pub(super) fn init_hilog_logger(base_logger: env_logger::Logger) {
 
 /// Writes `message` straight to hilog, bypassing the `log` facade.
 ///
-/// The launch path in `warp_ohos` logs before `warp::run()` installs the
+/// The launch path in `entry_ohos` logs before `warp::run()` installs the
 /// logger, and those lines would otherwise be dropped — which makes "the
 /// redirect is broken" and "the process never got that far" indistinguishable
 /// on device. Pairing a direct write with a nearby `log::` macro tells the two

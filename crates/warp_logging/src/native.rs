@@ -603,7 +603,7 @@ fn init_internal(
 
     let mut base_logger = env_logger::builder();
 
-    base_logger.filter_level(LevelFilter::Info);
+    base_logger.filter_level(LevelFilter::Debug);
 
     // Only include `WARN` or higher logs for wgpu. By default, wgpu outputs logs at the `INFO`
     // level multiple times _per_ frame. See https://github.com/gfx-rs/wgpu/issues/3206.
