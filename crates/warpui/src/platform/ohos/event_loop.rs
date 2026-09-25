@@ -668,6 +668,12 @@ impl Translator {
     /// Delivers a modifier-free key press for an IME editing key.
     fn send_key_press(&self, key: &str) {
         log::info!("ohos::event_loop::Translator::send_key_press: key={key}");
+        // An IME reports Enter by name only, so the CR byte the pty needs has to
+        // be filled in here, matching the winit back-end.
+        let chars = match key.to_lowercase().as_str() {
+            "enter" => "\r".to_string(),
+            _ => String::new(),
+        };
         self.send(AppEvent::Input(WindowEvent::KeyDown {
             keystroke: Keystroke {
                 ctrl: false,
@@ -677,7 +683,7 @@ impl Translator {
                 meta: false,
                 key: key.to_string(),
             },
-            chars: String::new(),
+            chars,
             details: KeyEventDetails::default(),
             is_composing: false,
         }));

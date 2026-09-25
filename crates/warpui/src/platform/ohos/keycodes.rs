@@ -198,6 +198,14 @@ fn text_base(code: KeyCode, shift: bool, capslock: bool) -> Option<char> {
     }
 
     match code {
+        // The named keys whose byte is a control character rather than printable
+        // text. The escape-sequence encoder covers most control keys through the
+        // keystroke name, but leaves these three unmapped without the kitty
+        // protocol, so on the desktop back-ends their byte arrives as OS text and
+        // has to be filled in here.
+        KeyCode::Enter | KeyCode::NumpadEnter => Some('\r'),
+        KeyCode::Tab => Some('\t'),
+        KeyCode::Escape => Some('\x1b'),
         KeyCode::Space => Some(' '),
         KeyCode::Comma => Some(symbol(',', '<', shift)),
         KeyCode::Period => Some(symbol('.', '>', shift)),
