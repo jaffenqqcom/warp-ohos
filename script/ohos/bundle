@@ -3,7 +3,7 @@
 # Builds Warp for HarmonyOS NEXT.
 #
 # The Warp GUI is a cdylib NAPI module here: this script compiles the
-# `crates/warp_ohos` entry crate on the device's native `aarch64-unknown-linux-ohos`
+# `crates/entry_ohos` entry crate on the device's native `aarch64-unknown-linux-ohos`
 # target, stages the resulting `libcore.so` into the HAP, and then drives
 # hvigor to assemble, inject the pre-provisioned HNP payloads and re-sign.
 #
@@ -17,7 +17,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 HAP_DIR="$PROJECT_ROOT/hap"
 
 OHOS_TARGET="aarch64-unknown-linux-ohos"
-CRATE="warp_ohos"
+CRATE="entry_ohos"
 # The three names below must stay identical: the cdylib file name, the NAPI
 # module registration name and the ArkTS `import` in EntryAbility.
 OHOS_LIB_NAME="libcore.so"
@@ -239,8 +239,12 @@ export RUSTFLAGS="${RUSTFLAGS:-} -A warnings"
 # HiCodeer's own shim reads directories through rustix and so wants this flag,
 # but cannot compile with it.
 
+# Release-only codegen tuning kept out of the shared Cargo.toml profiles, so the
+# desktop release profiles are unaffected. HiCodeer pairs codegen-units=2 with
+# ThinLTO in its release build; mirror that here.
 if [ "$CARGO_PROFILE_ENV_RELEASE" = 1 ]; then
   export CARGO_PROFILE_RELEASE_CODEGEN_UNITS=2
+  export CARGO_PROFILE_RELEASE_LTO=thin
 else
   export CARGO_PROFILE_DEV_CODEGEN_UNITS=16
 fi

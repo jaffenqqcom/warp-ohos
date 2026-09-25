@@ -1,0 +1,307 @@
+#!/usr/bin/env bash
+#
+# Builds the cmdbridge pair for HarmonyOS and stages both native packages into
+# the entry HAP's HNP directory:
+#
+#   hitdaemon - the on-device command server, shipped as a PUBLIC HNP: the system
+#               unpacks it outside the application sandbox and links it into the
+#               global PATH. An application cannot start it, which is why the
+#               user starts it by hand from the system command line.
+#   hitshell  - the terminal bridge, shipped as a PRIVATE HNP: it unpacks into
+#               the host application's own bin directory, so a sandboxed terminal
+#               can run it directly. It opens a shell on hitdaemon and connects
+#               that shell to the terminal, which is how a sandboxed session
+#               reaches programs installed by the system command-line tools.
+#
+# Neither crate is a member of the repository workspace and neither depends on
+# any warp crate, so running this never rebuilds the host application. Each crate
+# builds into its own target directory under the repository's target/, where the
+# application's own build output lives: cmdbridge/ then holds sources only, and
+# the artifacts sit under the one directory the repository already ignores.
+#
+# Usage: ./script/ohos/cmdbridge [--release] [--build-only | --pack-only]
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+CMDBRIDGE_DIR="$PROJECT_ROOT/cmdbridge"
+HNP_SRC_DIR="$PROJECT_ROOT/hap/entry/hnp/arm64-v8a"
+MODULE_JSON="$PROJECT_ROOT/hap/entry/src/main/module.json5"
+
+OHOS_TARGET="aarch64-unknown-linux-ohos"
+PACKAGES=(hitdaemon hitshell)
+
+BUILD_ONLY=false
+PACK_ONLY=false
+IS_RELEASE=false
+while (( "$#" )); do
+  case "$1" in
+    --release) IS_RELEASE=true; shift ;;
+    --build-only) BUILD_ONLY=true; shift ;;
+    --pack-only) PACK_ONLY=true; shift ;;
+    *) echo "Error: unknown argument '$1'" >&2; exit 1 ;;
+  esac
+done
+
+# Temporary files must stay inside the project: the device's /tmp is a read-only
+# erofs, and clang fails outright when it cannot create temp files ("unable to
+# make temporary file: Read-only file system").
+export TMPDIR="$PROJECT_ROOT/target/tmp"
+mkdir -p "$TMPDIR" "$HNP_SRC_DIR"
+
+# ==================== Toolchain ====================
+# Mirrors script/ohos/bundle: the same SDK, the same native OHOS rust toolchain
+# and the same compiler TLS shim, so both scripts build for the same target with
+# the same flags.
+BREW_PREFIX="${HARMONYBREW_PREFIX:-$HOME/.harmonybrew}"
+OHOS_SDK_ROOT="$("$BREW_PREFIX/bin/brew" --prefix ohos-sdk 2>/dev/null || echo "$BREW_PREFIX/opt/ohos-sdk")"
+SDK_LLVM_BIN="$OHOS_SDK_ROOT/native/llvm/bin"
+SDK_NATIVE="$OHOS_SDK_ROOT/native"
+
+# rustup's cargo/rustc live under the prefix's rustup opt dir, while brew/bin only
+# carries the rustup binary itself.
+export PATH="$BREW_PREFIX/opt/rustup/bin:$BREW_PREFIX/bin:$PATH"
+# The repository pins 1.92.0, which is not installed on this machine; the
+# installed 1.97.1 is used instead (same override as script/ohos/bundle).
+export RUSTUP_TOOLCHAIN="${RUSTUP_TOOLCHAIN:-1.97.1}"
+
+export CC_aarch64_unknown_linux_ohos="$SDK_LLVM_BIN/clang"
+export CXX_aarch64_unknown_linux_ohos="$SDK_LLVM_BIN/clang++"
+export AR_aarch64_unknown_linux_ohos="$SDK_LLVM_BIN/llvm-ar"
+export RANLIB_aarch64_unknown_linux_ohos="$SDK_LLVM_BIN/llvm-ranlib"
+export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_OHOS_LINKER="$SDK_LLVM_BIN/clang"
+export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_OHOS_CXX="$SDK_LLVM_BIN/clang++"
+export OHOS_NDK_HOME="$SDK_NATIVE"
+export CMAKE_TOOLCHAIN_FILE_aarch64_unknown_linux_ohos="$SDK_NATIVE/build/cmake/ohos.toolchain.cmake"
+# Some C crates need these macros; clang promotes the pointer-type mismatch to an
+# error and must be told otherwise.
+export CFLAGS_aarch64_unknown_linux_ohos="-DZSTD_NOVMS -D__ANDROID__ -Wno-incompatible-function-pointer-types"
+
+# OHOS libc caps pthread keys at 128 and std implements thread_local! on top of
+# them for this target, so a large build aborts with "out of TLS keys". The shim
+# serves these compiler processes only, exactly as in script/ohos/bundle.
+TLS_SHIM="$PROJECT_ROOT/target/ohos/rust-tls-shim.so"
+if [ -f "$TLS_SHIM" ]; then
+  export LD_PRELOAD="$TLS_SHIM"
+else
+  echo "[cmdbridge] note: no compiler TLS shim at $TLS_SHIM; building without it" >&2
+fi
+
+HNPCLI="${HNPCLI:-$HOME/workspace/commandline-ohos/sdk.org/sdk_1.0.0/default/openharmony/toolchains/hnpcli}"
+# Build output goes under the repository's target/, next to the application's own
+# artifacts, so cmdbridge/ stays source-only; target/ is already gitignored. Each
+# crate gets its own directory there: they are separate packages with separate
+# lockfiles, and sharing one would let the two builds evict each other's
+# fingerprints on every run.
+TARGET_ROOT="$PROJECT_ROOT/target/cmdbridge"
+JOBS="$(nproc)"
+
+# ==================== Key pairs ====================
+# Both sides embed their management keys at compile time, so a mismatched split
+# would only show up as an authentication failure on the device, where it is hard
+# to read. Check the four files against each other here instead.
+key_pair_matches() { # <private key> <public key> <what the pair has to satisfy>
+  local derived expected
+  # Both sides reduce a key line to its two key tokens at runtime, so compare
+  # that form here: `ssh-keygen -y` repeats the private key's comment, and a
+  # public key file may carry a trailing comment of its own.
+  derived="$(ssh-keygen -y -f "$1" | awk 'NF { print $1 " " $2; exit }')"
+  expected="$(awk 'NF && $1 !~ /^#/ { print $1 " " $2; exit }' "$2")"
+  if [ -z "$expected" ]; then
+    echo "Error: no public key line in $2" >&2
+    exit 1
+  fi
+  if [ "$derived" != "$expected" ]; then
+    echo "Error: $3 ($1 does not match $2)" >&2
+    exit 1
+  fi
+}
+
+echo "[cmdbridge] checking the management key split"
+key_pair_matches "$CMDBRIDGE_DIR/hitdaemon/conf/mgmt_host_key" \
+                 "$CMDBRIDGE_DIR/hitshell/conf/mgmt_host_key.pub" \
+                 "hitshell must verify the host key hitdaemon serves with"
+key_pair_matches "$CMDBRIDGE_DIR/hitshell/conf/mgmt_client_key" \
+                 "$CMDBRIDGE_DIR/hitdaemon/conf/authorized_keys" \
+                 "hitdaemon must authorize the client key hitshell authenticates with"
+
+# ==================== Build ====================
+PROFILE_DIR="debug"
+CARGO_PROFILE_ARG=()
+if [ "$IS_RELEASE" = true ]; then
+  PROFILE_DIR="release"
+  CARGO_PROFILE_ARG=(--release)
+  # The same release tuning script/ohos/bundle applies (HiCodeer pairs
+  # codegen-units=2 with ThinLTO), so the bridge binaries are built like the
+  # rest of the project's release artifacts.
+  export CARGO_PROFILE_RELEASE_CODEGEN_UNITS=2
+  export CARGO_PROFILE_RELEASE_LTO=thin
+fi
+
+if [ "$PACK_ONLY" = false ]; then
+  for package in "${PACKAGES[@]}"; do
+    echo "[cmdbridge] building $package (OHOS $OHOS_TARGET, $PROFILE_DIR)"
+    # Run from the crate directory: cargo then neither reads the repository's
+    # .cargo/config.toml nor walks up into the workspace. CARGO_TARGET_DIR
+    # redirects the output under the repository's target/, so the crate
+    # directory itself is never written to.
+    (
+      cd "$CMDBRIDGE_DIR/$package"
+      export CARGO_TARGET_DIR="$TARGET_ROOT/$package"
+      cargo build --target "$OHOS_TARGET" "${CARGO_PROFILE_ARG[@]}" -j "$JOBS" --bin "$package"
+    )
+  done
+fi
+
+if [ "$BUILD_ONLY" = true ]; then
+  echo "[cmdbridge] build only; no packages staged"
+  exit 0
+fi
+
+# ==================== Staging ====================
+STAGE_ROOT="$PROJECT_ROOT/target/cmdbridge-hnp-stage"
+
+# Stages hitdaemon: the binary plus the preloads it addresses from its own
+# package root. The fixed management keys are compiled into the binary, so no
+# conf directory ships.
+stage_hitdaemon() {
+  local stage="$STAGE_ROOT/hitdaemon"
+  local binary="$TARGET_ROOT/hitdaemon/$OHOS_TARGET/$PROFILE_DIR/hitdaemon"
+  mkdir -p "$stage/bin" "$stage/shim"
+  # A staged file left by an earlier build can carry fs-verity (FS_VERITY_FL),
+  # which makes the inode unwritable: an open-for-write returns EPERM and cp
+  # cannot overwrite it in place. Remove it first so the copy lands on a fresh
+  # inode without the verity tag.
+  rm -f "$stage/bin/hitdaemon" "$stage/shim/shim.js" "$stage/shim/musllib-shim.so" "$stage/hnp.json"
+  cp "$binary" "$stage/bin/hitdaemon"
+  # Only the other-execute bit reaches the installer (see the permission rewrite
+  # below), and it reads the staged file to decide -- so the binary has to be
+  # owner-executable here.
+  chmod 755 "$stage/bin/hitdaemon"
+  cp "$CMDBRIDGE_DIR/hitdaemon/shim/shim.js" "$stage/shim/shim.js"
+  cp "$CMDBRIDGE_DIR/hitdaemon/shim/musllib-shim.so" "$stage/shim/musllib-shim.so"
+  cat > "$stage/hnp.json" <<'JSON'
+{"type":"hnp-config","name":"hitdaemon","version":"0.1.0","install":{}}
+JSON
+}
+
+# Stages hitshell: only the bridge binary. Its management keys and the shell it
+# asks for are compiled in, so it carries nothing else.
+stage_hitshell() {
+  local stage="$STAGE_ROOT/hitshell"
+  local binary="$TARGET_ROOT/hitshell/$OHOS_TARGET/$PROFILE_DIR/hitshell"
+  mkdir -p "$stage/bin"
+  rm -f "$stage/bin/hitshell" "$stage/hnp.json"
+  cp "$binary" "$stage/bin/hitshell"
+  chmod 755 "$stage/bin/hitshell"
+  cat > "$stage/hnp.json" <<'JSON'
+{"type":"hnp-config","name":"hitshell","version":"0.1.0","install":{}}
+JSON
+}
+
+# Packs one staged package and rewrites the permissions hnpcli recorded.
+#
+# hnpcli records each entry's permission by stat() on the staged file. The
+# staging tree lives on /storage, which is hmdfs: that filesystem keeps only the
+# owner bits, rewrites the group bits and forces the other bits to zero -- chmod
+# 755 and chmod 777 both yield 0770 there, and a directory comes out as 0770 too.
+# The on-device installer then decides the extracted mode from the other-execute
+# bit alone (hnp_zip.c HnpUnZipForFile: mode & S_IXOTH ? 0755 : 0744), so what
+# hnpcli records cannot be used as-is:
+#
+#   * a plain file packs as 0660, which no other user may even read, and
+#   * a directory packs as 0o0, which the installer turns into 0744 -- no
+#     other-execute, so no other user may traverse into it.
+#
+# That second one is fatal for hitdaemon: it is a public HNP precisely so the
+# user can start it from the system command line, as a different account. The
+# mode is therefore assigned per entry kind instead of being derived from the
+# staging tree -- directories 0755, executable files 0755, everything else 0644
+# -- which is exactly the shape the working git.hnp and zsh.hnp carry. Whether a
+# file is executable is still read from the staged source, so the driver there
+# is only the owner-execute bit the staging step set.
+#
+# Only the central directory carries the unix mode (minizip reads external_fa
+# from there), so the local headers, the entry data and their CRCs stay
+# untouched.
+pack_hnp() { # <package name>
+  local package="$1"
+  rm -f "$HNP_SRC_DIR/$package.hnp"
+  "$HNPCLI" pack -i "$STAGE_ROOT/$package" -o "$HNP_SRC_DIR"
+  if [ ! -f "$HNP_SRC_DIR/$package.hnp" ]; then
+    echo "Error: hnpcli did not produce $HNP_SRC_DIR/$package.hnp" >&2
+    exit 1
+  fi
+  python3 - "$HNP_SRC_DIR/$package.hnp" "$STAGE_ROOT" <<'PY'
+import os
+import struct
+import sys
+
+hnp_path, stage_dir = sys.argv[1], sys.argv[2]
+
+CENTRAL_DIRECTORY_SIG = b"PK\x01\x02"
+END_OF_CENTRAL_DIRECTORY_SIG = b"PK\x05\x06"
+UNIX_MODE_OFFSET = 38
+OWNER_EXECUTE_BIT = 0o100
+DIRECTORY_MODE = 0o40755
+EXECUTABLE_MODE = 0o100755
+REGULAR_MODE = 0o100644
+
+with open(hnp_path, "rb") as hnp_file:
+    archive = bytearray(hnp_file.read())
+
+end_of_central_directory = archive.rfind(END_OF_CENTRAL_DIRECTORY_SIG)
+if end_of_central_directory < 0:
+    sys.exit("hnp: end of central directory not found: %s" % hnp_path)
+
+entry_count = struct.unpack_from("<H", archive, end_of_central_directory + 10)[0]
+offset = struct.unpack_from("<I", archive, end_of_central_directory + 16)[0]
+
+for _ in range(entry_count):
+    if archive[offset:offset + 4] != CENTRAL_DIRECTORY_SIG:
+        sys.exit("hnp: malformed central directory entry at %d: %s" % (offset, hnp_path))
+    name_length = struct.unpack_from("<H", archive, offset + 28)[0]
+    extra_length = struct.unpack_from("<H", archive, offset + 30)[0]
+    comment_length = struct.unpack_from("<H", archive, offset + 32)[0]
+    entry_name = bytes(archive[offset + 46:offset + 46 + name_length]).decode()
+    if entry_name.endswith("/"):
+        mode = DIRECTORY_MODE
+    else:
+        staged_source = os.path.join(stage_dir, entry_name)
+        if not os.path.exists(staged_source):
+            sys.exit("hnp: no staged source for entry %s: %s" % (entry_name, staged_source))
+        if os.stat(staged_source).st_mode & OWNER_EXECUTE_BIT:
+            mode = EXECUTABLE_MODE
+        else:
+            mode = REGULAR_MODE
+    struct.pack_into("<I", archive, offset + UNIX_MODE_OFFSET, mode << 16)
+    offset += 46 + name_length + extra_length + comment_length
+
+with open(hnp_path, "wb") as hnp_file:
+    hnp_file.write(archive)
+PY
+  echo "[cmdbridge] staged $HNP_SRC_DIR/$package.hnp"
+}
+
+if [ ! -x "$HNPCLI" ]; then
+  echo "Error: hnpcli not available at $HNPCLI" >&2
+  exit 1
+fi
+
+stage_hitdaemon
+stage_hitshell
+pack_hnp hitdaemon
+pack_hnp hitshell
+
+# ==================== Declaration check ====================
+# The packages only reach the device if module.json5 tells the installer about
+# them, and only a public entry makes hitdaemon startable by hand from outside
+# the sandbox.
+for package in "${PACKAGES[@]}"; do
+  if ! grep -q "\"$package.hnp\"" "$MODULE_JSON"; then
+    echo "[cmdbridge] warning: $MODULE_JSON does not declare $package.hnp" >&2
+  fi
+done
+
+echo "[cmdbridge] done: hitdaemon.hnp (public) + hitshell.hnp (private) staged in $HNP_SRC_DIR"

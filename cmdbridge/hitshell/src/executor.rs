@@ -1,0 +1,506 @@
+//! Remote command execution over the daemon SSH connection pool.
+//!
+//! `SshCommandExecutor` implements the self-contained `RemoteCommandExecutor`
+//! contract. Each spawn acquires an SSH connection (a ready pooled one, or a
+//! freshly established one when the pool keeps none -- see `Pool::new_terminal`),
+//! opens a session channel, runs the translated shell command, and bridges stdio
+//! through socketpairs: the caller sees smol `Async<UnixStream>` ends, while a
+//! tokio pump task (on the pool runtime) relays channel Data/ExtendedData into
+//! the socketpairs and reports the exit status.
+
+use std::collections::HashMap;
+use std::os::unix::net::UnixStream;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
+
+use russh::ChannelMsg;
+use smol::io::{AsyncRead, AsyncWrite};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+use crate::command;
+use crate::endpoint::CommandEndpoint;
+use crate::pool::{Pool, SshSession};
+use crate::types::{
+    ExecSpec, ExitFuture, RemoteChild, RemoteCommandExecutor, ShellPtyFuture, Signal,
+};
+
+/// Bytes read from the socketpair per select iteration.
+const IO_CHUNK_SIZE: usize = 8192;
+
+/// How often `wait_ready` re-checks the pool while the management handshake is
+/// in flight.
+const WAIT_READY_POLL: Duration = Duration::from_millis(20);
+
+/// Per-session exit state, shared between the tokio pump task and waiters on
+/// the smol executor.
+pub struct SessionState {
+    exit: Mutex<Option<Option<i32>>>,
+    tx: tokio::sync::watch::Sender<Option<Option<i32>>>,
+}
+
+impl SessionState {
+    fn new() -> Self {
+        let (tx, _) = tokio::sync::watch::channel(None);
+        Self {
+            exit: Mutex::new(None),
+            tx,
+        }
+    }
+
+    /// Records the exit result once (later calls are ignored) and broadcasts it.
+    /// `None` means the command died without a status (signal or connection
+    /// loss), mapping to util::command's None -> 128.
+    ///
+    /// A `watch` (not a one-shot `Notify`) is used because it keeps the latest
+    /// value: a waiter that subscribes after the broadcast still observes the
+    /// terminal state, so the wake-up can never be lost to a timing race.
+    fn set_exit(&self, exit: Option<i32>) {
+        let mut guard = self.exit.lock().unwrap_or_else(|poison| poison.into_inner());
+        if guard.is_none() {
+            *guard = Some(exit);
+        }
+        let value = *guard;
+        drop(guard);
+        // Store the terminal value unconditionally: `send()` rejects the value
+        // when no receiver is alive yet (the initial receiver was dropped), so
+        // a fast-exiting child would lose its exit status and a later
+        // subscriber of `wait_exit_async` would block forever. `send_replace`
+        // always stores, so late waiters observe the value via `borrow()`.
+        self.tx.send_replace(value);
+    }
+}
+
+/// Remote command executor over the SSH pool.
+pub struct SshCommandExecutor {
+    pool: Arc<Pool>,
+    sessions: Mutex<HashMap<u64, Arc<SessionState>>>,
+    next_session: AtomicU64,
+}
+
+impl SshCommandExecutor {
+    /// Creates a command pool, starts the management bootstrap thread against
+    /// `endpoint` (dynamic command keys -> pool config) and returns the
+    /// executor.
+    ///
+    /// One identity is minted here for the executor's whole life and presented
+    /// on every connection, so the daemon can tell this instance's process tree
+    /// from a predecessor's (see `protocol::new_client_id`).
+    pub fn new(
+        endpoint: CommandEndpoint,
+        mgmt_client_priv_pem: String,
+        mgmt_host_pub_pem: String,
+    ) -> std::io::Result<Self> {
+        Self::build(
+            endpoint,
+            mgmt_client_priv_pem,
+            mgmt_host_pub_pem,
+            Pool::new()?,
+        )
+    }
+
+    /// Like [`new`](Self::new), for a process whose remote work is a single
+    /// interaction: one interactive shell (the `hitshell` bridge), or the one
+    /// command a `-c` run asks for. The pool keeps no connection ready, so that
+    /// interaction is the only connection this executor opens -- a stock would
+    /// open connections nobody pops. The management bootstrap is unchanged -- it
+    /// is what tells the daemon the instance behind it is alive.
+    pub fn new_terminal(
+        endpoint: CommandEndpoint,
+        mgmt_client_priv_pem: String,
+        mgmt_host_pub_pem: String,
+    ) -> std::io::Result<Self> {
+        Self::build(
+            endpoint,
+            mgmt_client_priv_pem,
+            mgmt_host_pub_pem,
+            Pool::new_terminal()?,
+        )
+    }
+
+    /// Builds the executor around `pool` and starts the management bootstrap
+    /// thread off the calling thread.
+    ///
+    /// One identity is minted here for the executor's whole life and presented
+    /// on every connection, so the daemon can tell this instance's process tree
+    /// from a predecessor's (see `protocol::new_client_id`).
+    fn build(
+        endpoint: CommandEndpoint,
+        mgmt_client_priv_pem: String,
+        mgmt_host_pub_pem: String,
+        pool: Arc<Pool>,
+    ) -> std::io::Result<Self> {
+        let executor = Self {
+            pool: pool.clone(),
+            sessions: Mutex::new(HashMap::new()),
+            next_session: AtomicU64::new(1),
+        };
+        let client_id = crate::protocol::new_client_id();
+        // Bootstrap thread: re-fetch the dynamic command keys and reconfigure
+        // the pool whenever the daemon restarts. Runs off the calling thread.
+        std::thread::Builder::new()
+            .name("hitshell-bootstrap".to_string())
+            .spawn(move || {
+                crate::bootstrap::start(
+                    pool,
+                    endpoint,
+                    mgmt_client_priv_pem,
+                    mgmt_host_pub_pem,
+                    client_id,
+                );
+            })
+            .map_err(std::io::Error::other)?;
+        Ok(executor)
+    }
+}
+
+impl RemoteCommandExecutor for SshCommandExecutor {
+    fn spawn(&self, spec: ExecSpec) -> std::io::Result<RemoteChild> {
+        let session_id = self.next_session.fetch_add(1, Ordering::SeqCst);
+        let command = command::build_command(&spec, session_id);
+        let conn = self.pool.acquire()?;
+
+        // Socketpairs: caller side is smol Async<UnixStream>, pump side is a
+        // tokio UnixStream on the pool runtime.
+        let (stdout_reader, stdout_pump) = UnixStream::pair()?;
+        let (stderr_reader, stderr_pump) = UnixStream::pair()?;
+        let (stdin_pump, stdin_writer) = UnixStream::pair()?;
+
+        let stdout: Box<dyn AsyncRead + Unpin + Send + Sync> =
+            Box::new(smol::Async::new(stdout_reader)?);
+        let stderr: Box<dyn AsyncRead + Unpin + Send + Sync> =
+            Box::new(smol::Async::new(stderr_reader)?);
+        let stdin: Box<dyn AsyncWrite + Unpin + Send + Sync> =
+            Box::new(smol::Async::new(stdin_writer)?);
+
+        let state = Arc::new(SessionState::new());
+        self.sessions
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner())
+            .insert(session_id, state.clone());
+
+        let runtime = self.pool.runtime();
+        runtime.spawn(async move {
+            pump(conn, command, stdout_pump, stderr_pump, stdin_pump, state).await;
+        });
+
+        Ok(RemoteChild {
+            session_id,
+            stdin: Some(stdin),
+            stdout: Some(stdout),
+            stderr: Some(stderr),
+        })
+    }
+
+    fn signal(&self, session_id: u64, signal: Signal) -> std::io::Result<()> {
+        // Signal the recorded process group via the reserved command; the daemon
+        // kills the whole group (`kill(-pgid, sig)`).
+        let command = crate::protocol::signal_command(session_id, signal.code());
+        let conn = self.pool.acquire()?;
+        let runtime = self.pool.runtime();
+        runtime.spawn(async move {
+            if let Err(err) = run_ssh_command(conn, &command).await {
+                log::warn!("hitshell: signal session={session_id}: {err}");
+            }
+        });
+        Ok(())
+    }
+
+    fn try_exit(&self, session_id: u64) -> Option<Option<i32>> {
+        let state = self
+            .sessions
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner())
+            .get(&session_id)
+            .cloned()?;
+        let exit = state.exit.lock().unwrap_or_else(|poison| poison.into_inner());
+        *exit
+    }
+
+    fn open_shell_pty<'a>(
+        &self,
+        cols: u32,
+        rows: u32,
+        cwd: Option<&'a str>,
+        program: &'a str,
+        args: &'a [String],
+    ) -> ShellPtyFuture<'a> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            let command = crate::pty::shell_command(program, args, cwd)?;
+            let (tx, rx) = tokio::sync::oneshot::channel();
+            let acquire_pool = pool.clone();
+            // Connection acquisition blocks (the pool's retry budget, or one
+            // connect attempt for a pool that keeps no ready connection), so it
+            // runs on a blocking worker instead of stalling the runtime; the pty
+            // setup itself is async and stays on the pool runtime.
+            pool.runtime().spawn(async move {
+                let result =
+                    match tokio::task::spawn_blocking(move || acquire_pool.acquire()).await {
+                        Ok(Ok(conn)) => {
+                            crate::pty::open_shell_pty(conn, cols, rows, &command).await
+                        }
+                        Ok(Err(err)) => Err(err),
+                        Err(join) => Err(std::io::Error::other(format!(
+                            "shell pty acquire task: {join}"
+                        ))),
+                    };
+                let _ = tx.send(result);
+            });
+            rx.await
+                .map_err(|_| std::io::Error::other("shell pty setup task dropped"))?
+        })
+    }
+
+    fn wait_exit_async(&self, session_id: u64) -> ExitFuture<'_> {
+        Box::pin(async move {
+            let state = self
+                .sessions
+                .lock()
+                .unwrap_or_else(|poison| poison.into_inner())
+                .get(&session_id)
+                .cloned()
+                .ok_or_else(|| {
+                    std::io::Error::new(std::io::ErrorKind::NotFound, "unknown session")
+                })?;
+            let mut exit_rx = state.tx.subscribe();
+            loop {
+                if let Some(exit) = *exit_rx.borrow() {
+                    // Terminal state recorded: drop the map entry so a long-lived
+                    // editor does not accumulate one SessionState per completed
+                    // command. The Arc was cloned above and the watch keeps the
+                    // value, so readers that already hold the Arc stay correct.
+                    self.remove_session(session_id);
+                    return Ok(exit);
+                }
+                if exit_rx.changed().await.is_err() {
+                    // The sender only drops with its SessionState; if that ever
+                    // happens without a terminal value, fall back to the recorded
+                    // state (flattening Some(None) -> None, unset -> None).
+                    let recorded = *state
+                        .exit
+                        .lock()
+                        .unwrap_or_else(|poison| poison.into_inner());
+                    return Ok(recorded.flatten());
+                }
+            }
+        })
+    }
+}
+
+impl SshCommandExecutor {
+    /// Waits up to `timeout` for the management bootstrap to hand the pool a
+    /// config.
+    ///
+    /// Returns as soon as one exists. Returns at once -- without waiting out
+    /// `timeout` -- when the last management round trip failed to connect, which
+    /// is what a daemon that was never started looks like; `timeout` only bounds
+    /// the case where something accepts the connection but never completes the
+    /// handshake. Blocks the calling thread, so call it from a background thread,
+    /// never from a tokio runtime or the host application's main thread.
+    pub fn wait_ready(&self, timeout: Duration) -> Result<(), String> {
+        log::info!("hitshell executor: waiting up to {timeout:?} for the pool config");
+        let deadline = Instant::now() + timeout;
+        loop {
+            if self.pool.config().is_some() {
+                return Ok(());
+            }
+            if self.pool.bootstrap_failed() {
+                return Err("hitdaemon is not reachable on the loopback port".to_string());
+            }
+            if Instant::now() >= deadline {
+                return Err("timed out waiting for the hitdaemon handshake".to_string());
+            }
+            std::thread::sleep(WAIT_READY_POLL);
+        }
+    }
+
+    /// Runs one short shell command synchronously on an acquired connection and
+    /// waits for its exit status. Used for guest-side housekeeping (mkdir + virtiofs mount,
+    /// guest clock sync) from a non-command context without going through the
+    /// global executor (which would recurse into `spawn`). Blocks the calling
+    /// thread for up to the connection-acquisition budget, so call it from a
+    /// background thread, never from a tokio runtime or the GPUI main thread.
+    pub fn run_shell(&self, command: &str) -> std::io::Result<()> {
+        let conn = self.pool.acquire()?;
+        self.pool.runtime().block_on(run_ssh_command(conn, command))
+    }
+
+    /// Drops a session entry once its terminal exit has been consumed by a
+    /// waiter. Repeated removals are a no-op.
+    fn remove_session(&self, session_id: u64) {
+        self.sessions
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner())
+            .remove(&session_id);
+    }
+}
+
+/// Runs one short SSH command and waits for its exit status (0 = success).
+pub async fn run_ssh_command(conn: SshSession, command: &str) -> std::io::Result<()> {
+    let mut channel = conn
+        .channel_open_session()
+        .await
+        .map_err(|err| std::io::Error::other(format!("open channel: {err}")))?;
+    channel
+        .exec(true, command)
+        .await
+        .map_err(|err| std::io::Error::other(format!("exec: {err}")))?;
+    loop {
+        match channel.wait().await {
+            Some(ChannelMsg::ExitStatus { exit_status }) => {
+                if exit_status == 0 {
+                    return Ok(());
+                }
+                return Err(std::io::Error::other(format!(
+                    "remote command failed with status {exit_status}"
+                )));
+            }
+            Some(_) => continue,
+            None => return Err(std::io::Error::other("channel closed without exit status")),
+        }
+    }
+}
+
+/// The per-command tokio pump task: opens the channel, runs the command, and
+/// relays Data/ExtendedData into the socketpairs until the channel closes.
+async fn pump(
+    conn: SshSession,
+    command: String,
+    stdout_pump: UnixStream,
+    stderr_pump: UnixStream,
+    stdin_pump: UnixStream,
+    state: Arc<SessionState>,
+) {
+    let mut channel = match conn.channel_open_session().await {
+        Ok(channel) => channel,
+        Err(err) => {
+            log::error!("hitshell pump: channel_open_session: {err}");
+            state.set_exit(None);
+            return;
+        }
+    };
+    if let Err(err) = channel.exec(true, command.as_bytes()).await {
+        log::error!("hitshell pump: exec: {err}");
+        state.set_exit(None);
+        return;
+    }
+    // tokio requires non-blocking sockets: set each socketpair end before
+    // wrapping, otherwise from_std panics ("Registering a blocking socket").
+    let stdout_pump = stdout_pump;
+    if let Err(err) = stdout_pump.set_nonblocking(true) {
+        log::error!("hitshell pump: set stdout nonblocking: {err}");
+        state.set_exit(None);
+        return;
+    }
+    let mut stdout_w = match tokio::net::UnixStream::from_std(stdout_pump) {
+        Ok(stream) => stream,
+        Err(err) => {
+            log::error!("hitshell pump: wrap stdout: {err}");
+            state.set_exit(None);
+            return;
+        }
+    };
+    let stderr_pump = stderr_pump;
+    if let Err(err) = stderr_pump.set_nonblocking(true) {
+        log::error!("hitshell pump: set stderr nonblocking: {err}");
+        state.set_exit(None);
+        return;
+    }
+    let mut stderr_w = match tokio::net::UnixStream::from_std(stderr_pump) {
+        Ok(stream) => stream,
+        Err(err) => {
+            log::error!("hitshell pump: wrap stderr: {err}");
+            state.set_exit(None);
+            return;
+        }
+    };
+    let stdin_pump = stdin_pump;
+    if let Err(err) = stdin_pump.set_nonblocking(true) {
+        log::error!("hitshell pump: set stdin nonblocking: {err}");
+        state.set_exit(None);
+        return;
+    }
+    let mut stdin_r = match tokio::net::UnixStream::from_std(stdin_pump) {
+        Ok(stream) => stream,
+        Err(err) => {
+            log::error!("hitshell pump: wrap stdin: {err}");
+            state.set_exit(None);
+            return;
+        }
+    };
+    let mut stdin_writer = channel.make_writer();
+    let mut buf = [0u8; IO_CHUNK_SIZE];
+    let mut stdin_open = true;
+
+    loop {
+        tokio::select! {
+            msg = channel.wait() => {
+                match msg {
+                    Some(ChannelMsg::Data { data }) => {
+                        if let Err(err) = stdout_w.write_all(&data).await {
+                            log::warn!("hitshell pump: write stdout failed: {err}");
+                            break;
+                        }
+                    }
+                    Some(ChannelMsg::ExtendedData { data, .. }) => {
+                        if let Err(err) = stderr_w.write_all(&data).await {
+                            log::warn!("hitshell pump: write stderr failed: {err}");
+                            break;
+                        }
+                    }
+                    Some(ChannelMsg::ExitStatus { exit_status }) => {
+                        state.set_exit(Some(exit_status as i32));
+                    }
+                    Some(ChannelMsg::ExitSignal { .. }) => {
+                        state.set_exit(None);
+                    }
+                    Some(ChannelMsg::Eof) => {
+                        // The remote side has no more stdout/stderr data, but
+                        // the exit-status message for a finished command is sent
+                        // AFTER this EOF: the daemon EOFs on a closed child stdout
+                        // pipe, then reports the exit status once the child is
+                        // reaped. Breaking here made every quick command resolve
+                        // with exit_code=None. Keep looping until the
+                        // ExitStatus and Close arrive.
+                    }
+                    Some(ChannelMsg::Close) => {
+                        break;
+                    }
+                    None => {
+                        break;
+                    }
+                    Some(_other) => {}
+                }
+            }
+            read = stdin_r.read(&mut buf), if stdin_open => {
+                match read {
+                    Ok(0) => {
+                        // Send the channel EOF per the SSH standard: the caller
+                        // (util) closed its stdin, so the daemon must learn that
+                        // and enter its normal error handling instead of a
+                        // long-lived LSP blocking forever waiting for input.
+                        stdin_open = false;
+                        let _ = stdin_writer.shutdown().await;
+                    }
+                    Ok(n) => {
+                        if let Err(err) = stdin_writer.write_all(&buf[..n]).await {
+                            log::warn!("hitshell pump: write stdin: {err}");
+                            stdin_open = false;
+                        }
+                    }
+                    Err(err) => {
+                        log::warn!("hitshell pump: read stdin: {err}");
+                        stdin_open = false;
+                    }
+                }
+            }
+        }
+    }
+    // Ensure a terminal state: if no ExitStatus/ExitSignal arrived (channel
+    // dropped early), record None so wait_exit_async resolves.
+    state.set_exit(None);
+    // Close the caller's ends so downstream readers see EOF.
+    let _ = stdout_w.shutdown().await;
+    let _ = stderr_w.shutdown().await;
+}
