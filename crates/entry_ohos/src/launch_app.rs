@@ -98,6 +98,15 @@ pub fn launch_app(app: openharmony_ability::OpenHarmonyApp) {
             // several layers deep, and the outer message alone does not say why.
             Err(err) => log::error!("launch_app: warp::run failed: {err:#}"),
         }
+        // warp's loop stopping only ends warp: the ability owns the process and
+        // outlives it, so an unfinished ability would keep the window on screen
+        // frozen on its last frame instead of closing the application.
+        if !openharmony_ability::terminate_ability() {
+            log::warn!(
+                "launch_app: the ArkTS ability actions are not registered, so the ability was not \
+                 finished and the window will stay frozen"
+            );
+        }
     });
     if let Err(err) = spawn_result {
         log::error!("launch_app: failed to start warp: {err:#}");

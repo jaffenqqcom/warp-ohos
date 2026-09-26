@@ -1565,7 +1565,7 @@ HNP 载荷为**预制**（`hap/entry/hnp/arm64-v8a/` 下的 `git.hnp` + `zsh.hnp
 `Delegate` 与 `Window` 两个 trait 的全部方法在 OHOS 后端**都有实现，不存在编译期缺失**；缺口是实现深度，分三类：
 
 1. **`report_gap` 显式打点**：`request_user_attention`、`show_native_platform_modal`、`open_character_palette`。（`register_global_shortcut` / `unregister_global_shortcut` 原本也在此列，已于 2026-09-24 实现，见 12.4.2。）
-2. **静默降级**（返回保守值而不报错）：`request_desktop_notification_permissions` 恒 `PermissionsDenied`、`send_desktop_notification` 直接丢弃、`application_bundle_info` 恒 `None`、`is_screen_reader_enabled` 恒 `None`、`microphone_access_state` 返回 `Denied` / `NotDetermined`、`set_accessibility_contents` 不填充、`terminate_app` 只停事件循环而进程留驻。
+2. **静默降级**（返回保守值而不报错）：`request_desktop_notification_permissions` 恒 `PermissionsDenied`、`send_desktop_notification` 直接丢弃、`application_bundle_info` 恒 `None`、`is_screen_reader_enabled` 恒 `None`、`microphone_access_state` 返回 `Denied` / `NotDetermined`、`set_accessibility_contents` 不填充。（`terminate_app` 原在此列，已于 2026-09-26 补上真正的 ability 结束通道，见 12.4.3。）
 3. **窗口层空实现**：`Window` 的 `minimize` / `toggle_maximized` / `toggle_fullscreen` 只记日志（注意这是 **per-window** 层；**app 级**的隐藏 / 唤起已于 2026-09-24 实现，见 12.4.2（3）），`set_window_title` 与 `set_all_windows_background_blur_radius` 为空，`display_count` 恒 1、`active_display_id` 恒 0（单显示器假设），`supports_transparency` 恒 `false`。
 
 另有 `event_loop.rs` 三处：`InputEvent::HoverEvent`（指针悬停）、`KeyboardEvent`（软键盘高度）、`SaveState`（ability 保存状态回调）。
@@ -1607,7 +1607,7 @@ HNP 载荷为**预制**（`hap/entry/hnp/arm64-v8a/` 下的 `git.hnp` + `zsh.hnp
   - **另一处关键修正**：`active_window_id()` 原本恒返回 `Some`，`show_or_hide_non_quake_mode_windows` 因此每次都判成「该隐藏」、窗口永远切不回来；改为按 `openharmony_ability::window_visibility()` 门控（窗口最小化时返回 `None`，快捷键于是走 `activate_app`），并在 `hide_app()` 里 `set_active_window(None)` 做确定性兜底（`set_active_window` 不动 `active_window_stack`，`frontmost_window_id()` 仍能拿回窗口 id）。`app_is_active()` 也由硬编码 `true` 改为读 `window_visibility()`。
   - 2026-09-24 装机实测（**覆盖安装，未卸载**）：按下 Alt+W 后 hilog 出现 `window_control::minimize_main_window: dispatching to ArkTS`，warp.log 出现 `hide_app: minimizing the main window` / `activate_app`，窗口最小化与唤起均生效。
 
-### 12.4.3 裁决：以下各项不做
+### 12.4.3 裁决：以下各项不做（**2026-09-26 更正**：其中「退出确认」与「异步终止」两项结论已被推翻并落地，见各自条目）
 
 **桌面通知**（`send_desktop_notification` + `request_desktop_notification_permissions`）
 
@@ -1615,11 +1615,21 @@ OHOS 侧 API 其实是齐的——`notificationManager` 的 `publish` / `isNotif
 
 **对话框与退出确认**（`show_native_platform_modal`）
 
-`app/src/quit_warning/mod.rs` 的 `show()` 用 `cfg!` 分两支：macOS 走 `show_native_platform_modal`，linux / freebsd / windows 走 warp 自绘 modal，**OHOS 两支都不进、`shown` 恒为 `false`**，因此有长命令在跑时关窗口不弹任何确认。要修必须改该文件（非 OHOS 专属文件），且在 OHOS 上还得另配一个对话框插件。
+`app/src/quit_warning/mod.rs` 的 `show()` 用 `cfg!` 分两支：macOS 走 `show_native_platform_modal`，linux / freebsd / windows 走 warp 自绘 modal。
+
+**⭐ 2026-09-26 更正**：原文写"**OHOS 两支都不进、`shown` 恒为 `false`**，因此有长命令在跑时关窗口不弹任何确认"，**这是误判 `target_os` 得出的错误结论**。OHOS 目标 `aarch64-unknown-linux-ohos` 的 `target_os` **就是 `linux`**（`rustc --print cfg` 实测 `target_os="linux"` / `target_env="ohos"` / `target_family="unix"`；构建是自举的，`rustc -vV` 的 host 即该三元组），所以**linux 分支会进**：走 `ctx.windows().show_window_and_focus_app(...)` + `workspace.show_native_modal(...)`，即 warpui 自绘 modal，不依赖任何原生对话框。结论：有长命令在跑时关窗口**会弹** warp 自绘的退出确认框，**既不需要改该文件、也不需要另配对话框插件**。`show_native_platform_modal`（原生对话框）仍不实现，OHOS 上也用不到它。
 
 **异步终止**（`terminate_app`）
 
-现状只发 `AppEvent::Terminate` 停掉 warp 事件循环，ability 仍持有进程，用户退出后应用留在后台。现有 `ohos.app-control` 是 `MainThreadSyncBridge`（ArkTS 侧 `SyncPluginBase`），`terminate` 走 `process.ProcessManager().exit()` 且**必须持有 napi `Env` 同步调用**；而 warp 从 warp-main 事件循环线程发起，该线程没有 `Env`。由于**一个插件只能有一种 `Mode`**，无法在同一插件内增加异步 action，只能另开插件。
+原文结论：只发 `AppEvent::Terminate` 停掉 warp 事件循环，ability 仍持有进程，应用留在后台；`ohos.app-control` 是 `MainThreadSyncBridge`、`terminate` 必须持有 napi `Env` 同步调用，而 warp 从 warp-main 线程发起没有 `Env`，一个插件只能有一种 `Mode`，**只能另开插件**。
+
+**⭐ 2026-09-26 更正**：那段结论只对"用 `ohos.app-control` 这条现成 route"成立，**"只能另开插件"不成立** —— 真正该走的是与窗口最小化（见 12.4.2（3））同一条路：**框架 core + ArkTS threadsafe function**，不开插件。已落地：
+
+- 框架 core 新增 `crates/ability/src/ability_control.rs`：`set_ability_actions(terminate)`（`#[napi]`，把 ArkTS 递来的闭包存成 threadsafe function）与 `terminate_ability()`（供 Rust 侧调用），与 `crates/ability/src/window_control.rs` 同构；`crates/derive/src/lib.rs` 增 `setAbilityActions` 导出。
+- ArkTS 侧：`native_ability` 的 `type.ets` 加 `setAbilityActions` 声明，`NativeAbility.ets` 在会话初始化时注册 `context.terminateSelf()`。
+- warp 侧：`crates/entry_ohos/src/launch_app.rs` 在 `warp::run()` 返回后调用 `openharmony_ability::terminate_ability()`。`delegate.rs` 的 `terminate_app` 本身仍只发 `AppEvent::Terminate`，但事件循环结束后由上述端口结束 ability，于是应用**真正退出**，不再留在后台。
+
+- 顺带修掉一个由此暴露的 bug：OHOS 后端原先收到 `CloseWindow` 事件后**直接删窗口，跳过了 winit 后端必走的 `should_close_window`**，而"关最后一个窗口要不要退 app"只在该回调里判断（`ctx.window_ids().count()==1` → `terminate_app`）。后果是关掉所有 tab 后窗口被删、warp 进入零窗口态，事件循环还在转但每帧因 `active_window_id()` 返回 `None` 被丢弃、输入也无窗口可派发 —— 界面冻在最后一帧、且永不退出。修法：`platform/ohos/` 里让 `CloseWindow` 事件携带 `TerminationMode`，`Cancellable` 时先问 `should_close_window`、批准才关窗口，与 winit 的 `close_window_requested` 对齐。
 
 **终端响铃提示**（`request_user_attention`）
 

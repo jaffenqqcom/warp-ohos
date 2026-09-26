@@ -88,8 +88,12 @@ pub(super) enum AppEvent {
     RunTask(ManuallyDrop<async_task::Runnable>),
     /// Run a synchronous callback on the main thread.
     RunCallback(Box<dyn FnOnce(&mut AppContext) + Send + Sync>),
-    /// Close a window.
-    CloseWindow(WindowId),
+    /// Close a window. The termination mode decides whether the app is offered
+    /// the close first, matching the winit back-end's `close_window_requested`.
+    CloseWindow {
+        window_id: WindowId,
+        termination_mode: TerminationMode,
+    },
     /// Active window changed.
     ActiveWindowChanged(Option<WindowId>),
     /// Exit the event loop, terminating the application.
@@ -1090,7 +1094,25 @@ fn process_event(
                 return ControlFlow::Break(());
             }
         }
-        AppEvent::CloseWindow(window_id) => callbacks.window_will_close(window_id),
+        AppEvent::CloseWindow {
+            window_id,
+            termination_mode,
+        } => {
+            // Offer a cancellable close to the app first, exactly as the winit
+            // back-end does. That callback is what converts "the last window is
+            // closing" into an app termination; without it warp is left running
+            // with no window, which renders and accepts no input. A forced close
+            // skips the offer.
+            if matches!(
+                termination_mode,
+                TerminationMode::ForceTerminate | TerminationMode::ContentTransferred
+            ) || matches!(
+                callbacks.should_close_window(window_id),
+                ApproveTerminateResult::Terminate
+            ) {
+                callbacks.window_will_close(window_id);
+            }
+        }
         AppEvent::ActiveWindowChanged(window_id) => callbacks.active_window_changed(window_id),
         AppEvent::GlobalShortcutTriggered(keystroke) => {
             callbacks.global_shortcut_triggered(keystroke)

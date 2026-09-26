@@ -218,11 +218,14 @@ impl warpui_core::platform::WindowManager for WindowManager {
     fn close_window_async(
         &self,
         window_id: WindowId,
-        _termination_mode: platform::TerminationMode,
+        termination_mode: platform::TerminationMode,
     ) {
         if self
             .event_sender
-            .send(AppEvent::CloseWindow(window_id))
+            .send(AppEvent::CloseWindow {
+                window_id,
+                termination_mode,
+            })
             .is_err()
         {
             log::warn!(
