@@ -1,12 +1,11 @@
-//! hilog sink for the OHOS build: mirrors every record the `env_logger`
-//! pipeline produces into the platform log service.
+//! hilog sink for the OHOS build: the only destination the `log` records reach.
 //!
 //! An OHOS application has no terminal attached, so neither the stderr sink nor
 //! the `warp.log` file is reachable while developing on device. `native.rs`
-//! builds an `env_logger::Logger` with the level filters and the file sink warp
-//! normally installs; [`init_hilog_logger`] takes that logger over and forwards
-//! each record it accepts to hilog through `OH_LOG_Print`, so both sinks show
-//! exactly the same lines.
+//! builds an `env_logger::Logger` that supplies the level filters warp applies
+//! on every platform; [`init_hilog_logger`] takes that logger over, reuses its
+//! filters, and forwards each accepted record to hilog through `OH_LOG_Print`
+//! without passing it on to the wrapped logger's own sink.
 //!
 //! `log`'s facade does not hand `log::Log::log` a target string, only a
 //! reference to the record, so the module path is folded into the message
@@ -49,9 +48,9 @@ unsafe extern "C" {
     ) -> i32;
 }
 
-/// Wraps the `env_logger` instance so that every record it accepts also reaches
-/// hilog. Level filtering stays with `env_logger` so the file sink and hilog
-/// cannot drift apart.
+/// Wraps the `env_logger` instance so that every record it accepts reaches
+/// hilog. The wrapped logger contributes its level filters only; accepted
+/// records are not forwarded to its sink, so hilog is the sole destination.
 struct HilogLogger {
     inner: env_logger::Logger,
 }
@@ -66,7 +65,6 @@ impl Log for HilogLogger {
             return;
         }
         submit_to_hilog(record);
-        self.inner.log(record);
     }
 
     fn flush(&self) {
@@ -74,7 +72,7 @@ impl Log for HilogLogger {
     }
 }
 
-/// Installs the hilog-mirroring logger in place of `env_logger`'s own
+/// Installs the hilog-only logger in place of `env_logger`'s own
 /// `Logger::init`.
 ///
 /// Called by `native::init_internal` on OHOS. Builds that enable
@@ -110,7 +108,7 @@ pub fn direct_hilog(message: &str) {
     }
 }
 
-/// Mirrors one record into hilog.
+/// Writes one record to hilog.
 ///
 /// The return value of `OH_LOG_Print` is dropped on purpose: hilog is the last
 /// channel available, so there is nowhere left to report a failure to.
