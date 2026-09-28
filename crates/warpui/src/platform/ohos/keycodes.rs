@@ -53,10 +53,6 @@ impl Modifiers {
                 if pressed {
                     self.capslock = !self.capslock;
                 }
-                log::debug!(
-                    "ohos::keycodes::Modifiers::update: capslock={}",
-                    self.capslock
-                );
                 return true;
             }
             _ => return false,
@@ -68,13 +64,6 @@ impl Modifiers {
         } else {
             self.held.remove(&code);
         }
-        log::debug!(
-            "ohos::keycodes::Modifiers::update: code={:?} pressed={pressed} -> ctrl={} alt={} shift={}",
-            event.code,
-            self.ctrl(),
-            self.alt(),
-            self.shift()
-        );
         true
     }
 
@@ -84,12 +73,6 @@ impl Modifiers {
     /// focus, so the state has to be reset on focus loss or the modifier stays
     /// stuck.
     pub fn clear_held(&mut self) {
-        if !self.held.is_empty() {
-            log::info!(
-                "ohos::keycodes::Modifiers::clear_held: dropping {} held key(s)",
-                self.held.len()
-            );
-        }
         self.held.clear();
     }
 
@@ -121,10 +104,6 @@ pub fn key_event_to_keystroke(event: &KeyEventData, modifiers: &Modifiers) -> Op
     let alt = modifiers.alt();
     let shift = modifiers.shift();
     let key = key_name(event.code, shift)?;
-    log::info!(
-        "key_event_to_keystroke: code={:?} key={key} ctrl={ctrl} alt={alt} shift={shift}",
-        event.code
-    );
     // OHOS reports no Meta/super key state, so `cmd` and `meta` stay false and
     // `cmdorctrl` bindings resolve to ctrl.
     Some(Keystroke {
@@ -157,10 +136,6 @@ pub fn key_event_to_chars(event: &KeyEventData, modifiers: &Modifiers) -> Option
     let shift = modifiers.shift();
     let base = text_base(event.code, shift, modifiers.capslock())?;
     let text = if ctrl { control_character(base)? } else { base };
-    log::debug!(
-        "key_event_to_chars: code={:?} text={text:?} ctrl={ctrl} shift={shift}",
-        event.code
-    );
     Some(text.to_string())
 }
 

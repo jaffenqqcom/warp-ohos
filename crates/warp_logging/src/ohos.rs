@@ -14,7 +14,15 @@
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 
-use log::{Log, Metadata, Record};
+use log::{Level, Log, Metadata, Record};
+
+/// Most verbose level the hilog sink emits.
+///
+/// hilog is one system-wide buffer shared with every other process, and its
+/// records are read back over `hdc`, so the `info`/`debug` traffic the
+/// `env_logger` filters allow is dropped here; only `warn` and `error` — the
+/// levels that report something going wrong — reach the buffer.
+const HILOG_MAX_LEVEL: Level = Level::Warn;
 
 /// hilog `LogType`: third-party applications always log as `LOG_APP`.
 const LOG_TYPE_APP: i32 = 0;
@@ -48,16 +56,17 @@ unsafe extern "C" {
     ) -> i32;
 }
 
-/// Wraps the `env_logger` instance so that every record it accepts reaches
-/// hilog. The wrapped logger contributes its level filters only; accepted
-/// records are not forwarded to its sink, so hilog is the sole destination.
+/// Wraps the `env_logger` instance so that every record it accepts — up to
+/// [`HILOG_MAX_LEVEL`] — reaches hilog. The wrapped logger contributes its
+/// level filters only; accepted records are not forwarded to its sink, so
+/// hilog is the sole destination.
 struct HilogLogger {
     inner: env_logger::Logger,
 }
 
 impl Log for HilogLogger {
     fn enabled(&self, metadata: &Metadata) -> bool {
-        self.inner.enabled(metadata)
+        metadata.level() <= HILOG_MAX_LEVEL && self.inner.enabled(metadata)
     }
 
     fn log(&self, record: &Record) {
@@ -79,11 +88,14 @@ impl Log for HilogLogger {
 /// `crash_reporting` are excluded there, because `sentry_log::SentryLogger`
 /// already claims the single global logger slot.
 pub(super) fn init_hilog_logger(base_logger: env_logger::Logger) {
-    let max_level = base_logger.filter();
+    // Clamping the facade's ceiling as well keeps the dropped levels from
+    // costing anything on the producing side.
+    let max_level = base_logger
+        .filter()
+        .min(HILOG_MAX_LEVEL.to_level_filter());
     log::set_boxed_logger(Box::new(HilogLogger { inner: base_logger }))
         .expect("Should not have already initialized a logger");
     log::set_max_level(max_level);
-    log::info!("warp_logging::ohos: hilog sink installed, tag={HILOG_TAG:?}");
 }
 
 /// Writes `message` straight to hilog, bypassing the `log` facade.

@@ -50,15 +50,11 @@ pub(crate) fn system_font_families() -> &'static [ScannedFontFamily] {
     static FAMILIES: OnceLock<Vec<ScannedFontFamily>> = OnceLock::new();
 
     FAMILIES.get_or_init(|| {
-        log::info!("ohos font scan: starting, directories={SYSTEM_FONT_DIRS:?}");
         let mut database = fontdb::Database::new();
         for directory in SYSTEM_FONT_DIRS {
             let path = Path::new(directory);
             if path.is_dir() {
-                log::info!("ohos font scan: loading fonts under {directory}");
                 database.load_fonts_dir(path);
-            } else {
-                log::debug!("ohos font scan: no fonts under {directory}");
             }
         }
 
@@ -90,11 +86,6 @@ pub(crate) fn system_font_families() -> &'static [ScannedFontFamily] {
             .into_iter()
             .map(|(family_name, faces)| ScannedFontFamily { family_name, faces })
             .collect::<Vec<_>>();
-        log::info!(
-            "ohos font scan: finished, {} families, {} faces",
-            families.len(),
-            families.iter().map(|family| family.faces.len()).sum::<usize>(),
-        );
         families
     })
 }

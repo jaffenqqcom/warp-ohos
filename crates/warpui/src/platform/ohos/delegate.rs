@@ -261,9 +261,6 @@ impl platform::Delegate for AppDelegate {
         let options = FileDialogOptions::new(dialog_kind)
             .allow_many(allow_many)
             .filters(filters);
-        log::info!(
-            "ohos::delegate::open_file_picker: dialog_kind={dialog_kind}, allow_many={allow_many}"
-        );
         show_file_dialog_off_thread(
             self.app.clone(),
             options,
@@ -286,13 +283,6 @@ impl platform::Delegate for AppDelegate {
         if let Some(filename) = config.default_filename.as_ref() {
             options = options.default_file_name(filename.clone());
         }
-        log::info!(
-            "ohos::delegate::open_save_file_picker: dialog_kind={}, \
-             has_default_directory={}, has_default_filename={}",
-            filepicker_dialog_type::SAVE_FILE,
-            config.default_directory.is_some(),
-            config.default_filename.is_some()
-        );
         show_file_dialog_off_thread(
             self.app.clone(),
             options,
@@ -359,7 +349,6 @@ impl platform::Delegate for AppDelegate {
         if self.pointer_style.get() == Some(style) {
             return;
         }
-        log::debug!("ohos::delegate::set_cursor_shape: cursor={cursor:?}, pointer_style={style}");
         if self.app.set_cursor_style(style) {
             self.pointer_style.set(Some(style));
         }
@@ -378,10 +367,6 @@ impl platform::Delegate for AppDelegate {
         // keyboard down while warp still holds window focus, because warp
         // requests this on every focused-view change. The request is therefore
         // only recorded; the authoritative state lives in `IME_OPEN`.
-        log::info!(
-            "ohos::delegate::close_ime_async: leaving the soft keyboard to the system; the IME \
-             status event reports the real state"
-        );
     }
 
     fn is_ime_open(&self) -> bool {
@@ -429,10 +414,6 @@ impl platform::Delegate for AppDelegate {
     fn terminate_app(&self, termination_mode: platform::TerminationMode) {
         // Leaving the ability itself is an ArkTS decision; ending warp's loop is
         // all the native side can do on its own.
-        log::info!(
-            "ohos::delegate::terminate_app: stopping warp's event loop ({termination_mode:?}); the \
-             ability keeps the process alive"
-        );
         self.send_event(AppEvent::Terminate(termination_mode));
     }
 
@@ -492,14 +473,9 @@ pub(super) fn open_ime_async() {
         log::warn!("ohos::delegate::open_ime_async: no ability app is installed");
         return;
     };
-    log::info!("ohos::delegate::open_ime_async: showing the soft keyboard");
     match app.ime() {
         Ok(client) => match crate::r#async::block_on(client.attach()) {
-            Ok(ack) if ack.accepted => {
-                log::info!(
-                    "ohos::delegate::open_ime_async: the IME session is bound to the focused editor"
-                );
-            }
+            Ok(ack) if ack.accepted => {}
             Ok(_) => {
                 log::warn!(
                     "ohos::delegate::open_ime_async: the editor has not taken focus yet, so the \
@@ -520,7 +496,6 @@ pub(super) fn open_ime_async() {
 
 /// Records the soft keyboard state the ArkTS IME plugin reported.
 pub(super) fn set_ime_open(open: bool) {
-    log::debug!("ohos::delegate::set_ime_open: open={open}");
     IME_OPEN.store(open, Ordering::Release);
 }
 
@@ -537,7 +512,6 @@ pub(crate) fn open_url_in_system(url: &str) -> bool {
         );
         return false;
     };
-    log::info!("ohos::delegate::open_url_in_system: opening {url}");
     match crate::r#async::block_on(app.open_url(url.to_owned())) {
         Ok(()) => true,
         Err(err) => {
@@ -583,7 +557,6 @@ fn open_path_with_system(path: &std::path::Path, mode: SystemOpenMode) {
     };
     let path = path.to_string_lossy().into_owned();
     let mode_name = mode.name();
-    log::info!("ohos::delegate::open_path_with_system: opening {path} with {mode_name}");
     let result = match mode {
         SystemOpenMode::RegisteredApp => crate::r#async::block_on(app.open_file(path.clone())),
         SystemOpenMode::FileManager => {
@@ -617,10 +590,6 @@ fn show_file_dialog_off_thread(
         .spawn(move || {
             let paths = match crate::r#async::block_on(app.show_file_dialog(options)) {
                 Ok(response) => {
-                    log::debug!(
-                        "ohos::delegate: the {dialog_kind} dialog picked {} entry(ies)",
-                        response.files.len()
-                    );
                     local_paths_from_uris(&response.files)
                 }
                 Err(err) => {

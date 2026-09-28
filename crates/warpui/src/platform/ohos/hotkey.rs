@@ -155,9 +155,6 @@ pub(super) fn keystroke_to_hotkey(keystroke: &Keystroke) -> Option<(Vec<i32>, i3
         return None;
     };
 
-    log::info!(
-        "ohos::hotkey: mapped '{keystroke:?}' onto pre_keys={pre_keys:?} final_key={final_key}"
-    );
     Some((pre_keys, final_key))
 }
 
@@ -199,7 +196,6 @@ pub(super) fn hotkey_to_keystroke(pre_keys: &[i32], final_key: i32) -> Option<Ke
         meta: false,
         key,
     };
-    log::info!("ohos::hotkey: rebuilt '{keystroke:?}' from the fired hotkey");
     Some(keystroke)
 }
 

@@ -24,10 +24,6 @@ thread_local! {
 
 /// Stores `app` for the platform back-end to pick up.
 pub fn set_global_app(app: OpenHarmonyApp) {
-    log::info!(
-        "ohos::global_app::set_global_app: module_name={:?}",
-        app.module_name()
-    );
     GLOBAL_APP.with(|slot| *slot.borrow_mut() = Some(app));
 }
 
@@ -35,7 +31,6 @@ pub fn set_global_app(app: OpenHarmonyApp) {
 pub fn global_app() -> Option<OpenHarmonyApp> {
     GLOBAL_APP.with(|slot| {
         let app = slot.borrow();
-        log::debug!("ohos::global_app::global_app: present={}", app.is_some());
         app.clone()
     })
 }

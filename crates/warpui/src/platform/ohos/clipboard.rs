@@ -22,7 +22,6 @@ pub struct Clipboard;
 
 impl Clipboard {
     pub fn new() -> Result<Self> {
-        log::info!("ohos::clipboard::Clipboard::new: pasteboard-backed clipboard ready");
         Ok(Self)
     }
 
@@ -57,7 +56,6 @@ impl ClipboardTrait for Clipboard {
         let images = contents.images.unwrap_or_default();
 
         if !has_text && html.is_none() && images.is_empty() {
-            log::debug!("ohos::clipboard::write: nothing to write, skipping pasteboard update");
             return;
         }
 
@@ -73,9 +71,7 @@ impl ClipboardTrait for Clipboard {
                 .collect(),
         };
 
-        if write_content(&pasteboard) {
-            log::info!("ohos::clipboard::write: the pasteboard accepted the content");
-        } else {
+        if !write_content(&pasteboard) {
             log::error!("ohos::clipboard::write: the pasteboard write failed");
         }
     }
@@ -83,7 +79,6 @@ impl ClipboardTrait for Clipboard {
     fn read(&mut self) -> ClipboardContent {
         let content = read_content();
         if content.plain_text.is_empty() && content.html.is_none() && content.images.is_empty() {
-            log::debug!("ohos::clipboard::read: the pasteboard carries nothing");
             return ClipboardContent::default();
         }
 
@@ -94,14 +89,6 @@ impl ClipboardTrait for Clipboard {
             .html
             .as_deref()
             .and_then(warpui_core::clipboard_utils::extract_filename_from_html);
-
-        log::info!(
-            "ohos::clipboard::read: {} text byte(s), paths={}, html={}, image(s)={}",
-            content.plain_text.len(),
-            paths.as_ref().map_or(0, Vec::len),
-            content.html.is_some(),
-            content.images.len()
-        );
 
         let images = (!content.images.is_empty()).then(|| {
             content

@@ -41,11 +41,6 @@ use crate::platform::app::{
 use crate::platform::{self, TerminationMode};
 use crate::{AppContext, WindowId};
 
-/// Set once a frame has reached the renderer. Frames are otherwise only
-/// reported at `debug` level, which the logger filters out on-device, so this
-/// makes "is anything being drawn at all" answerable from a hilog capture.
-static FIRST_FRAME_REPORTED: AtomicBool = AtomicBool::new(false);
-
 /// Whether the ability's window currently holds focus.
 ///
 /// The platform reports focus through several overlapping callbacks, and each
@@ -168,7 +163,6 @@ pub(super) fn channel() -> (EventSender, EventReceiver) {
 pub(super) fn register(app: &OpenHarmonyApp, sender: EventSender) {
     register_file_drop_handler(sender.clone());
     let mut translator = Translator::new(app.clone(), sender);
-    log::info!("ohos::event_loop::register: installing the ability run-loop handler");
     app.run_loop(move |event| {
         translator.handle(event);
     });
@@ -186,20 +180,15 @@ pub(super) fn register(app: &OpenHarmonyApp, sender: EventSender) {
 /// a window position, and the positionless `drag-enter` sample is superseded by
 /// the `drag-move` that follows it.
 fn register_file_drop_handler(sender: EventSender) {
-    log::info!("ohos::event_loop::register_file_drop_handler: installing the file-drop handler");
     set_filedropin_callback(Box::new(move |event| {
         let app_event = match event {
             FileDropEventData::Enter => {
-                log::debug!("ohos::event_loop::file_drop: the drag entered the window");
                 return;
             }
             FileDropEventData::Move {
                 position_x,
                 position_y,
             } => {
-                log::debug!(
-                    "ohos::event_loop::file_drop: the drag moved to ({position_x}, {position_y})"
-                );
                 AppEvent::FileDrag {
                     location: drag_position(position_x, position_y),
                 }
@@ -209,11 +198,6 @@ fn register_file_drop_handler(sender: EventSender) {
                 position_x,
                 position_y,
             } => {
-                log::info!(
-                    "ohos::event_loop::file_drop: {} file(s) dropped at ({position_x}, \
-                     {position_y})",
-                    files.len()
-                );
                 AppEvent::FileDrop {
                     uris: files,
                     location: drag_position(position_x, position_y),
@@ -301,16 +285,12 @@ impl Translator {
     }
 
     fn handle(&mut self, event: PlatformEvent<'_>) {
-        log::debug!("ohos::event_loop::Translator::handle: {}", event.as_str());
         match event {
             PlatformEvent::SurfaceCreate => {
                 // The XComponent callback registry is thread-local and the
                 // per-frame callback is delivered on this, the UI, thread, so
                 // the arm has to happen here: arming it from the warp main
                 // thread would register a callback this thread never sees.
-                log::info!(
-                    "ohos::event_loop::Translator::handle: arming the XComponent frame callback"
-                );
                 PENDING_REDRAW.store(true, Ordering::Release);
                 self.app.enable_frame_callback();
                 // A window that was already focused before its surface appeared
@@ -318,10 +298,6 @@ impl Translator {
                 // been issued before the bridge session existed. Asking again
                 // here costs one idempotent bridge call.
                 if WINDOW_FOCUSED.load(Ordering::Acquire) {
-                    log::info!(
-                        "ohos::event_loop::Translator::handle: the surface appeared while the \
-                         window was focused, requesting the soft keyboard"
-                    );
                     self.send(AppEvent::OpenImeRequested);
                 }
                 self.push_surface_created();
@@ -341,7 +317,6 @@ impl Translator {
                 // consumed, so an idle window stops waking this thread every
                 // frame; the waker arms them again when a frame is wanted.
                 if !PENDING_REDRAW.swap(false, Ordering::AcqRel) {
-                    log::debug!("ohos::event_loop::Translator::handle: parking the frame callback");
                     self.app.disable_frame_callback();
                 }
                 self.send(AppEvent::Frame {
@@ -349,10 +324,6 @@ impl Translator {
                 });
             }
             PlatformEvent::ConfigChanged(config) => {
-                log::info!(
-                    "ohos::event_loop::Translator::handle: color mode changed to {:?}",
-                    config.color_mode
-                );
                 self.send(AppEvent::ColorModeChanged(config.color_mode));
             }
             PlatformEvent::Start | PlatformEvent::GainedFocus | PlatformEvent::Resume(_) => {
@@ -361,10 +332,6 @@ impl Translator {
                 // binding the IME blocks until ArkTS answers, and ArkTS answers
                 // on this, the UI, thread -- so waiting here would deadlock.
                 if !WINDOW_FOCUSED.swap(true, Ordering::AcqRel) {
-                    log::info!(
-                        "ohos::event_loop::Translator::handle: the window gained focus, requesting \
-                         the soft keyboard"
-                    );
                     self.send(AppEvent::OpenImeRequested);
                 }
                 self.send(AppEvent::FocusChanged(true));
@@ -375,10 +342,6 @@ impl Translator {
                 self.send(AppEvent::FocusChanged(false));
             }
             PlatformEvent::VisibilityChanged(visible) => {
-                log::debug!(
-                    "ohos::event_loop::Translator::handle: the window became {}",
-                    if visible { "visible" } else { "hidden" }
-                );
                 // A titlebar minimize/hide on 2in1 fires no windowStageEvent at
                 // all -- no Stop/LostFocus on the way out, and symmetrically no
                 // Resume/GainedFocus on the way back -- so `WINDOW_FOCUSED` stays
@@ -388,15 +351,10 @@ impl Translator {
                 // session is idempotent, so a restore that does report focus only
                 // repeats the request.
                 if visible {
-                    log::info!(
-                        "ohos::event_loop::Translator::handle: the window is visible again, \
-                         requesting the soft keyboard"
-                    );
                     self.send(AppEvent::OpenImeRequested);
                 }
             }
             PlatformEvent::Destroy | PlatformEvent::WindowDestroy => {
-                log::info!("ohos::event_loop::Translator::handle: the ability was destroyed");
                 self.send(AppEvent::Terminate(TerminationMode::ForceTerminate));
             }
             PlatformEvent::Input(input) => self.handle_input(input),
@@ -405,18 +363,10 @@ impl Translator {
                 // has no producer here.
                 self.report_gap("ability save-state callbacks");
             }
-            PlatformEvent::KeyboardEvent(height) => {
-                log::debug!(
-                    "ohos::event_loop::Translator::handle: soft keyboard height changed to {height}"
-                );
+            PlatformEvent::KeyboardEvent(_) => {
                 self.report_gap("soft keyboard height changes");
             }
-            PlatformEvent::AvoidAreaChange(_) => {
-                log::debug!(
-                    "ohos::event_loop::Translator::handle: avoid-area geometry changed; the \
-                     content rect event carries the resulting size"
-                );
-            }
+            PlatformEvent::AvoidAreaChange(_) => {}
             PlatformEvent::LowMemory => {
                 log::warn!("ohos::event_loop::Translator::handle: the system is low on memory");
             }
@@ -426,9 +376,6 @@ impl Translator {
                 // when a frame is wanted again, which is what restarts the
                 // per-vsync callbacks after an idle window stopped them.
                 if PENDING_REDRAW.load(Ordering::Acquire) {
-                    log::debug!(
-                        "ohos::event_loop::Translator::handle: arming the frame callback on wake"
-                    );
                     self.app.enable_frame_callback();
                 }
             }
@@ -455,13 +402,6 @@ impl Translator {
     /// [`ModifiersState`] for them.
     fn handle_mouse(&mut self, data: &MouseEventData) {
         let position = self.device_position(data.x, data.y);
-        log::debug!(
-            "ohos::event_loop::Translator::handle_mouse: action={:?} button={:?} mask={:#x} \
-             position={position:?}",
-            data.action,
-            data.button,
-            data.button_mask
-        );
         let modifiers = modifiers_from_key_mask(data.modifiers);
         match data.action {
             MouseAction::Move => {
@@ -532,12 +472,6 @@ impl Translator {
                         position,
                         modifiers,
                     }));
-                } else {
-                    log::debug!(
-                        "ohos::event_loop::Translator::handle_mouse: no warpui event for a {:?} \
-                         release",
-                        data.button
-                    );
                 }
             }
             MouseAction::Cancel => {
@@ -550,11 +484,7 @@ impl Translator {
                 );
                 self.left_button_pressed = false;
             }
-            MouseAction::None => {
-                log::debug!(
-                    "ohos::event_loop::Translator::handle_mouse: dropping an event with no action"
-                );
-            }
+            MouseAction::None => {}
         }
     }
 
@@ -577,10 +507,6 @@ impl Translator {
             at: now,
             click_count,
         });
-        log::debug!(
-            "ohos::event_loop::Translator::click_count_for_press: button={button:?} \
-             click_count={click_count}"
-        );
         click_count
     }
 
@@ -609,12 +535,6 @@ impl Translator {
                 true,
             ),
         };
-        log::debug!(
-            "ohos::event_loop::Translator::handle_axis: tool={:?} phase={:?} delta={delta:?} \
-             precise={precise} position={position:?}",
-            data.tool_type,
-            data.scroll_phase
-        );
         self.send(AppEvent::Input(WindowEvent::ScrollWheel {
             position,
             delta,
@@ -631,39 +551,25 @@ impl Translator {
     /// focused view applies its own semantics: in a terminal, Backspace must
     /// delete through the PTY rather than inside a composition buffer.
     fn handle_ime(&mut self, event: &ImeEvent) {
-        log::debug!("ohos::event_loop::Translator::handle_ime: {event:?}");
         match event {
             ImeEvent::TextInputEvent(data) => {
                 if data.text.is_empty() {
-                    log::debug!(
-                        "ohos::event_loop::Translator::handle_ime: dropping an empty text commit"
-                    );
                     return;
                 }
                 self.send(AppEvent::Input(WindowEvent::TypedCharacters {
                     chars: data.text.clone(),
                 }));
             }
-            ImeEvent::BackspaceEvent(len) => {
-                log::debug!(
-                    "ohos::event_loop::Translator::handle_ime: backspace of {len} character(s)"
-                );
+            ImeEvent::BackspaceEvent(_) => {
                 self.send_key_press("backspace");
             }
-            ImeEvent::EnterEvent(len) => {
-                log::debug!("ohos::event_loop::Translator::handle_ime: enter, key={len}");
+            ImeEvent::EnterEvent(_) => {
                 self.send_key_press("enter");
             }
-            ImeEvent::DeleteRightEvent(len) => {
-                log::debug!(
-                    "ohos::event_loop::Translator::handle_ime: forward delete of {len} character(s)"
-                );
+            ImeEvent::DeleteRightEvent(_) => {
                 self.send_key_press("delete");
             }
             ImeEvent::ImeStatusEvent(status) => {
-                log::info!(
-                    "ohos::event_loop::Translator::handle_ime: the soft keyboard is now {status:?}"
-                );
                 super::delegate::set_ime_open(matches!(status, KeyboardStatus::Show));
             }
         }
@@ -671,7 +577,6 @@ impl Translator {
 
     /// Delivers a modifier-free key press for an IME editing key.
     fn send_key_press(&self, key: &str) {
-        log::info!("ohos::event_loop::Translator::send_key_press: key={key}");
         // An IME reports Enter by name only, so the CR byte the pty needs has to
         // be filled in here, matching the winit back-end.
         let chars = match key.to_lowercase().as_str() {
@@ -717,40 +622,22 @@ impl Translator {
             .iter()
             .filter(|point| point.is_pressed)
             .count();
-        log::debug!(
-            "ohos::event_loop::Translator::handle_touch: type={:?} points={point_count} \
-             reported_points={} position={position:?}",
-            data.event_type,
-            data.num_points
-        );
         match data.event_type {
             TouchEvent::Down => self.touch_down(position, point_count),
             TouchEvent::Move => self.touch_move(position, point_count),
             TouchEvent::Up => self.touch_up(position),
             TouchEvent::Cancel => self.touch_cancel(),
-            TouchEvent::Unknown => {
-                log::debug!(
-                    "ohos::event_loop::Translator::handle_touch: dropping a touch with an unknown \
-                     type"
-                );
-            }
+            TouchEvent::Unknown => {}
         }
     }
 
     /// Starts a gesture. A second finger down cannot be a tap.
     fn touch_down(&mut self, position: Vector2F, point_count: usize) {
         if point_count > 1 {
-            log::debug!(
-                "ohos::event_loop::Translator::touch_down: {point_count} fingers down, not a tap"
-            );
             self.touch = TouchGesture::Idle;
             return;
         }
         let click_count = self.click_count_for_press(MouseButton::LeftButton);
-        log::info!(
-            "ohos::event_loop::Translator::touch_down: position={position:?} \
-             click_count={click_count}"
-        );
         self.touch = TouchGesture::Pending {
             start: position,
             started_at: Instant::now(),
@@ -768,12 +655,7 @@ impl Translator {
     /// continues whichever gesture it became.
     fn touch_move(&mut self, position: Vector2F, point_count: usize) {
         match self.touch {
-            TouchGesture::Idle => {
-                log::debug!(
-                    "ohos::event_loop::Translator::touch_move: dropping a move with no touch in \
-                     progress"
-                );
-            }
+            TouchGesture::Idle => {}
             TouchGesture::Pending {
                 start,
                 click_count,
@@ -782,10 +664,6 @@ impl Translator {
                 if point_count > 1 {
                     // The gesture changed shape, so it is no longer the tap
                     // that the press announced.
-                    log::info!(
-                        "ohos::event_loop::Translator::touch_move: {point_count} fingers, \
-                         withdrawing the pending tap"
-                    );
                     self.touch = TouchGesture::Idle;
                     self.send(AppEvent::Input(WindowEvent::LeftMouseUp {
                         position,
@@ -799,20 +677,12 @@ impl Translator {
                     return;
                 }
                 if click_count >= 2 {
-                    log::info!(
-                        "ohos::event_loop::Translator::touch_move: a drag after {click_count} \
-                         clicks selects from {start:?}"
-                    );
                     self.touch = TouchGesture::Select;
                     self.send(AppEvent::Input(WindowEvent::LeftMouseDragged {
                         position,
                         modifiers: ModifiersState::default(),
                     }));
                 } else {
-                    log::info!(
-                        "ohos::event_loop::Translator::touch_move: a one-finger drag scrolls \
-                         from {start:?}"
-                    );
                     self.touch = TouchGesture::Scroll { last: position };
                     self.send(AppEvent::Input(WindowEvent::ScrollWheel {
                         position,
@@ -852,10 +722,6 @@ impl Translator {
             } => {
                 let held = started_at.elapsed();
                 if held >= LONG_PRESS_DURATION {
-                    log::info!(
-                        "ohos::event_loop::Translator::touch_up: a hold of {held:?} opens the \
-                         context menu"
-                    );
                     self.send(AppEvent::Input(WindowEvent::RightMouseDown {
                         position,
                         cmd: false,
@@ -877,16 +743,8 @@ impl Translator {
             }
             TouchGesture::Scroll { .. } => {
                 // Scrolling has no button to release, so nothing follows.
-                log::debug!(
-                    "ohos::event_loop::Translator::touch_up: ending a scroll without an event"
-                );
             }
-            TouchGesture::Idle => {
-                log::debug!(
-                    "ohos::event_loop::Translator::touch_up: dropping an up with no touch in \
-                     progress"
-                );
-            }
+            TouchGesture::Idle => {}
         }
         self.touch = TouchGesture::Idle;
     }
@@ -894,11 +752,6 @@ impl Translator {
     /// Drops a gesture the platform withdrew. Nothing is emitted, because the
     /// system has already taken the touch over.
     fn touch_cancel(&mut self) {
-        if !matches!(self.touch, TouchGesture::Idle) {
-            log::info!(
-                "ohos::event_loop::Translator::touch_cancel: the platform withdrew the touch"
-            );
-        }
         self.touch = TouchGesture::Idle;
     }
 
@@ -911,10 +764,6 @@ impl Translator {
         let is_modifier = self.modifiers.update(event);
         if is_modifier {
             let Some(key_code) = modifier_keycode(event.code) else {
-                log::debug!(
-                    "ohos::event_loop::Translator::handle_key: lock key {:?} toggled, no keystroke",
-                    event.code
-                );
                 return;
             };
             let state = match event.action {
@@ -968,15 +817,10 @@ impl Translator {
         };
         let rect = self.app.content_rect();
         let size = Vector2F::new(rect.width as f32, rect.height as f32);
-        log::info!(
-            "ohos::event_loop::Translator::push_surface_created: surface size={size:?} scale={}",
-            self.app.scale()
-        );
         self.send(AppEvent::SurfaceCreated { window, size });
     }
 
     fn resize(&mut self, size: Vector2F) {
-        log::info!("ohos::event_loop::Translator::resize: physical size={size:?}");
         self.send(AppEvent::Resized(size));
     }
 
@@ -1139,15 +983,8 @@ fn process_event(
                 notify_window_resized(ui_app, callbacks);
             }
         }
-        AppEvent::Frame { time_stamp } => {
-            log::debug!("ohos::event_loop::process_event: frame time_stamp={time_stamp}");
-            if !FIRST_FRAME_REPORTED.swap(true, Ordering::Relaxed) {
-                log::info!("ohos::event_loop::process_event: the first frame reached the renderer");
-            }
+        AppEvent::Frame { .. } => {
             let Some(window_id) = active_window_id(callbacks) else {
-                log::warn!(
-                    "ohos::event_loop::process_event: dropping frame because no window is active"
-                );
                 return ControlFlow::Continue(());
             };
             let Some(window_handle) = ui_app.read(|ctx| ctx.windows().platform_window(window_id))
@@ -1187,16 +1024,48 @@ fn process_event(
         AppEvent::FocusChanged(true) => callbacks.app_became_active(),
         AppEvent::FocusChanged(false) => callbacks.app_resigned_active(),
         AppEvent::OpenImeRequested => super::delegate::open_ime_async(),
-        AppEvent::Input(input) => dispatch_to_active_window(ui_app, callbacks, "input", input),
-        AppEvent::FileDrag { location } => dispatch_to_active_window(
-            ui_app,
-            callbacks,
-            "a file drag",
-            WindowEvent::DragFiles { location },
-        ),
+        AppEvent::Input(input) => {
+            // The GUI front-ends insert printable text only through
+            // `TypedCharacters`: the terminal's `KeyDown` handler deliberately
+            // declines printable characters so that one can follow. The OHOS IME
+            // converts only some physical keys to text — the main-keyboard digit
+            // row arrives as a bare key event with no IME text — so a press that
+            // no view handled falls back to the text the key event carries, as
+            // the winit back-end and the integration-test driver do. Keys the IME
+            // does convert never reach here: it consumes their key-down while
+            // producing the text, so this cannot double-insert.
+            let fallback_chars = match &input {
+                WindowEvent::KeyDown {
+                    keystroke,
+                    chars,
+                    is_composing,
+                    ..
+                } if !*is_composing && !keystroke.cmd && !chars.is_empty() => Some(chars.clone()),
+                _ => None,
+            };
+            let handled = dispatch_to_active_window(ui_app, callbacks, "input", input);
+            if handled == Some(false)
+                && let Some(chars) = fallback_chars
+            {
+                dispatch_to_active_window(
+                    ui_app,
+                    callbacks,
+                    "input text",
+                    WindowEvent::TypedCharacters { chars },
+                );
+            }
+        }
+        AppEvent::FileDrag { location } => {
+            let _ = dispatch_to_active_window(
+                ui_app,
+                callbacks,
+                "a file drag",
+                WindowEvent::DragFiles { location },
+            );
+        }
         AppEvent::FileDrop { uris, location } => {
             let paths = super::delegate::local_paths_from_uris(&uris);
-            dispatch_to_active_window(
+            let _ = dispatch_to_active_window(
                 ui_app,
                 callbacks,
                 "a file drop",
@@ -1204,7 +1073,7 @@ fn process_event(
             );
             // OHOS reports no drag-leave, so the drop is also the end of the
             // drag session; the exit closes the state the drag events opened.
-            dispatch_to_active_window(
+            let _ = dispatch_to_active_window(
                 ui_app,
                 callbacks,
                 "a file drop exit",
@@ -1215,30 +1084,33 @@ fn process_event(
     ControlFlow::Continue(())
 }
 
-/// Dispatches `event` to the active window.
+/// Dispatches `event` to the active window, returning whether a view handled it.
 ///
-/// Drops the event, with a warning naming `what`, when no window is focused or
-/// the active window has gone away.
+/// Returns `None` when the event is dropped, with a warning naming `what`,
+/// because no window is focused or the active window has gone away.
 fn dispatch_to_active_window(
     ui_app: &crate::App,
     callbacks: &mut AppCallbackDispatcher,
     what: &str,
     event: WindowEvent,
-) {
+) -> Option<bool> {
     let Some(window_id) = active_window_id(callbacks) else {
         log::warn!("ohos::event_loop::process_event: dropping {what} because no window is active");
-        return;
+        return None;
     };
     let Some(window_handle) = ui_app.read(|ctx| ctx.windows().platform_window(window_id)) else {
         log::warn!(
             "ohos::event_loop::process_event: dropping {what} because the active window does not \
              exist"
         );
-        return;
+        return None;
     };
-    callbacks
-        .for_window(window_handle.as_ref())
-        .dispatch_event(event);
+    Some(
+        callbacks
+            .for_window(window_handle.as_ref())
+            .dispatch_event(event)
+            .handled,
+    )
 }
 
 /// The [`WindowId`] of the active window, or `None` when nothing is focused.
@@ -1288,7 +1160,6 @@ fn for_each_window(ui_app: &crate::App, mut apply: impl FnMut(&dyn platform::Win
 #[cfg(not(target_family = "wasm"))]
 fn setup_signal_handler(sender: EventSender) {
     let result = ctrlc::set_handler(move || {
-        log::info!("Received Ctrl-C signal on OHOS, terminating application");
         if sender
             .send(AppEvent::Terminate(TerminationMode::ForceTerminate))
             .is_err()

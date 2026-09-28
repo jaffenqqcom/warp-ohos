@@ -56,15 +56,8 @@ const TERMINFO_SUBDIR: &str = "share/terminfo";
 #[ability]
 pub fn launch_app(app: openharmony_ability::OpenHarmonyApp) {
     // `warp::run()` installs the global logger, so `log::` records emitted
-    // before that point are dropped and hilog only shows them through
-    // `direct_hilog`. Both calls are kept deliberately: a device log that shows
-    // the direct line but not the `log::` one confirms the redirect is not live
-    // yet, and a log with neither says the hilog link itself is broken.
-    log::info!(
-        "launch_app: entry, base_path={:?}, pref_path={:?}",
-        app.base_path(),
-        app.pref_path()
-    );
+    // before that point are dropped; `direct_hilog` is the only channel that
+    // reaches the device log this early.
     warp_logging::direct_hilog(&format!(
         "launch_app: entry, base_path={:?}, pref_path={:?}",
         app.base_path(),
@@ -92,7 +85,7 @@ pub fn launch_app(app: openharmony_ability::OpenHarmonyApp) {
         prepare_process_environment(&app);
         install_channel_state();
         match warp::run() {
-            Ok(()) => log::info!("launch_app: warp::run returned normally"),
+            Ok(()) => {}
             // The alternate form prints the whole context chain, not just the
             // outermost message: the terminal server's spawn failure is wrapped
             // several layers deep, and the outer message alone does not say why.
@@ -129,17 +122,15 @@ fn register_bridge_plugins(app: &openharmony_ability::OpenHarmonyApp) {
     register_bridge_plugin(app, UrlBridgePlugin);
 }
 
-/// Registers one facade, reporting the outcome through both the logger and
-/// hilog. The `log::` records are dropped until `warp::run()` installs the
-/// logger, and registration happens before that, so the direct hilog line is the
-/// one that actually reaches the device log.
+/// Registers one facade, reporting the outcome through hilog. Registration
+/// happens before `warp::run()` installs the logger, so the direct hilog line is
+/// the one that actually reaches the device log.
 fn register_bridge_plugin<P: openharmony_ability::BridgePlugin>(
     app: &openharmony_ability::OpenHarmonyApp,
     plugin: P,
 ) {
     match app.register_plugin(plugin) {
         Ok(()) => {
-            log::info!("register_bridge_plugin: {} is registered", P::ID);
             warp_logging::direct_hilog(&format!(
                 "register_bridge_plugin: {} is registered",
                 P::ID
@@ -166,7 +157,6 @@ fn prepare_process_environment(app: &openharmony_ability::OpenHarmonyApp) {
     unsafe {
         std::env::set_var(WARP_SHELL_PATH_ENV, TERMINAL_SHELL_PATH);
     }
-    log::info!("prepare_process_environment: {WARP_SHELL_PATH_ENV}={TERMINAL_SHELL_PATH}");
 
     // `openharmony-ability` no longer carries a user-chosen home directory: it
     // was removed from `AbilityInitContext` upstream, so the ArkTS host has no
@@ -177,7 +167,6 @@ fn prepare_process_environment(app: &openharmony_ability::OpenHarmonyApp) {
             unsafe {
                 std::env::set_var("HOME", &home);
             }
-            log::info!("prepare_process_environment: HOME={home}");
         }
         None => log::warn!("prepare_process_environment: no base path to use as HOME"),
     }
@@ -263,7 +252,6 @@ fn point_shell_at_bundled_terminfo() {
 fn append_path_entry(entry: &str) {
     let current = std::env::var("PATH").unwrap_or_default();
     if current.split(':').any(|existing| existing == entry) {
-        log::info!("append_path_entry: {entry} already on PATH");
         return;
     }
     let updated = if current.is_empty() {
@@ -274,7 +262,6 @@ fn append_path_entry(entry: &str) {
     unsafe {
         std::env::set_var("PATH", &updated);
     }
-    log::info!("append_path_entry: PATH={updated}");
 }
 
 /// Installs the OSS channel configuration that `warp::run()` requires to be set
@@ -297,5 +284,4 @@ fn install_channel_state() {
         state = state.with_additional_features(warp_core::features::DEBUG_FLAGS);
     }
     ChannelState::set(state);
-    log::info!("install_channel_state: OSS channel state installed");
 }

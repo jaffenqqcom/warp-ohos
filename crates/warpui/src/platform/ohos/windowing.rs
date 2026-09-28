@@ -47,7 +47,6 @@ pub(super) struct WindowManager {
 
 impl WindowManager {
     pub(super) fn new(app: OpenHarmonyApp, event_sender: EventSender) -> Self {
-        log::info!("ohos::windowing::WindowManager::new");
         Self {
             app,
             event_sender,
@@ -78,10 +77,6 @@ impl warpui_core::platform::WindowManager for WindowManager {
         window_options: WindowOptions,
         callbacks: WindowCallbacks,
     ) -> Result<()> {
-        log::info!(
-            "ohos::windowing::WindowManager::open_window: window_id={window_id:?} bounds={:?}",
-            window_options.bounds
-        );
         if !self.windows.is_empty() {
             // The ability mounts a single XComponent, so there is no surface for
             // a second window to bind to. Surface creation is logged rather than
@@ -110,7 +105,6 @@ impl warpui_core::platform::WindowManager for WindowManager {
     }
 
     fn remove_window(&mut self, window_id: WindowId) {
-        log::info!("ohos::windowing::WindowManager::remove_window: window_id={window_id:?}");
         self.windows.remove(&window_id);
         if *self.active_window.borrow() == Some(window_id) {
             self.set_active_window(None);
@@ -124,10 +118,6 @@ impl warpui_core::platform::WindowManager for WindowManager {
         // keeps `show_or_hide_non_quake_mode_windows` toggling instead of always
         // taking the hide branch.
         if !openharmony_ability::window_visibility() {
-            log::debug!(
-                "ohos::windowing::WindowManager::active_window_id: the window is not visible, \
-                 reporting no active window"
-            );
             return None;
         }
         *self.active_window.borrow()
@@ -144,9 +134,6 @@ impl warpui_core::platform::WindowManager for WindowManager {
     }
 
     fn activate_app(&self, last_active_window: Option<WindowId>) -> Option<WindowId> {
-        log::info!(
-            "ohos::windowing::WindowManager::activate_app: last_active_window={last_active_window:?}"
-        );
         if !openharmony_ability::show_and_focus_main_window() {
             log::warn!(
                 "ohos::windowing::WindowManager::activate_app: the ArkTS main-window actions are \
@@ -162,9 +149,6 @@ impl warpui_core::platform::WindowManager for WindowManager {
         window_id: WindowId,
         _behavior: platform::WindowFocusBehavior,
     ) {
-        log::info!(
-            "ohos::windowing::WindowManager::show_window_and_focus_app: window_id={window_id:?}"
-        );
         if !openharmony_ability::show_and_focus_main_window() {
             log::warn!(
                 "ohos::windowing::WindowManager::show_window_and_focus_app: the ArkTS main-window \
@@ -175,7 +159,6 @@ impl warpui_core::platform::WindowManager for WindowManager {
     }
 
     fn hide_app(&self) {
-        log::info!("ohos::windowing::WindowManager::hide_app: minimizing the main window");
         // Clearing the active window is what makes the shortcut toggle back: the
         // caller hides while a window is active and shows otherwise, so a leftover
         // id would keep every later press on the hide branch. Dropping the id
@@ -202,18 +185,9 @@ impl warpui_core::platform::WindowManager for WindowManager {
         }
     }
 
-    fn set_all_windows_background_blur_radius(&self, _blur_radius_pixels: u8) {
-        log::debug!(
-            "ohos::windowing::WindowManager::set_all_windows_background_blur_radius: the OHOS \
-             back-end does not support background blur"
-        );
-    }
+    fn set_all_windows_background_blur_radius(&self, _blur_radius_pixels: u8) {}
 
-    fn set_window_title(&self, _window_id: WindowId, _title: &str) {
-        log::debug!(
-            "ohos::windowing::WindowManager::set_window_title: OHOS draws no native title bar"
-        );
-    }
+    fn set_window_title(&self, _window_id: WindowId, _title: &str) {}
 
     fn close_window_async(
         &self,
@@ -366,7 +340,6 @@ impl Window {
             );
             return;
         }
-        log::info!("ohos::windowing::Window::attach_surface: size={size:?}");
         self.surface_size.set(size);
         // A zero-sized surface cannot be configured, so keep the swap chain at a
         // minimal size until the first real resize arrives.
@@ -418,7 +391,6 @@ impl Window {
             );
             return;
         }
-        log::info!("ohos::windowing::Window::detach_surface");
         let _ = self.rendering_resources.borrow_mut().take();
         self.surface_size.set(Vector2F::zero());
         self.configured_surface_size.set(Vector2F::zero());
@@ -429,10 +401,6 @@ impl Window {
         if self.surface_size.get() == size {
             return false;
         }
-        log::info!(
-            "ohos::windowing::Window::set_surface_size: {size:?} (was {:?})",
-            self.surface_size.get()
-        );
         self.surface_size.set(size);
         self.surface_requires_reconfiguration.set(true);
         true
@@ -454,7 +422,6 @@ impl Window {
         {
             return Ok(());
         }
-        log::debug!("ohos::windowing::Window::update_size_if_needed: reconfiguring to {size:?}");
         rendering.resources.update_surface_size(size)?;
         self.configured_surface_size.set(size);
         self.surface_requires_reconfiguration.set(false);
@@ -473,15 +440,11 @@ impl Window {
         }
 
         let Some(scene) = scene.clone() else {
-            log::debug!(
-                "ohos::windowing::Window::render: a frame was requested but no scene is available"
-            );
             return Ok(());
         };
 
         let mut rendering = self.rendering_resources.borrow_mut();
         let Some(rendering) = rendering.as_mut() else {
-            log::debug!("ohos::windowing::Window::render: no surface is attached");
             return Ok(());
         };
 
@@ -511,19 +474,11 @@ impl Window {
 }
 
 impl platform::Window for Window {
-    fn minimize(&self) {
-        log::debug!("ohos::windowing::Window::minimize: OHOS has no per-window minimize");
-    }
+    fn minimize(&self) {}
 
-    fn toggle_maximized(&self) {
-        log::debug!("ohos::windowing::Window::toggle_maximized: the ability is always full-screen");
-    }
+    fn toggle_maximized(&self) {}
 
-    fn toggle_fullscreen(&self) {
-        log::debug!(
-            "ohos::windowing::Window::toggle_fullscreen: full-screen mode is owned by the ability"
-        );
-    }
+    fn toggle_fullscreen(&self) {}
 
     fn fullscreen_state(&self) -> platform::FullscreenState {
         self.fullscreen_state.get()
@@ -600,7 +555,6 @@ impl platform::WindowContext for Window {
         // The frame callback is armed on the UI thread while this runs on the
         // warp main thread, so record the demand where that thread can see it
         // and wake it, which re-arms the callback after an idle stop.
-        log::debug!("ohos::windowing::Window::request_redraw: waking the UI thread for a frame");
         PENDING_REDRAW.store(true, Ordering::Release);
         self.waker.wake();
     }
@@ -613,9 +567,6 @@ impl platform::WindowContext for Window {
         // The capture rides on the next rendered frame, so the UI thread has to
         // be woken the same way `request_redraw` does: without this an idle
         // window's frame callback stays parked and the capture never happens.
-        log::debug!(
-            "ohos::windowing::Window::request_frame_capture: waking the UI thread for a capture"
-        );
         PENDING_REDRAW.store(true, Ordering::Release);
         self.waker.wake();
     }
