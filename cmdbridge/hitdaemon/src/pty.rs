@@ -288,10 +288,13 @@ pub async fn run_pty_shell(
     drop(slave);
 
     // The shell leads its own session (see the pre_exec above), so its pid is
-    // also its process-group id. Recording that group is what lets a terminal's
-    // whole tree go down with the client that opened it.
+    // also its process-group id and its session id. Recording the group reaches
+    // the shell; recording the session reaches the jobs its control of the
+    // terminal puts in further groups, so the whole tree goes down with the
+    // client that opened it.
     let shell_pgid = child.id().unwrap_or(0) as i32;
     crate::peers::add_group(client_id, shell_pgid);
+    crate::peers::add_session(client_id, shell_pgid);
 
     let master_for_input =
         match set_nonblocking(master_for_input.as_raw_fd()).and_then(|()| AsyncFd::new(master_for_input)) {
@@ -300,6 +303,7 @@ pub async fn run_pty_shell(
             log::error!("pty: master write side channel={channel}: {err}");
             let _ = child.kill().await;
             crate::peers::drop_group(client_id, shell_pgid);
+            crate::peers::drop_session(client_id, shell_pgid);
             // SAFETY: close the raw fd we own.
             unsafe { libc::close(master_fd) };
             let _ = handle.channel_failure(channel).await;
@@ -328,6 +332,7 @@ pub async fn run_pty_shell(
             log::error!("pty: async master read channel={channel}: {err}");
             let _ = child.kill().await;
             crate::peers::drop_group(client_id, shell_pgid);
+            crate::peers::drop_session(client_id, shell_pgid);
             MASTERS
                 .lock()
                 .unwrap_or_else(|p| p.into_inner())
@@ -374,7 +379,13 @@ pub async fn run_pty_shell(
     // disconnect never leaves an orphan shell behind. A kill that fails here
     // has already exited, which is the case being handled.
     let _ = child.kill().await;
+    // The reaped shell took nothing with it: job control had put the jobs it
+    // was running in their own process groups, so they are not covered by
+    // signalling the shell. Tear down the whole session, so the terminal's tree
+    // does not outlive the terminal.
+    crate::peers::kill_session(shell_pgid);
     crate::peers::drop_group(client_id, shell_pgid);
+    crate::peers::drop_session(client_id, shell_pgid);
     MASTERS
         .lock()
         .unwrap_or_else(|p| p.into_inner())
