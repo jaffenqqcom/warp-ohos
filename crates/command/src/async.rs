@@ -17,6 +17,10 @@ pub struct Command {
     stdin_is_default: bool,
     stdout_is_default: bool,
     stderr_is_default: bool,
+    /// How this command is routed on HarmonyOS, where a program the sandbox
+    /// cannot resolve is run through the bridge instead.
+    #[cfg(target_env = "ohos")]
+    routing: crate::ohos::Routing,
 }
 
 impl fmt::Debug for Command {
@@ -40,8 +44,16 @@ impl Command {
     /// ```
     pub fn new<S: AsRef<OsStr>>(program: S) -> Command {
         let program = crate::wsl::translate_program_for_spawn(program.as_ref());
-        let inner = async_process::Command::new(program);
-        Self::new_internal(inner)
+        #[cfg(target_env = "ohos")]
+        {
+            let (inner, routing) = crate::ohos::start_async_command(&program);
+            return Self::new_internal(inner, routing);
+        }
+        #[cfg(not(target_env = "ohos"))]
+        {
+            let inner = async_process::Command::new(program);
+            Self::new_internal(inner)
+        }
     }
 
     /// Same as new, but makes this process the leader of a new session with
@@ -53,6 +65,9 @@ impl Command {
     #[cfg(unix)]
     pub fn new_with_session<S: AsRef<OsStr>>(program: S) -> Command {
         let program = crate::wsl::translate_program_for_spawn(program.as_ref());
+        #[cfg(target_env = "ohos")]
+        let (mut command, routing) = crate::ohos::start_blocking_command(&program);
+        #[cfg(not(target_env = "ohos"))]
         let mut command = std::process::Command::new(program);
 
         // SAFETY: `pre_exec` requires the closure to be async-signal-safe.
@@ -71,6 +86,9 @@ impl Command {
         }
 
         let inner: async_process::Command = command.into();
+        #[cfg(target_env = "ohos")]
+        return Self::new_internal(inner, routing);
+        #[cfg(not(target_env = "ohos"))]
         Self::new_internal(inner)
     }
 
@@ -80,6 +98,9 @@ impl Command {
     /// when we kill this process.
     pub fn new_with_process_group<S: AsRef<OsStr>>(program: S) -> Command {
         let program = crate::wsl::translate_program_for_spawn(program.as_ref());
+        #[cfg(target_env = "ohos")]
+        let (mut command, routing) = crate::ohos::start_blocking_command(&program);
+        #[cfg(not(target_env = "ohos"))]
         #[allow(unused_mut)]
         let mut command = std::process::Command::new(program);
 
@@ -92,11 +113,17 @@ impl Command {
         std::os::unix::process::CommandExt::process_group(&mut command, 0);
 
         let inner: async_process::Command = command.into();
+        #[cfg(target_env = "ohos")]
+        return Self::new_internal(inner, routing);
+        #[cfg(not(target_env = "ohos"))]
         Self::new_internal(inner)
     }
 
     #[allow(unused_mut)]
-    fn new_internal(mut inner: async_process::Command) -> Command {
+    fn new_internal(
+        mut inner: async_process::Command,
+        #[cfg(target_env = "ohos")] routing: crate::ohos::Routing,
+    ) -> Command {
         #[cfg(all(windows, not(feature = "test-util")))]
         {
             use async_process::windows::CommandExt;
@@ -112,6 +139,8 @@ impl Command {
             stdin_is_default: true,
             stdout_is_default: true,
             stderr_is_default: true,
+            #[cfg(target_env = "ohos")]
+            routing,
         }
     }
 
@@ -127,7 +156,9 @@ impl Command {
     /// cmd.arg("world");
     /// ```
     pub fn arg<S: AsRef<OsStr>>(&mut self, arg: S) -> &mut Command {
-        self.inner.arg(arg);
+        self.inner.arg(arg.as_ref());
+        #[cfg(target_env = "ohos")]
+        self.routing.push_arg(arg.as_ref());
         self
     }
 
@@ -146,8 +177,19 @@ impl Command {
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
     {
-        self.inner.args(args);
-        self
+        #[cfg(target_env = "ohos")]
+        {
+            for arg in args {
+                self.inner.arg(arg.as_ref());
+                self.routing.push_arg(arg.as_ref());
+            }
+            return self;
+        }
+        #[cfg(not(target_env = "ohos"))]
+        {
+            self.inner.args(args);
+            self
+        }
     }
 
     /// Configures an environment variable for the new process.
@@ -168,7 +210,9 @@ impl Command {
         K: AsRef<OsStr>,
         V: AsRef<OsStr>,
     {
-        self.inner.env(key, val);
+        self.inner.env(key.as_ref(), val.as_ref());
+        #[cfg(target_env = "ohos")]
+        self.routing.set_environment(key.as_ref(), val.as_ref());
         self
     }
 
@@ -191,8 +235,19 @@ impl Command {
         K: AsRef<OsStr>,
         V: AsRef<OsStr>,
     {
-        self.inner.envs(vars);
-        self
+        #[cfg(target_env = "ohos")]
+        {
+            for (key, value) in vars {
+                self.inner.env(key.as_ref(), value.as_ref());
+                self.routing.set_environment(key.as_ref(), value.as_ref());
+            }
+            return self;
+        }
+        #[cfg(not(target_env = "ohos"))]
+        {
+            self.inner.envs(vars);
+            self
+        }
     }
 
     /// Removes an environment variable mapping.
@@ -206,7 +261,9 @@ impl Command {
     /// cmd.env_remove("PATH");
     /// ```
     pub fn env_remove<K: AsRef<OsStr>>(&mut self, key: K) -> &mut Command {
-        self.inner.env_remove(key);
+        self.inner.env_remove(key.as_ref());
+        #[cfg(target_env = "ohos")]
+        self.routing.remove_environment(key.as_ref());
         self
     }
 
@@ -222,6 +279,8 @@ impl Command {
     /// ```
     pub fn env_clear(&mut self) -> &mut Command {
         self.inner.env_clear();
+        #[cfg(target_env = "ohos")]
+        self.routing.clear_environment();
         self
     }
 
@@ -243,11 +302,21 @@ impl Command {
     /// Returns the path to the program configured for this command.
     #[must_use]
     pub fn get_program(&self) -> &OsStr {
+        #[cfg(target_env = "ohos")]
+        return self.routing.program();
+        #[cfg(not(target_env = "ohos"))]
         self.inner.get_program()
     }
 
     /// Returns the arguments configured for this command.
     pub fn get_args(&self) -> impl Iterator<Item = &OsStr> {
+        #[cfg(target_env = "ohos")]
+        return self
+            .routing
+            .args()
+            .iter()
+            .map(std::ffi::OsString::as_os_str);
+        #[cfg(not(target_env = "ohos"))]
         self.inner.get_args()
     }
 
@@ -361,6 +430,8 @@ impl Command {
     /// # std::io::Result::Ok(()) });
     /// ```
     pub fn spawn(&mut self) -> io::Result<Child> {
+        #[cfg(target_env = "ohos")]
+        self.routing.apply_to_async(&mut self.inner);
         if self.stdin_is_default {
             self.inner.stdin(Stdio::null());
         }
@@ -392,6 +463,8 @@ impl Command {
     /// # std::io::Result::Ok(()) });
     /// ```
     pub fn status(&mut self) -> impl Future<Output = io::Result<ExitStatus>> {
+        #[cfg(target_env = "ohos")]
+        self.routing.apply_to_async(&mut self.inner);
         if self.stdin_is_default {
             self.inner.stdin(Stdio::null());
         }
@@ -423,6 +496,8 @@ impl Command {
     /// # std::io::Result::Ok(()) });
     /// ```
     pub fn output(&mut self) -> impl Future<Output = io::Result<Output>> {
+        #[cfg(target_env = "ohos")]
+        self.routing.apply_to_async(&mut self.inner);
         if self.stdin_is_default {
             self.inner.stdin(Stdio::null());
         }

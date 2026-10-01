@@ -15,4 +15,9 @@ pub mod unix;
 pub mod windows;
 pub mod wsl;
 
+/// Routes command execution on HarmonyOS, where the sandbox cannot exec the
+/// system's own programs.
+#[cfg(target_env = "ohos")]
+mod ohos;
+
 pub use std::process::{ExitStatus, Output, Stdio};

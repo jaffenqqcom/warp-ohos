@@ -1,4 +1,10 @@
 [toolchain]
-channel = "1.92.0"
-components = ["rustfmt", "clippy", "rust-analyzer"]
+# Pinned to the toolchain this port is actually built with (`script/ohos/bundle`
+# forces the same version). The previous 1.92.0 pin is not installed, so a bare
+# `cargo` in this repo fails, and on device the rustup-proxied `rust-analyzer`
+# exits as soon as warp starts it in this workspace. Only the components this
+# toolchain actually carries are listed: naming a missing one makes rustup try to
+# install it, which fails and blocks every cargo command in the repo.
+channel = "1.97.1"
+components = ["rust-analyzer"]
 profile = "minimal"

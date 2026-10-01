@@ -14,6 +14,7 @@
 //! terminal started before the daemon still gets a shell.
 
 mod logger;
+mod pipe_exec;
 
 use std::os::fd::RawFd;
 use std::os::unix::process::CommandExt;
@@ -24,6 +25,8 @@ use hitshell::{
     CommandEndpoint, ExecSpec, FdMode, RemoteCommandExecutor, RemotePty, SshCommandExecutor,
 };
 use smol::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
+
+use pipe_exec::PIPE_EXEC_FLAG;
 
 /// Program hitdaemon runs on the pty. Absolute, so hitdaemon's own PATH cannot
 /// decide which shell the bridge ends up talking to.
@@ -40,11 +43,11 @@ const FALLBACK_SHELL_PATH: &str = "/data/app/bin/zsh";
 const DEFAULT_SHELL_ARGS: &[&str] = &["-g", "--no-rcs"];
 /// Reported when hitdaemon cannot be reached. Kept verbatim: it is the only thing
 /// that tells the user how to get the privileged session back.
-const HITDAEMON_NOT_READY_MESSAGE: &str = "hitdaemon is not ready, start hitdaemon from the system command line first. 请先在系统终端工具启动hitdaemon程序。";
+pub(crate) const HITDAEMON_NOT_READY_MESSAGE: &str = "hitdaemon is not ready, start hitdaemon from the system command line first. 请先在系统终端工具启动hitdaemon程序。";
 /// How long to wait for the management handshake before giving up. A daemon that
 /// is not running is reported at once, because the connection is refused; this
 /// only bounds a listener that accepts and then never answers.
-const READY_TIMEOUT: Duration = Duration::from_secs(10);
+pub(crate) const READY_TIMEOUT: Duration = Duration::from_secs(10);
 /// How often the local window size is compared against the size the remote pty
 /// was last told.
 const RESIZE_POLL: Duration = Duration::from_millis(200);
@@ -58,17 +61,29 @@ const RELAY_CHUNK: usize = 8192;
 /// own -- killed by a signal, or its session dropped. 128 is what a shell
 /// reports for an unknown termination, and it is non-zero, so the caller does
 /// not read the run as a success.
-const EXIT_WITHOUT_STATUS: i32 = 128;
+pub(crate) const EXIT_WITHOUT_STATUS: i32 = 128;
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
+    // A pipe exec carries the routed program's own arguments, and those may well
+    // include `--help` or `--log`. Dispatching it before either is scanned keeps
+    // them with the program instead of being read as this bridge's own options.
+    if args.first().map(String::as_str) == Some(PIPE_EXEC_FLAG) {
+        logger::init(false);
+        finish(pipe_exec::run(&args[1..]));
+    }
     if args.iter().any(|arg| arg == "--help") {
         print_help();
         return;
     }
     let logging = args.iter().any(|arg| arg == "--log");
     logger::init(logging);
-    match run(&args) {
+    finish(run(&args));
+}
+
+/// Reports how a run ended and exits with its status.
+fn finish(result: Result<i32, String>) -> ! {
+    match result {
         // The status is handed on rather than flattened: a caller that ran a
         // one-off command reads it to tell a command that ran from one that did
         // not, and an interactive session has no status of its own (0).
@@ -92,11 +107,16 @@ fn print_help() {
     println!("hitshell - run an interactive shell on hitdaemon from this terminal");
     println!();
     println!("Usage: hitshell [--log] [--help]");
+    println!("       hitshell --pipe-exec <program> [arg...]");
     println!();
     println!("Opens {SHELL_PROGRAM} on the running hitdaemon and connects it to the current");
     println!("terminal, or runs one `-c` command on that shell and hands back what it printed");
     println!("and the status it exited with. Without hitdaemon the bridge prints the failure and");
     println!("replaces itself with {FALLBACK_SHELL_PATH} instead.");
+    println!();
+    println!("With {PIPE_EXEC_FLAG}, the bridge instead runs <program> on hitdaemon and connects");
+    println!("this process's own standard streams to it in both directions, for as long as it");
+    println!("runs; without hitdaemon it runs the program locally instead.");
     println!();
     println!("Options:");
     println!("  --log   Add debug-level diagnostics to hilog (on the device). Without");
@@ -511,7 +531,7 @@ fn bridge(mut pty: RemotePty, opened_cols: u32, opened_rows: u32) -> Result<(), 
 /// The flush after every chunk is required, not cosmetic: `std::io::stdout` is
 /// line-buffered, so a prompt or a key echo (neither ends in a newline) would
 /// otherwise sit in the user-space buffer and never reach the terminal.
-async fn relay_to_local<R, W>(remote: &mut R, local: &mut W) -> std::io::Result<()>
+pub(crate) async fn relay_to_local<R, W>(remote: &mut R, local: &mut W) -> std::io::Result<()>
 where
     R: AsyncRead + Unpin,
     W: AsyncWrite + Unpin,
@@ -531,7 +551,7 @@ where
 }
 
 /// Copies the local terminal's input to the remote shell.
-async fn relay_to_remote<R, W>(local: &mut R, remote: &mut W) -> std::io::Result<()>
+pub(crate) async fn relay_to_remote<R, W>(local: &mut R, remote: &mut W) -> std::io::Result<()>
 where
     R: AsyncRead + Unpin,
     W: AsyncWrite + Unpin,
@@ -597,7 +617,7 @@ impl Drop for RawMode {
 /// The protocol carries text, so a directory that is not valid text -- which a
 /// caller that passes its own as text cannot produce -- is reported as none
 /// rather than sent on in a form that would name a different directory.
-fn working_directory() -> Option<String> {
+pub(crate) fn working_directory() -> Option<String> {
     match std::env::current_dir() {
         Ok(cwd) => match cwd.to_str() {
             Some(cwd) => Some(cwd.to_string()),

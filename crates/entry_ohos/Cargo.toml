@@ -15,7 +15,9 @@ path = "src/lib.rs"
 crate-type = ["cdylib"]
 
 [dependencies]
-warp.workspace = true
+# `local_fs` is what makes the editor and language-server surfaces reach the
+# local filesystem at all; without it they compile to no-ops.
+warp = { workspace = true, features = ["local_fs"] }
 warp_core.workspace = true
 # The launch path needs a hilog handle before `warp::run()` installs the
 # logger, and it reuses the redirect the logging crate owns instead of opening

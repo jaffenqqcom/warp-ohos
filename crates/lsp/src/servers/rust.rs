@@ -69,7 +69,7 @@ impl RustAnalyzerCandidate {
     /// Returns the path to the first working binary found (verified by running `--help`).
     #[cfg(feature = "local_fs")]
     pub async fn find_installed_binary_in_data_dir() -> Option<std::path::PathBuf> {
-        use tokio::process::Command;
+        use command::r#async::Command;
 
         let install_dir = warp_core::paths::data_dir().join(SERVER_NAME);
         if !install_dir.exists() {

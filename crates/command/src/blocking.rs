@@ -5,7 +5,7 @@
 use std::ffi::OsStr;
 use std::io;
 use std::path::Path;
-use std::process::{Child, CommandArgs, CommandEnvs, ExitStatus, Output, Stdio};
+use std::process::{Child, CommandEnvs, ExitStatus, Output, Stdio};
 
 #[cfg(windows)]
 use anyhow::Context as _;
@@ -24,6 +24,10 @@ pub struct Command {
     stdin_is_default: bool,
     stdout_is_default: bool,
     stderr_is_default: bool,
+    /// How this command is routed on HarmonyOS, where a program the sandbox
+    /// cannot resolve is run through the bridge instead.
+    #[cfg(target_env = "ohos")]
+    routing: crate::ohos::Routing,
 }
 
 impl Command {
@@ -71,6 +75,10 @@ impl Command {
     /// ```
     pub fn new<S: AsRef<OsStr>>(program: S) -> Command {
         let program = crate::wsl::translate_program_for_spawn(program.as_ref());
+        #[cfg(target_env = "ohos")]
+        #[cfg_attr(not(windows), expect(unused_mut))]
+        let (mut inner, routing) = crate::ohos::start_blocking_command(&program);
+        #[cfg(not(target_env = "ohos"))]
         #[cfg_attr(not(windows), expect(unused_mut))]
         let mut inner = std::process::Command::new(program);
 
@@ -91,6 +99,8 @@ impl Command {
             stdin_is_default: true,
             stdout_is_default: true,
             stderr_is_default: true,
+            #[cfg(target_env = "ohos")]
+            routing,
         }
     }
 
@@ -169,7 +179,9 @@ impl Command {
     ///     .expect("ls command failed to start");
     /// ```
     pub fn arg<S: AsRef<OsStr>>(&mut self, arg: S) -> &mut Self {
-        self.inner.arg(arg);
+        self.inner.arg(arg.as_ref());
+        #[cfg(target_env = "ohos")]
+        self.routing.push_arg(arg.as_ref());
         self
     }
 
@@ -220,8 +232,19 @@ impl Command {
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
     {
-        self.inner.args(args);
-        self
+        #[cfg(target_env = "ohos")]
+        {
+            for arg in args {
+                self.inner.arg(arg.as_ref());
+                self.routing.push_arg(arg.as_ref());
+            }
+            return self;
+        }
+        #[cfg(not(target_env = "ohos"))]
+        {
+            self.inner.args(args);
+            self
+        }
     }
 
     /// Inserts or updates an explicit environment variable mapping.
@@ -255,7 +278,9 @@ impl Command {
         K: AsRef<OsStr>,
         V: AsRef<OsStr>,
     {
-        self.inner.env(key, val);
+        self.inner.env(key.as_ref(), val.as_ref());
+        #[cfg(target_env = "ohos")]
+        self.routing.set_environment(key.as_ref(), val.as_ref());
         self
     }
 
@@ -301,8 +326,19 @@ impl Command {
         K: AsRef<OsStr>,
         V: AsRef<OsStr>,
     {
-        self.inner.envs(vars);
-        self
+        #[cfg(target_env = "ohos")]
+        {
+            for (key, value) in vars {
+                self.inner.env(key.as_ref(), value.as_ref());
+                self.routing.set_environment(key.as_ref(), value.as_ref());
+            }
+            return self;
+        }
+        #[cfg(not(target_env = "ohos"))]
+        {
+            self.inner.envs(vars);
+            self
+        }
     }
 
     /// Removes an explicitly set environment variable and prevents inheriting it from a parent
@@ -331,7 +367,9 @@ impl Command {
     ///     .expect("ls command failed to start");
     /// ```
     pub fn env_remove<K: AsRef<OsStr>>(&mut self, key: K) -> &mut Command {
-        self.inner.env_remove(key);
+        self.inner.env_remove(key.as_ref());
+        #[cfg(target_env = "ohos")]
+        self.routing.remove_environment(key.as_ref());
         self
     }
 
@@ -361,6 +399,8 @@ impl Command {
     /// ```
     pub fn env_clear(&mut self) -> &mut Command {
         self.inner.env_clear();
+        #[cfg(target_env = "ohos")]
+        self.routing.clear_environment();
         self
     }
 
@@ -497,6 +537,8 @@ impl Command {
     ///     .expect("ls command failed to start");
     /// ```
     pub fn spawn(&mut self) -> io::Result<Child> {
+        #[cfg(target_env = "ohos")]
+        self.routing.apply_to_blocking(&mut self.inner);
         if self.stdin_is_default {
             self.inner.stdin(Stdio::null());
         }
@@ -551,6 +593,8 @@ impl Command {
     /// assert!(output.status.success());
     /// ```
     pub fn output(&mut self) -> io::Result<Output> {
+        #[cfg(target_env = "ohos")]
+        self.routing.apply_to_blocking(&mut self.inner);
         if self.stdin_is_default {
             self.inner.stdin(Stdio::null());
         }
@@ -585,6 +629,8 @@ impl Command {
     /// assert!(status.success());
     /// ```
     pub fn status(&mut self) -> io::Result<ExitStatus> {
+        #[cfg(target_env = "ohos")]
+        self.routing.apply_to_blocking(&mut self.inner);
         if self.stdin_is_default {
             self.inner.stdin(Stdio::null());
         }
@@ -610,6 +656,9 @@ impl Command {
     /// ```
     #[must_use]
     pub fn get_program(&self) -> &OsStr {
+        #[cfg(target_env = "ohos")]
+        return self.routing.program();
+        #[cfg(not(target_env = "ohos"))]
         self.inner.get_program()
     }
 
@@ -630,7 +679,14 @@ impl Command {
     /// let args: Vec<&OsStr> = cmd.get_args().collect();
     /// assert_eq!(args, &["first", "second"]);
     /// ```
-    pub fn get_args(&self) -> CommandArgs<'_> {
+    pub fn get_args(&self) -> impl Iterator<Item = &OsStr> {
+        #[cfg(target_env = "ohos")]
+        return self
+            .routing
+            .args()
+            .iter()
+            .map(std::ffi::OsString::as_os_str);
+        #[cfg(not(target_env = "ohos"))]
         self.inner.get_args()
     }
 
