@@ -204,6 +204,7 @@ openharmony-ability-plugin-url = { git = "https://github.com/jaffenqqcom/openhar
 owned_ttf_parser = "0.25.0"
 resvg.workspace = true
 serde.workspace = true
+serde_json.workspace = true
 version-compare.workspace = true
 wgpu.workspace = true
 

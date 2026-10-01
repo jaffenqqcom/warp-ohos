@@ -16686,6 +16686,7 @@ dependencies = [
  "resvg",
  "rust-embed 8.7.2",
  "serde",
+ "serde_json",
  "sum_tree",
  "takecell",
  "tauri-winrt-notification",

@@ -380,8 +380,8 @@ mod loader {
             .ok_or_else(|| anyhow!("No loadable system font family named {font_family}"))
     }
 
-    pub fn fallback_fonts(family_name: &str, _properties: Properties) -> Result<Vec<FontHandle>> {
-        Ok(fallback_font_faces(family_name)
+    pub fn fallback_fonts(family_name: &str, properties: Properties) -> Result<Vec<FontHandle>> {
+        Ok(fallback_font_faces(family_name, properties)
             .into_iter()
             .map(|face| FontHandle::new(face.path.clone(), face.index, face.is_monospace))
             .collect())

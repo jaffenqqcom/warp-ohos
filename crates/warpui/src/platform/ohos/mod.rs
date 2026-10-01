@@ -14,6 +14,8 @@
 mod app;
 mod delegate;
 mod event_loop;
+mod fontcache;
+mod fontconfig;
 mod global_app;
 mod hotkey;
 mod windowing;
