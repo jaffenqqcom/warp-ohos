@@ -114,6 +114,8 @@ pub(super) enum AppEvent {
     FocusChanged(bool),
     /// The window gained focus; bind the soft keyboard to the focused editor.
     OpenImeRequested,
+    /// The focused editor's caret moved; move the IME candidate box to follow it.
+    ImeCursorPositionUpdated,
     /// An input event to dispatch to the active window.
     Input(WindowEvent),
     /// Files are being dragged over the window, at the given position.
@@ -570,7 +572,15 @@ impl Translator {
                 self.send_key_press("delete");
             }
             ImeEvent::ImeStatusEvent(status) => {
-                super::delegate::set_ime_open(matches!(status, KeyboardStatus::Show));
+                // Only the hidden→shown edge needs a fresh position: once the
+                // keyboard is up, every caret move pushes one on its own, and
+                // pushing on every repeated status event would flood the queue.
+                let was_open = super::delegate::is_ime_open();
+                let is_open = matches!(status, KeyboardStatus::Show);
+                super::delegate::set_ime_open(is_open);
+                if is_open && !was_open {
+                    self.send(AppEvent::ImeCursorPositionUpdated);
+                }
             }
         }
     }
@@ -1024,6 +1034,7 @@ fn process_event(
         AppEvent::FocusChanged(true) => callbacks.app_became_active(),
         AppEvent::FocusChanged(false) => callbacks.app_resigned_active(),
         AppEvent::OpenImeRequested => super::delegate::open_ime_async(),
+        AppEvent::ImeCursorPositionUpdated => update_ime_cursor_position(ui_app, callbacks),
         AppEvent::Input(input) => {
             // The GUI front-ends insert printable text only through
             // `TypedCharacters`: the terminal's `KeyDown` handler deliberately
@@ -1131,6 +1142,32 @@ fn notify_window_resized(ui_app: &crate::App, callbacks: &mut AppCallbackDispatc
             .window_resized(super::windowing::downcast_window(window_handle.as_ref()));
     }
     callbacks.window_resized();
+}
+
+/// Moves the IME candidate box to the active editor's caret.
+///
+/// The ArkTS plugin caches the last reported rect and only recomputes its screen
+/// position on window geometry changes, so without this push the candidate box
+/// never follows the caret.
+fn update_ime_cursor_position(ui_app: &crate::App, callbacks: &mut AppCallbackDispatcher) {
+    // The candidate box only exists while the soft keyboard is up. Gating here
+    // rather than at the notification source keeps the windowing back-end free
+    // of IME state; the event itself is cheap to drop.
+    if !super::delegate::is_ime_open() {
+        return;
+    }
+    let Some(window_id) = active_window_id(callbacks) else {
+        return;
+    };
+    let Some(window_handle) = ui_app.read(|ctx| ctx.windows().platform_window(window_id)) else {
+        return;
+    };
+    let window = super::windowing::downcast_window(window_handle.as_ref());
+    let Some(cursor) = callbacks.for_window(window).get_active_cursor_position() else {
+        return;
+    };
+    let (x, y, width, height) = window.ime_cursor_rect(&cursor);
+    super::delegate::update_ime_cursor(x, y, width, height);
 }
 
 /// Runs `apply` on the platform window of every open window.

@@ -7,7 +7,7 @@
 //! Usage:
 //!
 //! ```text
-//! cargo run --example probe --manifest-path cmdbridge/hitshell/Cargo.toml
+//! cd cmdbridge/hitshell && cargo run --example probe
 //! ```
 
 use hitshell::keys::{MGMT_CLIENT_KEY, MGMT_HOST_PUB};

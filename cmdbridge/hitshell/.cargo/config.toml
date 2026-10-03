@@ -1,0 +1,10 @@
+# Keep this crate's build output under the repository's target/, next to the
+# application's own artifacts, instead of creating a local target/ directory
+# inside the crate. This mirrors the CARGO_TARGET_DIR that script/ohos/cmdbridge
+# assigns when it builds this crate for HarmonyOS, so editor and ad-hoc host
+# cargo runs share the layout the build script already uses.
+#
+# A relative build.target-dir is resolved against the directory that holds this
+# .cargo directory, so this resolves to <repo>/target/cmdbridge/hitshell.
+[build]
+target-dir = "../../target/cmdbridge/hitshell"

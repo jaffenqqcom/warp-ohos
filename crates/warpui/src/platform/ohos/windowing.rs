@@ -23,12 +23,17 @@ use crate::platform::{self, WindowBounds, WindowOptions};
 use crate::rendering::wgpu::{Renderer, Resources, init_wgpu_instance, renderer};
 use crate::rendering::{GlyphConfig, OnGPUDeviceSelected};
 use crate::windowing::WindowCallbacks;
-use crate::{DisplayId, DisplayIdx, OptionalPlatformWindow, Scene, WindowId, fonts};
+use crate::{CursorInfo, DisplayId, DisplayIdx, OptionalPlatformWindow, Scene, WindowId, fonts};
 
 /// Default logical window size, used until the ability reports a surface size.
 const DEFAULT_LOGICAL_WIDTH: f32 = 1024.0;
 /// Default logical window height, used until the ability reports a surface size.
 const DEFAULT_LOGICAL_HEIGHT: f32 = 768.0;
+
+/// How far below the caret origin the IME candidate box is anchored, as a
+/// multiple of the font size. Mirrors the winit back-end's placement so the
+/// candidate box sits under the cursor rather than on top of it.
+const IME_CURSOR_DESCENT_FACTOR: f32 = 1.2;
 
 /// Set while warp wants a frame drawn. The demand is raised on the warp main
 /// thread while the frame callback is armed on the UI thread, so it is shared
@@ -232,7 +237,21 @@ impl warpui_core::platform::WindowManager for WindowManager {
         }
     }
 
-    fn active_cursor_position_updated(&self) {}
+    fn active_cursor_position_updated(&self) {
+        // The caret rect is read through the callback dispatcher, which only the
+        // event loop owns, so the move is handed over as an event rather than
+        // resolved here.
+        if self
+            .event_sender
+            .send(AppEvent::ImeCursorPositionUpdated)
+            .is_err()
+        {
+            log::warn!(
+                "ohos::windowing::WindowManager::active_cursor_position_updated: the event loop is \
+                 no longer running"
+            );
+        }
+    }
 
     fn windowing_system(&self) -> Option<crate::windowing::System> {
         None
@@ -326,6 +345,26 @@ impl Window {
 
     fn set_bounds(&self, rect: RectF) {
         *self.bounds.borrow_mut() = rect;
+    }
+
+    /// Converts the focused editor's caret rect into the physical,
+    /// window-relative rectangle the ArkTS IME plugin positions its candidate
+    /// box from.
+    ///
+    /// The plugin adds the window's screen position and the system title bar,
+    /// but it cannot see the XComponent's offset inside the window (status bar /
+    /// safe-area insets), so that offset is folded in here. The rect is anchored
+    /// just below the caret, matching the winit back-end.
+    pub(super) fn ime_cursor_rect(&self, cursor: &CursorInfo) -> (f64, f64, f64, f64) {
+        let scale = f64::from(self.app.scale());
+        let content = self.app.content_rect();
+        let x = f64::from(cursor.position.origin_x()) * scale + f64::from(content.left);
+        let y = f64::from(cursor.position.origin_y() + IME_CURSOR_DESCENT_FACTOR * cursor.font_size)
+            * scale
+            + f64::from(content.top);
+        let width = f64::from(cursor.font_size) * scale;
+        let height = f64::from(cursor.font_size) * scale;
+        (x, y, width, height)
     }
 
     /// Binds the ability's surface and creates the GPU resources for it.

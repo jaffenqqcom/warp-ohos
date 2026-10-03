@@ -370,7 +370,7 @@ impl platform::Delegate for AppDelegate {
     }
 
     fn is_ime_open(&self) -> bool {
-        IME_OPEN.load(Ordering::Acquire)
+        is_ime_open()
     }
 
     fn open_character_palette(&self) {
@@ -494,9 +494,35 @@ pub(super) fn open_ime_async() {
     }
 }
 
+/// Moves the system IME's candidate box to `rect`, in physical pixels relative
+/// to the window (the XComponent's in-window offset is already folded in).
+pub(super) fn update_ime_cursor(x: f64, y: f64, width: f64, height: f64) {
+    let Some(app) = super::global_app() else {
+        log::warn!("ohos::delegate::update_ime_cursor: no ability app is installed");
+        return;
+    };
+    match app.ime() {
+        Ok(client) => {
+            if let Err(err) = crate::r#async::block_on(client.update_cursor(x, y, width, height)) {
+                log::error!(
+                    "ohos::delegate::update_ime_cursor: moving the IME candidate box failed: {err}"
+                );
+            }
+        }
+        Err(err) => {
+            log::error!("ohos::delegate::update_ime_cursor: the IME bridge is unavailable: {err}");
+        }
+    }
+}
+
 /// Records the soft keyboard state the ArkTS IME plugin reported.
 pub(super) fn set_ime_open(open: bool) {
     IME_OPEN.store(open, Ordering::Release);
+}
+
+/// Whether the system soft keyboard is currently shown.
+pub(super) fn is_ime_open() -> bool {
+    IME_OPEN.load(Ordering::Acquire)
 }
 
 /// Opens `url` with the system link opener.

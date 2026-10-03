@@ -132,6 +132,7 @@ fn rich_input_submit_strategy(agent: CLIAgent) -> RichInputSubmitStrategy {
         | CLIAgent::Gemini
         | CLIAgent::Auggie
         | CLIAgent::Grok
+        | CLIAgent::CodeBuddy
         | CLIAgent::CursorCli => RichInputSubmitStrategy::DelayedEnter,
         CLIAgent::Hermes => RichInputSubmitStrategy::BracketedPaste,
         CLIAgent::Amp

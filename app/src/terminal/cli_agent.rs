@@ -143,6 +143,14 @@ const GROK_COLOR: ColorU = ColorU {
     a: 255,
 };
 
+/// CodeBuddy brand color (#00BC90, from the official CodeBuddy logo)
+const CODEBUDDY_COLOR: ColorU = ColorU {
+    r: 0,
+    g: 188,
+    b: 144,
+    a: 255,
+};
+
 /// Represents a CLI agent (e.g., Claude Code, Gemini CLI, Codex, Amp, Droid, OpenCode, Copilot, Pi, Auggie, Cursor, Goose, Hermes, Mistral Vibe, Grok Build)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Sequence, Serialize, Deserialize)]
 pub enum CLIAgent {
@@ -162,6 +170,7 @@ pub enum CLIAgent {
     Vibe,
     Antigravity,
     Grok,
+    CodeBuddy,
     /// Warp's own headless TUI.
     WarpTui,
     /// Represents an unknown/custom CLI agent matched by user-configured regex patterns.
@@ -196,6 +205,7 @@ impl CLIAgent {
                 "run-tui",
             ],
             CLIAgent::Grok => &["grok"],
+            CLIAgent::CodeBuddy => &["codebuddy"],
             CLIAgent::Unknown => &[],
         }
     }
@@ -252,6 +262,7 @@ impl CLIAgent {
             CLIAgent::Vibe => "Mistral Vibe",
             CLIAgent::Antigravity => "Antigravity",
             CLIAgent::Grok => "Grok Build",
+            CLIAgent::CodeBuddy => "CodeBuddy",
             CLIAgent::WarpTui => "Warp TUI",
             CLIAgent::Unknown => "CLI Agent",
         }
@@ -279,6 +290,7 @@ impl CLIAgent {
             CLIAgent::Vibe => None,
             CLIAgent::Antigravity => Some(Icon::AntigravityLogo),
             CLIAgent::Grok => Some(Icon::GrokLogo),
+            CLIAgent::CodeBuddy => Some(Icon::CodeBuddyLogo),
             CLIAgent::WarpTui => Some(Icon::Warp),
             CLIAgent::Unknown => None,
         }
@@ -313,6 +325,9 @@ impl CLIAgent {
             CLIAgent::Vibe => &[SkillProvider::Agents],
             CLIAgent::Antigravity => &[],
             CLIAgent::Grok => &[SkillProvider::Agents],
+            // No provider is defined for `~/.codebuddy/skills`, so the slash menu
+            // offers nothing rather than another agent's skills.
+            CLIAgent::CodeBuddy => &[],
             CLIAgent::WarpTui => &[],
             CLIAgent::Unknown => &[],
         }
@@ -368,6 +383,7 @@ impl CLIAgent {
             CLIAgent::Vibe => Some(MISTRAL_ORANGE),
             CLIAgent::Antigravity => Some(ANTIGRAVITY_COLOR),
             CLIAgent::Grok => Some(GROK_COLOR),
+            CLIAgent::CodeBuddy => Some(CODEBUDDY_COLOR),
             CLIAgent::WarpTui => Some(ColorU::black()),
             CLIAgent::Unknown => None,
         }
@@ -645,6 +661,7 @@ impl From<CLIAgent> for CLIAgentType {
             CLIAgent::Vibe => CLIAgentType::Vibe,
             CLIAgent::Antigravity => CLIAgentType::Antigravity,
             CLIAgent::Grok => CLIAgentType::Grok,
+            CLIAgent::CodeBuddy => CLIAgentType::CodeBuddy,
             CLIAgent::WarpTui => CLIAgentType::WarpTui,
             CLIAgent::Unknown => CLIAgentType::Unknown,
         }

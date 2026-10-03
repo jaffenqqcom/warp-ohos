@@ -300,6 +300,7 @@ pub(crate) fn plugin_manager_for_with_shell(
         | CLIAgent::Goose
         | CLIAgent::Vibe
         | CLIAgent::Antigravity
+        | CLIAgent::CodeBuddy
         | CLIAgent::WarpTui
         | CLIAgent::Unknown => None,
     }
