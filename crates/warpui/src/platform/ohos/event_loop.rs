@@ -1150,12 +1150,6 @@ fn notify_window_resized(ui_app: &crate::App, callbacks: &mut AppCallbackDispatc
 /// position on window geometry changes, so without this push the candidate box
 /// never follows the caret.
 fn update_ime_cursor_position(ui_app: &crate::App, callbacks: &mut AppCallbackDispatcher) {
-    // The candidate box only exists while the soft keyboard is up. Gating here
-    // rather than at the notification source keeps the windowing back-end free
-    // of IME state; the event itself is cheap to drop.
-    if !super::delegate::is_ime_open() {
-        return;
-    }
     let Some(window_id) = active_window_id(callbacks) else {
         return;
     };
