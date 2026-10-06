@@ -43,9 +43,10 @@ use crate::{AppContext, WindowId};
 
 /// Whether the ability's window currently holds focus.
 ///
-/// The platform reports focus through several overlapping callbacks, and each
-/// keyboard request crosses to ArkTS and blocks until it answers, so the edge is
-/// tracked to ask for the keyboard only when focus is actually gained.
+/// The platform reports focus through several overlapping callbacks. This flag
+/// records the latest focus state, so a callback that fires without a preceding
+/// focus loss -- notably a surface created after the window is already focused
+/// -- can still tell whether the window is focused.
 static WINDOW_FOCUSED: AtomicBool = AtomicBool::new(false);
 
 /// A repeat press of the same button within this window counts as one more
@@ -333,9 +334,14 @@ impl Translator {
                 // Hopping to the warp main thread is required, not just tidy:
                 // binding the IME blocks until ArkTS answers, and ArkTS answers
                 // on this, the UI, thread -- so waiting here would deadlock.
-                if !WINDOW_FOCUSED.swap(true, Ordering::AcqRel) {
-                    self.send(AppEvent::OpenImeRequested);
-                }
+                // The request is unconditional rather than edge-triggered: the
+                // system drops the bound IME session while the window is away
+                // (screen off, background) and can re-deliver focus without ever
+                // reporting a preceding loss, so this edge does not imply the
+                // previous one was seen. Re-binding an already bound session is
+                // idempotent, so repeating the request is safe.
+                WINDOW_FOCUSED.store(true, Ordering::Release);
+                self.send(AppEvent::OpenImeRequested);
                 self.send(AppEvent::FocusChanged(true));
             }
             PlatformEvent::LostFocus | PlatformEvent::Pause | PlatformEvent::Stop => {
@@ -346,8 +352,8 @@ impl Translator {
             PlatformEvent::VisibilityChanged(visible) => {
                 // A titlebar minimize/hide on 2in1 fires no windowStageEvent at
                 // all -- no Stop/LostFocus on the way out, and symmetrically no
-                // Resume/GainedFocus on the way back -- so `WINDOW_FOCUSED` stays
-                // set and the focus edge above never asks for the keyboard again.
+                // Resume/GainedFocus on the way back -- so the focus branch above
+                // never runs and never asks for the keyboard again.
                 // This callback is the only signal for that transition, so the
                 // keyboard is requested here as well. Re-binding an already bound
                 // session is idempotent, so a restore that does report focus only
