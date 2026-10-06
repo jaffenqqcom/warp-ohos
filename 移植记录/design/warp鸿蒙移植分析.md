@@ -855,7 +855,7 @@ warp 依赖的外部程序较多（shell、git、语言服务器、AI CLI 等）
 ### 9.3.5 输入与交互
 
 - 冲突：同一输入产生三路并行事件流、无 `ModifiersChanged` 事件；IME 无 preedit 回调、API 23 失焦 detach 崩溃。
-- 方案：消除重复源 + SourceType 过滤 + 手动构造事件；仅启动 attach（第 12、13 章）。
+- 方案：消除重复源 + SourceType 过滤 + 手动构造事件；attach 改为每次焦点类事件幂等重绑，不再仅限启动（第 12、13 章）。
 
 ### 9.3.6 窗口与事件
 
