@@ -2763,6 +2763,51 @@ impl BlockListElement {
                 );
             }
 
+            // [OHOS PORT BEGIN] Keep the IME cursor anchor fresh while the output
+            // cursor is hidden. CLI tools (e.g. codebuddy) clear `TermMode::SHOW_CURSOR`
+            // with `ESC[?25l` while running on the main screen, so the `draw_cursor`
+            // call above is skipped. Position caching only happens inside `render_cursor`,
+            // so without this the cached anchor freezes at the last drawn position and the
+            // IME candidate window stops following the cursor. Re-running `render_cursor`
+            // with a `Hidden` shape refreshes the cache without drawing. Restore upstream
+            // behavior by removing this block.
+            #[cfg(target_env = "ohos")]
+            {
+                if block.is_active_and_long_running()
+                    && !block.is_output_cursor_visible()
+                    && !block_grid_params.grid_render_params.hide_cursor_cell
+                {
+                    let output_grid = block.output_grid();
+                    if let Some(cursor_display_point) = output_grid.cursor_display_point() {
+                        let (cursor_point, is_cursor_on_wide_char) = match cursor_display_point {
+                            super::model::blockgrid::CursorDisplayPoint::Visible(point) => {
+                                (point, output_grid.grid_handler().is_cursor_on_wide_char())
+                            }
+                            super::model::blockgrid::CursorDisplayPoint::HiddenCache(point) => {
+                                (point, false)
+                            }
+                        };
+                        grid_renderer::render_cursor(
+                            &block_grid_params.grid_render_params,
+                            cursor_point,
+                            is_cursor_on_wide_char,
+                            super::model::ansi::CursorStyle {
+                                shape: CursorShape::Hidden,
+                                ..output_grid.cursor_style()
+                            },
+                            block_grid_params.grid_render_params.size_info.padding_x_px(),
+                            *grid_origin,
+                            block_grid_params.grid_render_params.warp_theme.cursor().into(),
+                            ctx,
+                            terminal_view_id,
+                            None,
+                            app,
+                        );
+                    }
+                }
+            }
+            // [OHOS PORT END]
+
             // Offset the origin by the height of the output grid.
             *grid_origin += vec2f(
                 0.,

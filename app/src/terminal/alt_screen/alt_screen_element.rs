@@ -779,6 +779,37 @@ impl Element for AltScreenElement {
             );
         }
 
+        // [OHOS PORT BEGIN] Keep the IME cursor anchor fresh while the cursor is hidden.
+        // Full-screen TUI apps (e.g. codebuddy, vim) clear `TermMode::SHOW_CURSOR` with
+        // `ESC[?25l`, so the block above is skipped. Position caching only happens inside
+        // `render_cursor`, so without this the cached anchor freezes at the last drawn
+        // position and the IME candidate window stops following the cursor. Re-running
+        // `render_cursor` with a `Hidden` shape refreshes the cache without drawing.
+        // Restore upstream behavior by removing this block.
+        #[cfg(target_env = "ohos")]
+        {
+            if !cursor_visible && !self.grid_render_params.hide_cursor_cell {
+                let cursor_render_point = grid.cursor_render_point();
+                grid_renderer::render_cursor(
+                    &self.grid_render_params,
+                    cursor_render_point,
+                    grid.is_cursor_on_wide_char(),
+                    crate::terminal::model::ansi::CursorStyle {
+                        shape: crate::terminal::model::ansi::CursorShape::Hidden,
+                        ..model.alt_screen().cursor_style()
+                    },
+                    padding_x,
+                    adjusted_grid_origin,
+                    self.grid_render_params.warp_theme.cursor().into(),
+                    ctx,
+                    self.terminal_view_id,
+                    None,
+                    app,
+                );
+            }
+        }
+        // [OHOS PORT END]
+
         record_trace_event!("alt_screen_element:paint:cursor_rendered");
 
         self.render_selections(
