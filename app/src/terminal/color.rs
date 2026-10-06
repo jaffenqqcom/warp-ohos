@@ -118,6 +118,32 @@ impl List {
 
         // Foreground and background.
         self[color_index::FOREGROUND] = colors.primary.foreground;
+        // [OHOS PORT BEGIN] Dim body text to match the settings description text.
+        // Restore upstream behavior by removing this block.
+        #[cfg(target_env = "ohos")]
+        {
+            use warp_core::ui::color::blend::Blend;
+            use warp_core::ui::color::coloru_with_opacity;
+
+            /// Opacity percent used to dim the terminal body foreground on OHOS.
+            ///
+            /// This is a deliberate OHOS override rather than a mirror of the theme. The target
+            /// look is the settings description text -- white over the terminal background --
+            /// whose own value is `text_sub`'s 60; the 80 here is OHOS's own choice and is
+            /// intentionally different from that 60. The terminal grid overwrites a cell's alpha
+            /// with the paint alpha (`app/src/terminal/grid_renderer.rs`), so the translucency
+            /// cannot be carried over directly and has to be pre-composited against the
+            /// background.
+            const DESCRIPTION_TEXT_OPACITY_PERCENT: u8 = 80;
+
+            self[color_index::FOREGROUND] = colors.primary.background.blend(
+                &coloru_with_opacity(
+                    colors.primary.foreground,
+                    DESCRIPTION_TEXT_OPACITY_PERCENT,
+                ),
+            );
+        }
+        // [OHOS PORT END]
         self[color_index::BACKGROUND] = colors.primary.background;
 
         // Dims.
