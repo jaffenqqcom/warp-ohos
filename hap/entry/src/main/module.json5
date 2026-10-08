@@ -67,10 +67,6 @@
     ],
     "hnpPackages": [
       {
-        "package": "git.hnp",
-        "type": "private"
-      },
-      {
         "package": "zsh.hnp",
         "type": "private"
       },
