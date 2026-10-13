@@ -71,20 +71,27 @@ mkdir -p "$TMPDIR"
 # ==================== Toolchain ====================
 # Every compiler, packer, SDK and signing path is resolved here; the rest of
 # the script only refers to these variables.
+#
+# The command-line tools use a flat layout (node/, hvigor/, ohpm/, sdk/) and
+# carry the SDK at sdk/default, unlike the older `<tool>.org/<version>` tree.
 BREW_PREFIX="${HARMONYBREW_PREFIX:-$HOME/.harmonybrew}"
 OHOS_SDK_ROOT="$("$BREW_PREFIX/bin/brew" --prefix ohos-sdk 2>/dev/null || echo "$BREW_PREFIX/opt/ohos-sdk")"
-TOOLCHAIN="${OHOS_COMMANDLINE_TOOLS:-$HOME/workspace/commandline-ohos}"
+TOOLCHAIN="${OHOS_COMMANDLINE_TOOLS:-$HOME/workspace/command-line-tools}"
+SDK_HOME="$TOOLCHAIN/sdk"
 
 SDK_LLVM_BIN="$OHOS_SDK_ROOT/native/llvm/bin"
 SDK_NATIVE="$OHOS_SDK_ROOT/native"
 
-NODE_CMD="$TOOLCHAIN/node.org/node_22.7.0/bin/node"
-NODE_BIN_DIR="$TOOLCHAIN/node.org/node_22.7.0/bin"
-HVIGORW_JS="$TOOLCHAIN/hvigor.org/hvigor_1.0.0/bin/hvigorw.js"
-OHPM_CMD="$TOOLCHAIN/ohpm.org/ohpm_1.1/bin/ohpm"
-OHPM_BIN_DIR="$TOOLCHAIN/ohpm.org/ohpm_1.1/bin"
-export DEVECO_SDK_HOME="$TOOLCHAIN/sdk.org/sdk_1.0.0"
-SIGN_TOOL_JAR="$TOOLCHAIN/sdk.org/sdk_1.0.0/default/openharmony/toolchains/lib/hap-sign-tool.jar"
+NODE_CMD="$TOOLCHAIN/node/bin/node"
+NODE_BIN_DIR="$TOOLCHAIN/node/bin"
+HVIGORW_JS="$TOOLCHAIN/hvigor/bin/hvigorw.js"
+OHPM_CMD="$TOOLCHAIN/ohpm/bin/ohpm"
+OHPM_BIN_DIR="$TOOLCHAIN/ohpm/bin"
+export DEVECO_SDK_HOME="$SDK_HOME"
+# Sign with the jar, not the sibling `hap-sign-tool` ELF: the ELF writes the
+# newer merkle-tree format whose empty signMap the device-side hnp service
+# rejects (install fails with 9568407).
+SIGN_TOOL_JAR="$SDK_HOME/default/openharmony/toolchains/lib/hap-sign-tool.jar"
 
 # The TLS shim only serves the compiler processes. hvigor, ohpm and the signer
 # are node/java programs that must not inherit it, so those calls run through

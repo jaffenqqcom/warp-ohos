@@ -39,7 +39,7 @@ set -u
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 PROJECT_ROOT=$SCRIPT_DIR
 
-APP_BUNDLE=com.hiwarp.terminal
+APP_BUNDLE=com.ohwarp.terminal
 APP_ABILITY=EntryAbility
 DEFAULT_HAP="$PROJECT_ROOT/hap/entry/build/default/outputs/default/entry-default-signed.hap"
 

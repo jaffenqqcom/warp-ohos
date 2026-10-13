@@ -14,7 +14,8 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 BREW_PREFIX="${HARMONYBREW_PREFIX:-$HOME/.harmonybrew}"
 OHOS_SDK_ROOT="$("$BREW_PREFIX/bin/brew" --prefix ohos-sdk 2>/dev/null || echo "$BREW_PREFIX/opt/ohos-sdk")"
-TOOLCHAIN="${OHOS_COMMANDLINE_TOOLS:-$HOME/workspace/commandline-ohos}"
+TOOLCHAIN="${OHOS_COMMANDLINE_TOOLS:-$HOME/workspace/command-line-tools}"
+SDK_HOME="$TOOLCHAIN/sdk"
 
 # rustup's cargo/rustc live under the prefix's rustup opt dir, while `brew/bin`
 # only carries the rustup binary itself.
@@ -41,11 +42,11 @@ check_path "ohos-sdk clang" "$OHOS_SDK_ROOT/native/llvm/bin/clang"
 check_path "ohos-sdk clang++" "$OHOS_SDK_ROOT/native/llvm/bin/clang++"
 check_path "ohos-sdk llvm-ar" "$OHOS_SDK_ROOT/native/llvm/bin/llvm-ar"
 check_path "cmake toolchain file" "$OHOS_SDK_ROOT/native/build/cmake/ohos.toolchain.cmake"
-check_path "node" "$TOOLCHAIN/node.org/node_22.7.0/bin/node"
-check_path "hvigorw.js" "$TOOLCHAIN/hvigor.org/hvigor_1.0.0/bin/hvigorw.js"
-check_path "ohpm" "$TOOLCHAIN/ohpm.org/ohpm_1.1/bin/ohpm"
-check_path "command-line SDK" "$TOOLCHAIN/sdk.org/sdk_1.0.0"
-check_path "hap-sign-tool.jar" "$TOOLCHAIN/sdk.org/sdk_1.0.0/default/openharmony/toolchains/lib/hap-sign-tool.jar"
+check_path "node" "$TOOLCHAIN/node/bin/node"
+check_path "hvigorw.js" "$TOOLCHAIN/hvigor/bin/hvigorw.js"
+check_path "ohpm" "$TOOLCHAIN/ohpm/bin/ohpm"
+check_path "command-line SDK" "$SDK_HOME"
+check_path "hap-sign-tool.jar" "$SDK_HOME/default/openharmony/toolchains/lib/hap-sign-tool.jar"
 
 echo
 echo "Rust:"

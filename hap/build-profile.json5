@@ -4,13 +4,13 @@
       {
         "name": "default",
         "material": {
-          "storePassword": "00000020315718C14291BC9865800407E6D7B8D7CD9016C38E977CF28A57FF00F448C2C8F11B3A49FE7B8E437FE0E02D",
-          "certpath": "/storage/Users/currentUser/Documents/ohos/config/default_hapHD-v_0wt3fmlK17SYeXMGJOjh-mUjvGMnRbzqYQPLtU.cer",
+          "storePassword": "0000001ba8c9d5f1ae5b5ef67fd8d3bc4b2838f55d97f83585bd1972f4c4770c96b10bbef94c8f27c70ff9",
+          "certpath": "/storage/Users/currentUser/.ohos/config/default_hap_U6lCp1YTTw2BUQBRcFW18o1kGh34xD0nHKbO2TiRk=.cer",
           "keyAlias": "debugKey",
-          "keyPassword": "00000020315718C14291BC9865800407E6D7B8D7CD9016C38E977CF28A57FF00F448C2C8F11B3A49FE7B8E437FE0E02D",
-          "profile": "/storage/Users/currentUser/Documents/ohos/config/default_hapHD-v_0wt3fmlK17SYeXMGJOjh-mUjvGMnRbzqYQPLtU.p7b",
+          "keyPassword": "0000001ba8c9d5f1ae5b5ef67fd8d3bc4b2838f55d97f83585bd1972f4c4770c96b10bbef94c8f27c70ff9",
+          "profile": "/storage/Users/currentUser/Download/com.huawei.hmos.browser/com.ohwarp.terminalDebug.p7b",
           "signAlg": "SHA256withECDSA",
-          "storeFile": "/storage/Users/currentUser/Documents/ohos/config/default_hapHD-v_0wt3fmlK17SYeXMGJOjh-mUjvGMnRbzqYQPLtU.p12"
+          "storeFile": "/storage/Users/currentUser/.ohos/config/default_hap_U6lCp1YTTw2BUQBRcFW18o1kGh34xD0nHKbO2TiRk=.p12"
         },
         "type": "HarmonyOS"
       }
@@ -18,8 +18,8 @@
     "products": [
       {
         "name": "default",
-        "targetSdkVersion": "6.1.0(23)",
-        "compatibleSdkVersion": "6.1.0(23)",
+        "targetSdkVersion": "26.0.0",
+        "compatibleSdkVersion": "26.0.0",
         "runtimeOS": "HarmonyOS",
         "buildOption": {
           "packOptions": {
@@ -40,10 +40,9 @@
             "abiFilters": [
               "arm64-v8a"
             ]
-          },
-          "debuggable": false
+          }
         },
-        "bundleName": "com.hiwarp.terminal",
+        "bundleName": "com.ohwarp.terminal",
         "signingConfig": "default"
       }
     ],
@@ -55,10 +54,7 @@
         }
       },
       {
-        "name": "release",
-        "buildOption": {
-          "debuggable": false
-        }
+        "name": "release"
       }
     ]
   },

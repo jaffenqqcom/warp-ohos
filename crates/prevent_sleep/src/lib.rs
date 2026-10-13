@@ -1,5 +1,6 @@
 #[cfg_attr(macos, path = "mac.rs")]
 #[cfg_attr(windows, path = "windows.rs")]
+#[cfg_attr(ohos, path = "ohos.rs")]
 #[cfg_attr(noop, path = "noop.rs")]
 mod imp;
 

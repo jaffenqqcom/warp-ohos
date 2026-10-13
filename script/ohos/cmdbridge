@@ -88,7 +88,7 @@ else
   echo "[cmdbridge] note: no compiler TLS shim at $TLS_SHIM; building without it" >&2
 fi
 
-HNPCLI="${HNPCLI:-$HOME/workspace/commandline-ohos/sdk.org/sdk_1.0.0/default/openharmony/toolchains/hnpcli}"
+HNPCLI="${HNPCLI:-$HOME/workspace/command-line-tools/sdk/default/openharmony/toolchains/hnpcli}"
 # Build output goes under the repository's target/, next to the application's own
 # artifacts, so cmdbridge/ stays source-only; target/ is already gitignored. Each
 # crate gets its own directory there: they are separate packages with separate

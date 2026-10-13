@@ -78,4 +78,7 @@ hap/entry/build/
 hap/entry/.cxx/
 hap/entry/oh_modules/
 hap/entry/src/main/cpp/types/libcore/
+
+# Don't include workbuddy and codebuddy
 .workbuddy/
+.codebuddy/

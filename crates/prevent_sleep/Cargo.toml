@@ -25,5 +25,8 @@ objc2-foundation = { workspace = true, features = [
     "NSString",
 ] }
 
+[target.'cfg(target_env = "ohos")'.dependencies]
+openharmony-ability = { git = "https://github.com/jaffenqqcom/openharmony-ability-zed", branch = "main" }
+
 [build-dependencies]
 cfg_aliases.workspace = true
