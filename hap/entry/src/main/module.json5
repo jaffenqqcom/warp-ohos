@@ -53,16 +53,6 @@
       },
       {
         "name": "ohos.permission.INTERNET"
-      },
-      {
-        "name": "ohos.permission.ALLOW_EXTERNAL_NATIVE_CODE",
-        "reason": "$string:perm_allow_external_native_code_reason",
-        "usedScene": {
-          "abilities": [
-            "EntryAbility"
-          ],
-          "when": "inuse"
-        }
       }
     ],
     "hnpPackages": [

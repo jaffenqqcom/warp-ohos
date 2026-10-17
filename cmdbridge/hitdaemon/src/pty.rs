@@ -134,14 +134,54 @@ fn master_for(conn_id: u64, channel: ChannelId) -> Option<Arc<AsyncMutex<AsyncFd
 
 /// Handles a window-change request for a live pty channel.
 pub async fn resize(conn_id: u64, channel: ChannelId, cols: u32, rows: u32) {
+    log::info!("pty: resize request channel={channel} to {cols}x{rows}");
     let Some(master) = master_for(conn_id, channel) else {
+        log::debug!("pty: resize request for unknown channel={channel}");
         return;
     };
     let master_guard = master.lock().await;
     let fd = master_guard.get_ref().as_raw_fd();
     if let Err(err) = set_size(fd, clamp_dimension(cols), clamp_dimension(rows)) {
         log::warn!("pty: resize channel={channel} to {cols}x{rows}: {err}");
+        return;
     }
+    log::debug!("pty: resized channel={channel} to {cols}x{rows}");
+    forward_window_signal(fd, channel);
+}
+
+/// Delivers a resize signal to the pty's foreground process group.
+///
+/// The kernel normally sends SIGWINCH itself when TIOCSWINSZ changes the size.
+/// On OHOS it stops doing so once the shell's job control has moved the
+/// foreground group away from the session leader, so the daemon forwards the
+/// signal explicitly. The group is read from the master: `tcgetpgrp` on the
+/// slave fails with ENOTTY because that fd is not this process's controlling
+/// terminal.
+fn forward_window_signal(fd: RawFd, channel: ChannelId) {
+    let mut pgrp: libc::pid_t = 0;
+    // SAFETY: TIOCGPGRP writes a pid_t through the pointer it is given.
+    if unsafe { libc::ioctl(fd, libc::TIOCGPGRP, &mut pgrp) } != 0 {
+        log::warn!(
+            "pty: channel={channel} cannot read the foreground group: {}",
+            std::io::Error::last_os_error()
+        );
+        return;
+    }
+    if pgrp <= 0 {
+        log::debug!("pty: channel={channel} has no foreground process group");
+        return;
+    }
+    // SAFETY: a negative pid sends the signal to the whole process group.
+    if unsafe { libc::kill(-pgrp, libc::SIGWINCH) } != 0 {
+        let err = std::io::Error::last_os_error();
+        if err.raw_os_error() == Some(libc::ESRCH) {
+            log::debug!("pty: channel={channel} foreground group {pgrp} is gone");
+        } else {
+            log::warn!("pty: channel={channel} cannot signal group {pgrp}: {err}");
+        }
+        return;
+    }
+    log::debug!("pty: channel={channel} forwarded SIGWINCH to group {pgrp}");
 }
 
 /// Forwards client stdin bytes into the pty master for a live channel. Returns

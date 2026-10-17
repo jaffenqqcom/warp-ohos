@@ -4,13 +4,13 @@
       {
         "name": "default",
         "material": {
-          "storePassword": "0000001ba8c9d5f1ae5b5ef67fd8d3bc4b2838f55d97f83585bd1972f4c4770c96b10bbef94c8f27c70ff9",
-          "certpath": "/storage/Users/currentUser/.ohos/config/default_hap_U6lCp1YTTw2BUQBRcFW18o1kGh34xD0nHKbO2TiRk=.cer",
+          "storePassword": "000000202EAB15606DB93A3212F5BA838759C083DF1B60F6A8FC2D65A6378F465862D3B3B70851311AFB34CADF477FB4",
+          "certpath": "/storage/Users/currentUser/.ohos/config/default_hapHD-v_0wt3fmlK17SYeXMGJOjh-mUjvGMnRbzqYQPLtU.cer",
           "keyAlias": "debugKey",
-          "keyPassword": "0000001ba8c9d5f1ae5b5ef67fd8d3bc4b2838f55d97f83585bd1972f4c4770c96b10bbef94c8f27c70ff9",
-          "profile": "/storage/Users/currentUser/Download/com.huawei.hmos.browser/com.ohwarp.terminalDebug.p7b",
+          "keyPassword": "000000202EAB15606DB93A3212F5BA838759C083DF1B60F6A8FC2D65A6378F465862D3B3B70851311AFB34CADF477FB4",
+          "profile": "/storage/Users/currentUser/.ohos/config/default_hapHD-v_0wt3fmlK17SYeXMGJOjh-mUjvGMnRbzqYQPLtU.p7b",
           "signAlg": "SHA256withECDSA",
-          "storeFile": "/storage/Users/currentUser/.ohos/config/default_hap_U6lCp1YTTw2BUQBRcFW18o1kGh34xD0nHKbO2TiRk=.p12"
+          "storeFile": "/storage/Users/currentUser/.ohos/config/default_hapHD-v_0wt3fmlK17SYeXMGJOjh-mUjvGMnRbzqYQPLtU.p12"
         },
         "type": "HarmonyOS"
       }
