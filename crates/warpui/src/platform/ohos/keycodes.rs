@@ -1,6 +1,6 @@
 //! Mapping from OHOS xcomponent key events to warpui keystrokes and text.
 //!
-//! `ohos-native-bindings-zed` no longer carries modifier state on
+//! `ohos-native-bindings-hicodeer` no longer carries modifier state on
 //! [`KeyEventData`], so it is tracked across events by [`Modifiers`] and passed
 //! in by the input layer. Key names follow the same convention as the winit
 //! back-end: letters are uppercased while shift is held, the shifted form of

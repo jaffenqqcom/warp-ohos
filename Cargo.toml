@@ -598,18 +598,18 @@ nix = { path = "patches/nix" }
 # distinct types, which fails type-checking in downstream crates such as
 # `ohos-arkui-binding`. Patching the whole reachable set onto the same repository
 # and revision keeps exactly one copy of each.
-ohos-xcomponent-binding = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-zed.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
-ohos-xcomponent-sys = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-zed.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
-ohos-arkui-input-binding = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-zed.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
-ohos-arkui-input-sys = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-zed.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
-ohos-arkui-sys = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-zed.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
-ohos-enum-derive = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-zed.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
-ohos-native-buffer-sys = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-zed.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
-ohos-resource-manager-sys = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-zed.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
-ohos-image-native-sys = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-zed.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
-ohos-image-sys = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-zed.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
-ohos-native-drawing-sys = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-zed.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
-ohos-udmf-sys = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-zed.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
+ohos-xcomponent-binding = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-hicodeer.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
+ohos-xcomponent-sys = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-hicodeer.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
+ohos-arkui-input-binding = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-hicodeer.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
+ohos-arkui-input-sys = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-hicodeer.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
+ohos-arkui-sys = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-hicodeer.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
+ohos-enum-derive = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-hicodeer.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
+ohos-native-buffer-sys = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-hicodeer.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
+ohos-resource-manager-sys = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-hicodeer.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
+ohos-image-native-sys = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-hicodeer.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
+ohos-image-sys = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-hicodeer.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
+ohos-native-drawing-sys = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-hicodeer.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
+ohos-udmf-sys = { git = "https://github.com/jaffenqqcom/ohos-native-bindings-hicodeer.git", tag = "ohos-xcomponent-binding-v0.3.2-zed.1" }
 
 [patch."https://github.com/warpdotdev/warp-proto-apis.git"]
 # Uncomment for local development of warp-proto-apis

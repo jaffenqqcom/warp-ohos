@@ -615,7 +615,7 @@ pub mod current {
 
 - **纯附加、不动 winit**：新增 `crates/warpui/src/platform/ohos/`（与 `crates/warpui/src/platform/mac/` 同构）＋ `#[cfg(target_env = "ohos")]` 分支；`crates/warpui/build.rs` 的 `winit: { not(macos) }` 一行改为 `not(any(macos, ohos))`（受保护文件，须单独授权）。warp 的 winit 0.30.13 fork 与 Linux/Windows/Web/macOS **零改动**，「不改变其他 OS 编译与功能」天然满足。
 - **有树内同构先例**：macOS 走的正是这条形态——`crates/warpui/src/windowing/mod.rs` 的 `#[cfg(winit)] pub mod winit;` 与 `crates/warpui/src/platform/mod.rs` 的 `#[cfg(target_os = "macos")] pub mod mac;` 配对；新增 OHOS 与 mac 平行，范式可直接抄。
-- **HAP 与插件对齐更顺**：HiCodeer 的 `hap/` 与整套插件（cursor / files / pinch / filedrop / openwith / ime / url ＋ worker-pool）是对着 **openharmony-ability-zed fork**（`jaffenqqcom/openharmony-ability-zed`，tag `v1.0.0-beta.1-zed.1`）接的；路线 B 可沿用同一 fork 与同一插件集，`hap/` 复用度最高。相比之下 winit-ohos 只自动接线 window 一个插件，并声明 files / permissions / resources / URLs / webviews / app control 等应用级插件由应用自己负责——在插件这件事上，A′ 并不省事。
+- **HAP 与插件对齐更顺**：HiCodeer 的 `hap/` 与整套插件（cursor / files / pinch / filedrop / openwith / ime / url ＋ worker-pool）是对着 **openharmony-ability-hicodeer fork**（`jaffenqqcom/openharmony-ability-hicodeer`，tag `v1.0.0-beta.1-zed.1`）接的；路线 B 可沿用同一 fork 与同一插件集，`hap/` 复用度最高。相比之下 winit-ohos 只自动接线 window 一个插件，并声明 files / permissions / resources / URLs / webviews / app control 等应用级插件由应用自己负责——在插件这件事上，A′ 并不省事。
 - **代价一：要自写 OHOS 平台后端**。参照 HiCodeer 的 `crates/gpui_ohos`（7246 行），warpui 侧估 3000 至 5000 行；其中渲染器部分（gpui_ohos 的 `wgpu_renderer.rs` ＋ `wgpu_atlas.rs` = 2034 行）可由 warpui 既有 `crates/warpui/src/rendering/wgpu/` 复用而省去。
 - **代价二：窗口侧难点要自己踩**——事件三路（XComponent / ArkUI / IME）消重、帧回调持续触发导致的空转 CPU、避让区、可见性、IME、按需 vsync。但这些坑 gpui_ohos 与基座已趟过，且本仓库第 08、12、13、14 章留有实测记录可循。
 
@@ -901,7 +901,7 @@ warp 依赖的外部程序较多（shell、git、语言服务器、AI CLI 等）
 
 ## 10.2 openharmony-ability 的引入与用法
 
-`openharmony-ability` 是 HiCodeer fork 的 cargo git 依赖，仓库为 `https://github.com/jaffenqqcom/openharmony-ability-zed`，tag `v1.0.0-beta.1-zed.1`。三组 crate 必须解析到同一 git 源与同一 revision：
+`openharmony-ability` 是 HiCodeer fork 的 cargo git 依赖，仓库为 `https://github.com/jaffenqqcom/openharmony-ability-hicodeer`，tag `v1.0.0-beta.1-zed.1`。三组 crate 必须解析到同一 git 源与同一 revision：
 
 - `openharmony-ability`（基座：事件循环、渲染根、生命周期、ArkTS 与 Rust 双向桥、剪贴板 / 文件 URI / 子进程等 NDK 能力）
 - `openharmony-ability-derive`（`#[ability]` 宏）
@@ -1408,7 +1408,7 @@ HNP 载荷为**预制**（`hap/entry/hnp/arm64-v8a/` 下的 `git.hnp` + `zsh.hnp
 
 **最终选定：方案 2 的本地化变体——本地 path patch（已落地）**。根 `Cargo.toml` 新增三条 path 依赖，指向 `patches/` 下随仓库提交的上游 crate 副本：`nix`、`gettext-sys`、`interprocess`（后者两者同样在 OHOS 上按 glibc 假设编译而失败）。采用 path patch 而非 git fork 的原因是这些修复是本地性的、未向上游提交。选择依据是改动最小且**不触碰 warp 自身业务代码**；方案 3 虽最「正规」，但需改写 `warp_terminal` 的 PTY 与 `warpui`/`app` 的进程/信号调用，爆炸半径远大于两处上游 crate 的定点修复。
 
-同批引入的还有 `ohos-*` 系列原生绑定：根 `Cargo.toml` 以 `git = "https://github.com/jaffenqqcom/ohos-native-bindings-zed.git"`（默认分支）引入，而非 crates.io 版本。原因有二：一是 API 面，`openharmony-ability` 是按该 fork 写的（`off_frame_callback`、当前的 `on_ui_input_event` 签名），crates.io 版本没有；二是版本解析，`[patch.crates-io]` 只替换**同版本号**，把 patch 钉在比 crates.io 更旧的 tag 上会让两份副本同时留在依赖图里，它们各自定义的 FFI 类型（`OH_NativeXComponent`、`ArkUI_Node`）随之变成不同类型而报错；默认分支的版本不低于 crates.io，patch 直接生效、每个 crate 只存在一份。
+同批引入的还有 `ohos-*` 系列原生绑定：根 `Cargo.toml` 以 `git = "https://github.com/jaffenqqcom/ohos-native-bindings-hicodeer.git"`（默认分支）引入，而非 crates.io 版本。原因有二：一是 API 面，`openharmony-ability` 是按该 fork 写的（`off_frame_callback`、当前的 `on_ui_input_event` 签名），crates.io 版本没有；二是版本解析，`[patch.crates-io]` 只替换**同版本号**，把 patch 钉在比 crates.io 更旧的 tag 上会让两份副本同时留在依赖图里，它们各自定义的 FFI 类型（`OH_NativeXComponent`、`ArkUI_Node`）随之变成不同类型而报错；默认分支的版本不低于 crates.io，patch 直接生效、每个 crate 只存在一份。
 
 ### 11.10.5 本节结论
 
@@ -1443,7 +1443,7 @@ HNP 载荷为**预制**（`hap/entry/hnp/arm64-v8a/` 下的 `git.hnp` + `zsh.hnp
 - **两线程模型**：ArkTS（ability）线程只做事件**生产**，绝不阻塞；warp 的阻塞事件循环跑在 `spawn()` 起的独立 `warp-main` 线程上做**消费**，两者以 `std::sync::mpsc` 队列解耦。`openharmony-ability` 的 `run_loop` 把闭包转成 `'static + Send + Sync` 后存在单线程 cell 里、由 ability 线程驱动，因此 `run_loop` 必须在 ability 线程调用（`event_loop::register` 负责此事）。
 - **渲染零补丁**：wgpu 30 的 GL/EGL 后端已接受 `RawWindowHandle::OhosNdk` 并用其 `native_window` 指针建 EGL window surface（`wgpu-hal` 的 `create_surface` 识别该句柄）；因不提供 display 句柄，wgpu 落到 `WindowKind::Unknown` 分支，正好走 EGL 路径。因此 **warp 侧无需对 wgpu 打补丁**，仅需把 ability 的 `RawWindow` 包成实现 `HasWindowHandle` / `HasDisplayHandle` 的 surface target（`OhosSurfaceTarget`）。
 - **渲染驱动**：由 XComponent 的帧回调（`on_frame_callback` → `Event::WindowRedraw`）驱动；帧处理与 winit 后端同序——先 `update_size_if_needed` 让 swap chain 尺寸跟上，再 `build_scene`（仅当无缓存 scene），最后 `render(scene, font_cache)`。
-- **按键输入**：`ohos-native-bindings-zed` 的 `KeyEventData` 已不带修饰键状态，故修饰键由 `keycodes::Modifiers` 跨事件累计，并在失焦时清空（否则修饰键会卡住）；`key_without_modifiers` 走「不按 shift 的键名」。
+- **按键输入**：`ohos-native-bindings-hicodeer` 的 `KeyEventData` 已不带修饰键状态，故修饰键由 `keycodes::Modifiers` 跨事件累计，并在失焦时清空（否则修饰键会卡住）；`key_without_modifiers` 走「不按 shift 的键名」。
 
 **hilog 日志重定向（本批新增，方法与文件清单见 3.3）**
 

@@ -336,7 +336,7 @@ arkts_revision_from_lock() {
 
 arkts_checkout_dir() {
   local short="${1:0:7}" dir
-  for dir in "$CARGO_GIT_CHECKOUTS"/openharmony-ability-zed-*/"$short"; do
+  for dir in "$CARGO_GIT_CHECKOUTS"/openharmony-ability-hicodeer-*/"$short"; do
     if [ -d "$dir/native_ability" ]; then
       printf '%s\n' "$dir"
       return 0
@@ -404,7 +404,7 @@ sync_arkts_sources() {
     (cd "$PROJECT_ROOT" && CARGO_NET_OFFLINE=true cargo metadata --format-version 1 >/dev/null)
     if ! checkout="$(arkts_checkout_dir "$revision")"; then
       echo "Error: cargo checkout for openharmony-ability not found (revision $short)" >&2
-      echo "  expected: $CARGO_GIT_CHECKOUTS/openharmony-ability-zed-*/$short" >&2
+      echo "  expected: $CARGO_GIT_CHECKOUTS/openharmony-ability-hicodeer-*/$short" >&2
       return 1
     fi
   fi
